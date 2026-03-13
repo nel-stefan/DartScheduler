@@ -1,0 +1,30 @@
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  {
+    path: '',
+    loadComponent: () =>
+      import('./components/overview/overview.component').then((m) => m.OverviewComponent),
+  },
+  {
+    path: 'upload',
+    loadComponent: () =>
+      import('./components/upload/upload.component').then((m) => m.UploadComponent),
+  },
+  {
+    path: 'evening/:id',
+    loadComponent: () =>
+      import('./components/evening-view/evening-view.component').then((m) => m.EveningViewComponent),
+  },
+  {
+    path: 'score/:id',
+    loadComponent: () =>
+      import('./components/score-entry/score-entry.component').then((m) => m.ScoreEntryComponent),
+  },
+  {
+    path: 'standings',
+    loadComponent: () =>
+      import('./components/standings/standings.component').then((m) => m.StandingsComponent),
+  },
+  { path: '**', redirectTo: '' },
+];

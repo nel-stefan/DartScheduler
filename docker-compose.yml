@@ -1,0 +1,14 @@
+services:
+  dartscheduler:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - dart_data:/data
+    environment:
+      - DATABASE_PATH=/data/dartscheduler.db
+      - PORT=8080
+    restart: unless-stopped
+
+volumes:
+  dart_data:
