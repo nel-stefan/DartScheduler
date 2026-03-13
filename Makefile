@@ -19,8 +19,9 @@ tidy:
 	go mod tidy
 
 frontend:
-	cd frontend && npm run build -- --configuration=production && \
-	cp -r dist/dart-scheduler ../web/dist/
+	cd frontend && npm run build -- --configuration=production
+	rm -rf web/dist/dart-scheduler/browser
+	cp -r frontend/dist/dart-scheduler/browser web/dist/dart-scheduler/browser
 
 docker:
 	docker compose up --build

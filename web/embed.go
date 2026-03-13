@@ -6,14 +6,14 @@ import (
 	"net/http"
 )
 
-//go:embed dist/dart-scheduler
+//go:embed dist/dart-scheduler/browser
 var staticFiles embed.FS
 
 // SPAHandler returns an HTTP handler that serves the embedded Angular SPA.
 // All requests that don't match a static file are served index.html (for
 // client-side routing).
 func SPAHandler() http.Handler {
-	sub, err := fs.Sub(staticFiles, "dist/dart-scheduler")
+	sub, err := fs.Sub(staticFiles, "dist/dart-scheduler/browser")
 	if err != nil {
 		panic("web: embed sub-fs: " + err.Error())
 	}

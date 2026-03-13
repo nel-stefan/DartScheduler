@@ -10,7 +10,7 @@ RUN npm run build -- --configuration=production
 FROM golang:1.24-alpine AS go-builder
 WORKDIR /app
 # Copy Angular output into the embed path
-COPY --from=frontend-builder /app/frontend/dist/dart-scheduler ./web/dist/dart-scheduler
+COPY --from=frontend-builder /app/frontend/dist/dart-scheduler/browser ./web/dist/dart-scheduler/browser
 # Download deps
 COPY go.mod go.sum ./
 RUN go mod download
