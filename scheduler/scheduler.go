@@ -27,6 +27,9 @@ type Input struct {
 	CompetitionName string
 	StartDate       time.Time
 	IntervalDays    int
+	// EveningDates, if set, provides explicit dates for each evening (len must equal NumEvenings).
+	// Takes precedence over StartDate+IntervalDays.
+	EveningDates []time.Time
 }
 
 // Generate builds a round-robin Schedule with simulated-annealing optimisation.
@@ -72,10 +75,16 @@ func Generate(in Input) (domain.Schedule, error) {
 	}
 
 	for ei := range schedule.Evenings {
+		var date time.Time
+		if ei < len(in.EveningDates) {
+			date = in.EveningDates[ei]
+		} else {
+			date = in.StartDate.AddDate(0, 0, ei*in.IntervalDays)
+		}
 		schedule.Evenings[ei] = domain.Evening{
 			ID:     uuid.New(),
 			Number: ei + 1,
-			Date:   in.StartDate.AddDate(0, 0, ei*in.IntervalDays),
+			Date:   date,
 		}
 	}
 

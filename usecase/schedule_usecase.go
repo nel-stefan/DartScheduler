@@ -52,16 +52,47 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 		return domain.Schedule{}, err
 	}
 
+	// Verdeel de slots over normaal, inhaal en vrij.
+	inhaalSet := toIntSet(in.InhaalNrs)
+	vrijSet := toIntSet(in.VrijeNrs)
+
+	type slotInfo struct {
+		nr   int
+		date time.Time
+	}
+	var regularSlots, inhaalSlots []slotInfo
+	for i := range in.NumEvenings {
+		nr := i + 1
+		date := in.StartDate.AddDate(0, 0, i*in.IntervalDays)
+		switch {
+		case inhaalSet[nr]:
+			inhaalSlots = append(inhaalSlots, slotInfo{nr, date})
+		case vrijSet[nr]:
+			// vrije avond: datum wordt overgeslagen, geen evening aangemaakt
+		default:
+			regularSlots = append(regularSlots, slotInfo{nr, date})
+		}
+	}
+
+	regularDates := make([]time.Time, len(regularSlots))
+	for i, s := range regularSlots {
+		regularDates[i] = s.date
+	}
+
 	sched, err := scheduler.Generate(scheduler.Input{
 		Players:         participants,
 		BuddyPairs:      buddyPairs,
-		NumEvenings:     in.NumEvenings,
+		NumEvenings:     len(regularSlots),
+		EveningDates:    regularDates,
 		CompetitionName: in.CompetitionName,
-		StartDate:       in.StartDate,
-		IntervalDays:    in.IntervalDays,
 	})
 	if err != nil {
 		return domain.Schedule{}, err
+	}
+
+	// Hernum evenings naar hun slot-nummer.
+	for i := range sched.Evenings {
+		sched.Evenings[i].Number = regularSlots[i].nr
 	}
 
 	sched.Season = in.Season
@@ -78,7 +109,29 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 			}
 		}
 	}
+
+	// Sla inhaalavonden op.
+	for _, s := range inhaalSlots {
+		ev := domain.Evening{
+			ID:            uuid.New(),
+			Number:        s.nr,
+			Date:          s.date,
+			IsInhaalAvond: true,
+		}
+		if err := uc.evenings.Save(ctx, ev, sched.ID); err != nil {
+			return domain.Schedule{}, err
+		}
+	}
+
 	return sched, nil
+}
+
+func toIntSet(nrs []int) map[int]bool {
+	s := make(map[int]bool, len(nrs))
+	for _, n := range nrs {
+		s[n] = true
+	}
+	return s
 }
 
 func (uc *ScheduleUseCase) GetLatest(ctx context.Context) (domain.Schedule, error) {

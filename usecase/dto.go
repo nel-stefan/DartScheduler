@@ -32,9 +32,11 @@ type BuddyPairInput struct {
 type GenerateScheduleInput struct {
 	CompetitionName string
 	Season          string
-	NumEvenings     int
+	NumEvenings     int // total slots including inhaal and vrij
 	StartDate       time.Time
 	IntervalDays    int
+	InhaalNrs       []int // slot numbers that become inhaalavonden
+	VrijeNrs        []int // slot numbers that are skipped (no evening created)
 }
 
 // --- Score ---

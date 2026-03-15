@@ -31,48 +31,122 @@ import { environment } from '../../../environments/environment';
   selector: 'app-generate-dialog',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-            MatFormFieldModule, MatInputModule],
+            MatFormFieldModule, MatInputModule, MatSelectModule],
+  styles: [`
+    .slot-row { display:flex; align-items:center; gap:12px; padding:4px 0; border-bottom:1px solid #f5f5f5; }
+    .slot-date { color:#555; min-width:180px; font-size:13px; }
+    .slot-nr   { min-width:64px; font-size:13px; font-weight:500; }
+  `],
   template: `
     <h2 mat-dialog-title>Schema genereren</h2>
-    <mat-dialog-content>
-      <form [formGroup]="form" style="display:flex;flex-direction:column;gap:12px;min-width:320px;padding-top:8px">
-        <mat-form-field><mat-label>Naam competitie</mat-label>
+    <mat-dialog-content style="min-width:480px">
+      <form [formGroup]="form" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;padding-top:8px">
+        <mat-form-field style="grid-column:1/-1"><mat-label>Naam competitie</mat-label>
           <input matInput formControlName="competitionName">
         </mat-form-field>
-        <mat-form-field><mat-label>Seizoen (bijv. 2026)</mat-label>
+        <mat-form-field style="grid-column:1/-1"><mat-label>Seizoen (bijv. 2026)</mat-label>
           <input matInput formControlName="season" placeholder="2026">
         </mat-form-field>
-        <mat-form-field><mat-label>Aantal avonden</mat-label>
+        <mat-form-field><mat-label>Aantal avonden (totaal)</mat-label>
           <input matInput type="number" formControlName="numEvenings">
-        </mat-form-field>
-        <mat-form-field><mat-label>Startdatum (YYYY-MM-DD)</mat-label>
-          <input matInput formControlName="startDate" placeholder="2026-04-01">
         </mat-form-field>
         <mat-form-field><mat-label>Interval (dagen)</mat-label>
           <input matInput type="number" formControlName="intervalDays">
         </mat-form-field>
+        <mat-form-field style="grid-column:1/-1"><mat-label>Startdatum (YYYY-MM-DD)</mat-label>
+          <input matInput formControlName="startDate" placeholder="2026-04-01">
+        </mat-form-field>
       </form>
+
+      <!-- Avondenlijst -->
+      <div *ngIf="slots.length > 0" style="margin-top:16px">
+        <div style="font-weight:500;margin-bottom:8px;font-size:14px">
+          Avondtype instellen
+          <span style="color:#888;font-size:12px;font-weight:400;margin-left:8px">
+            {{ regularCount }} speelavonden · {{ inhaalCount }} inhaalavonden · {{ vrijCount }} vrij
+          </span>
+        </div>
+        <div style="max-height:280px;overflow-y:auto">
+          <div class="slot-row" *ngFor="let s of slots">
+            <span class="slot-nr">Avond {{ s.nr }}</span>
+            <span class="slot-date">{{ s.date | date:'EEE d MMM yyyy' }}</span>
+            <mat-form-field style="min-width:130px" subscriptSizing="dynamic">
+              <mat-select [(value)]="slotTypes[s.nr]">
+                <mat-option value="normaal">Normaal</mat-option>
+                <mat-option value="inhaal">Inhaalavond</mat-option>
+                <mat-option value="vrij">Vrije avond</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
-      <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="submit()">Genereren</button>
+      <button mat-raised-button color="primary"
+              [disabled]="form.invalid || regularCount === 0"
+              (click)="submit()">Genereren</button>
     </mat-dialog-actions>
   `,
 })
-export class GenerateDialogComponent {
+export class GenerateDialogComponent implements OnInit {
   private dialogRef = inject(MatDialogRef<GenerateDialogComponent>);
   fb = inject(FormBuilder);
 
   form = this.fb.group({
     competitionName: ['Liga 2026', Validators.required],
     season:          ['2026', Validators.required],
-    numEvenings: [20, [Validators.required, Validators.min(1)]],
-    startDate: ['2026-04-01', Validators.required],
-    intervalDays: [7, [Validators.required, Validators.min(1)]],
+    numEvenings:  [20, [Validators.required, Validators.min(1)]],
+    startDate:    ['2026-04-01', Validators.required],
+    intervalDays: [7,  [Validators.required, Validators.min(1)]],
   });
 
+  slotTypes: Record<number, string> = {};
+
+  ngOnInit(): void {
+    this.form.valueChanges.subscribe(() => this.rebuildSlots());
+    this.rebuildSlots();
+  }
+
+  get slots(): { nr: number; date: Date }[] {
+    const v = this.form.value;
+    if (!v.numEvenings || !v.startDate || !v.intervalDays) return [];
+    const start = new Date(v.startDate);
+    if (isNaN(start.getTime())) return [];
+    return Array.from({ length: v.numEvenings }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i * (v.intervalDays ?? 7));
+      return { nr: i + 1, date: d };
+    });
+  }
+
+  get regularCount(): number { return this.slots.filter(s => (this.slotTypes[s.nr] ?? 'normaal') === 'normaal').length; }
+  get inhaalCount():  number { return this.slots.filter(s => this.slotTypes[s.nr] === 'inhaal').length; }
+  get vrijCount():    number { return this.slots.filter(s => this.slotTypes[s.nr] === 'vrij').length; }
+
+  private rebuildSlots(): void {
+    const v = this.form.value;
+    const n = v.numEvenings ?? 0;
+    // Initialize new slots to 'normaal'; keep existing choices
+    for (let i = 1; i <= n; i++) {
+      if (!this.slotTypes[i]) this.slotTypes[i] = 'normaal';
+    }
+  }
+
   submit(): void {
-    if (this.form.valid) this.dialogRef.close(this.form.value as GenerateScheduleRequest);
+    if (!this.form.valid || this.regularCount === 0) return;
+    const v = this.form.value;
+    const inhaalNrs = this.slots.filter(s => this.slotTypes[s.nr] === 'inhaal').map(s => s.nr);
+    const vrijeNrs  = this.slots.filter(s => this.slotTypes[s.nr] === 'vrij').map(s => s.nr);
+    this.dialogRef.close({
+      competitionName: v.competitionName,
+      season:          v.season,
+      numEvenings:     v.numEvenings,
+      startDate:       v.startDate,
+      intervalDays:    v.intervalDays,
+      inhaalNrs,
+      vrijeNrs,
+    } as GenerateScheduleRequest);
   }
 }
 

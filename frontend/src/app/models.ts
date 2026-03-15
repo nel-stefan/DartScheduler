@@ -78,4 +78,6 @@ export interface GenerateScheduleRequest {
   numEvenings: number;
   startDate: string;
   intervalDays: number;
+  inhaalNrs: number[];
+  vrijeNrs: number[];
 }

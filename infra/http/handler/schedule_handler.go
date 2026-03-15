@@ -23,9 +23,12 @@ func NewScheduleHandler(uc *usecase.ScheduleUseCase) *ScheduleHandler {
 
 type generateRequest struct {
 	CompetitionName string `json:"competitionName"`
+	Season          string `json:"season"`
 	NumEvenings     int    `json:"numEvenings"`
-	StartDate       string `json:"startDate"`    // "2026-04-01"
+	StartDate       string `json:"startDate"` // "2026-04-01"
 	IntervalDays    int    `json:"intervalDays"`
+	InhaalNrs       []int  `json:"inhaalNrs"`
+	VrijeNrs        []int  `json:"vrijeNrs"`
 }
 
 func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
@@ -45,9 +48,12 @@ func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
 
 	sched, err := h.uc.Generate(r.Context(), usecase.GenerateScheduleInput{
 		CompetitionName: req.CompetitionName,
+		Season:          req.Season,
 		NumEvenings:     req.NumEvenings,
 		StartDate:       startDate,
 		IntervalDays:    req.IntervalDays,
+		InhaalNrs:       req.InhaalNrs,
+		VrijeNrs:        req.VrijeNrs,
 	})
 	if err != nil {
 		httpErrorDomain(w, err)
