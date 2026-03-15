@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"DartScheduler/domain"
 
@@ -218,26 +219,26 @@ func scanMatches(rows *sql.Rows) ([]domain.Match, error) {
 	return out, rows.Err()
 }
 
-func (r *MatchRepo) MoveToEvening(ctx context.Context, matchIDs []domain.MatchID, eveningID domain.EveningID) error {
-	if len(matchIDs) == 0 {
-		return nil
-	}
-	tx, err := r.db.BeginTx(ctx, nil)
+func (r *MatchRepo) FindCancelledByScheduleBeforeDate(ctx context.Context, scheduleID domain.ScheduleID, before time.Time) ([]domain.Match, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT m.id, m.evening_id, m.player_a, m.player_b, m.score_a, m.score_b, m.played,
+			m.leg1_winner, m.leg1_turns, m.leg2_winner, m.leg2_turns,
+			m.leg3_winner, m.leg3_turns,
+			m.reported_by, m.reschedule_date, m.secretary_nr, m.counter_nr
+		FROM matches m
+		JOIN evenings e ON m.evening_id = e.id
+		WHERE e.schedule_id = ?
+		  AND e.is_inhaal_avond = 0
+		  AND datetime(e.date) < datetime(?)
+		  AND m.reported_by != ''
+		  AND m.played = 0
+		ORDER BY e.date, m.rowid`,
+		scheduleID.String(), before.UTC().Format(time.RFC3339))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer tx.Rollback()
-	stmt, err := tx.PrepareContext(ctx, `UPDATE matches SET evening_id=? WHERE id=?`)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-	for _, id := range matchIDs {
-		if _, err := stmt.ExecContext(ctx, eveningID.String(), id.String()); err != nil {
-			return err
-		}
-	}
-	return tx.Commit()
+	defer rows.Close()
+	return scanMatches(rows)
 }
 
 func boolToInt(b bool) int {

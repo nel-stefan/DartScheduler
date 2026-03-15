@@ -134,12 +134,17 @@ export class BuddyDialogComponent {
   imports: [
     CommonModule, MatSnackBarModule, MatButtonModule, MatIconModule,
     MatCardModule, MatTableModule, MatDialogModule, MatChipsModule,
+    MatCheckboxModule, MatSelectModule, MatFormFieldModule,
   ],
   styles: [`
     .import-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     table { width: 100%; }
     .actions-cell { text-align: right; white-space: nowrap; }
     .buddy-chip { font-size: 11px; }
+    .batch-bar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      background: #e3f2fd; border-radius: 6px; padding: 8px 16px; margin-bottom: 12px;
+    }
   `],
   template: `
     <mat-card style="margin-bottom:24px">
@@ -166,7 +171,38 @@ export class BuddyDialogComponent {
         <mat-card-title>Spelers ({{ players.length }})</mat-card-title>
       </mat-card-header>
       <mat-card-content>
+
+        <!-- Batch action bar -->
+        <div class="batch-bar" *ngIf="selection.size > 0">
+          <span style="font-weight:500">{{ selection.size }} geselecteerd</span>
+          <mat-form-field style="min-width:140px" subscriptSizing="dynamic">
+            <mat-label>Klasse instellen</mat-label>
+            <mat-select [(value)]="batchClass">
+              <mat-option value="">— geen —</mat-option>
+              <mat-option value="1">Klasse 1</mat-option>
+              <mat-option value="2">Klasse 2</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button mat-raised-button color="primary" (click)="applyBatchClass()">Toepassen</button>
+          <button mat-button (click)="selection.clear()">Deselecteer</button>
+        </div>
+
         <table mat-table [dataSource]="players">
+
+          <!-- Checkbox column -->
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef style="width:40px">
+              <mat-checkbox
+                [checked]="allSelected()"
+                [indeterminate]="selection.size > 0 && !allSelected()"
+                (change)="toggleAll($event.checked)">
+              </mat-checkbox>
+            </th>
+            <td mat-cell *matCellDef="let p" style="width:40px">
+              <mat-checkbox [checked]="selection.has(p.id)" (change)="toggleOne(p.id)"></mat-checkbox>
+            </td>
+          </ng-container>
+
           <ng-container matColumnDef="nr">
             <th mat-header-cell *matHeaderCellDef style="width:48px">#</th>
             <td mat-cell *matCellDef="let p">{{ p.nr }}</td>
@@ -228,7 +264,9 @@ export class UploadComponent implements OnInit {
   loading = false;
   players: Player[] = [];
   buddyMap: Record<string, string[]> = {};
-  cols = ['nr', 'name', 'class', 'city', 'buddies', 'actions'];
+  selection = new Set<string>();
+  batchClass = '';
+  cols = ['select', 'nr', 'name', 'class', 'city', 'buddies', 'actions'];
 
   ngOnInit(): void { this.loadPlayers(); }
 
@@ -254,6 +292,37 @@ export class UploadComponent implements OnInit {
 
   playerName(id: string): string {
     return this.players.find(p => p.id === id)?.name ?? id.slice(0, 8);
+  }
+
+  allSelected(): boolean { return this.players.length > 0 && this.selection.size === this.players.length; }
+
+  toggleAll(checked: boolean): void {
+    if (checked) this.players.forEach(p => this.selection.add(p.id));
+    else this.selection.clear();
+  }
+
+  toggleOne(id: string): void {
+    if (this.selection.has(id)) this.selection.delete(id);
+    else this.selection.add(id);
+  }
+
+  applyBatchClass(): void {
+    const ids = Array.from(this.selection);
+    let done = 0;
+    for (const id of ids) {
+      const player = this.players.find(p => p.id === id);
+      if (!player) continue;
+      this.playerService.update({ ...player, class: this.batchClass }).subscribe({
+        next: (p) => {
+          this.players = this.players.map(x => x.id === p.id ? p : x);
+          if (++done === ids.length) {
+            this.snackBar.open(`Klasse bijgewerkt voor ${done} spelers`, 'OK', { duration: 2000 });
+            this.selection.clear();
+          }
+        },
+        error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+      });
+    }
   }
 
   onFileSelected(event: Event): void {

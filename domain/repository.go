@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // PlayerRepository definieert persistentieoperaties voor spelers en buddy-voorkeuren.
 // Implementaties bevinden zich in infra/sqlite.
@@ -33,7 +36,10 @@ type MatchRepository interface {
 	FindByPlayerAndSchedule(ctx context.Context, playerID PlayerID, scheduleID ScheduleID) ([]Match, error)
 	FindAllPlayed(ctx context.Context) ([]Match, error)
 	UpdateResult(ctx context.Context, m Match) error
-	MoveToEvening(ctx context.Context, matchIDs []MatchID, eveningID EveningID) error
+	// FindCancelledByScheduleBeforeDate returns unplayed matches with a non-empty
+	// ReportedBy from non-inhaal evenings in the given schedule whose date is
+	// strictly before `before`. Used to populate inhaalavonden dynamically.
+	FindCancelledByScheduleBeforeDate(ctx context.Context, scheduleID ScheduleID, before time.Time) ([]Match, error)
 }
 
 // ScheduleRepository definieert persistentieoperaties voor schema's.

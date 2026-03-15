@@ -230,40 +230,19 @@ func (uc *ScheduleUseCase) ImportSeason(ctx context.Context, competitionName, se
 }
 
 // AddInhaalAvond creates an inhaalavond for the given schedule and date.
-// All unplayed matches from evenings with a date strictly before the inhaalavond
-// date are moved into it, so they can be scored on that evening.
+// Matches are not moved — the inhaalavond dynamically shows all unplayed
+// matches with a non-empty ReportedBy from earlier evenings (see hydrate).
 func (uc *ScheduleUseCase) AddInhaalAvond(ctx context.Context, scheduleID domain.ScheduleID, date time.Time) (domain.Schedule, error) {
 	evenings, err := uc.evenings.FindBySchedule(ctx, scheduleID)
 	if err != nil {
 		return domain.Schedule{}, err
 	}
-
-	// Determine next evening number.
 	maxNr := 0
 	for _, ev := range evenings {
 		if ev.Number > maxNr {
 			maxNr = ev.Number
 		}
 	}
-
-	// Collect unplayed match IDs from evenings before the new date.
-	var toMove []domain.MatchID
-	for _, ev := range evenings {
-		if ev.IsInhaalAvond || !ev.Date.Before(date) {
-			continue
-		}
-		matches, err := uc.matches.FindByEvening(ctx, ev.ID)
-		if err != nil {
-			return domain.Schedule{}, err
-		}
-		for _, m := range matches {
-			if !m.Played {
-				toMove = append(toMove, m.ID)
-			}
-		}
-	}
-
-	// Create the inhaalavond evening.
 	inhaalEv := domain.Evening{
 		ID:            uuid.New(),
 		Number:        maxNr + 1,
@@ -273,12 +252,6 @@ func (uc *ScheduleUseCase) AddInhaalAvond(ctx context.Context, scheduleID domain
 	if err := uc.evenings.Save(ctx, inhaalEv, scheduleID); err != nil {
 		return domain.Schedule{}, err
 	}
-
-	// Move the unplayed matches into it.
-	if err := uc.matches.MoveToEvening(ctx, toMove, inhaalEv.ID); err != nil {
-		return domain.Schedule{}, err
-	}
-
 	sched, err := uc.schedules.FindByID(ctx, scheduleID)
 	if err != nil {
 		return domain.Schedule{}, err
@@ -293,7 +266,12 @@ func (uc *ScheduleUseCase) hydrate(ctx context.Context, sched domain.Schedule) (
 		return sched, err
 	}
 	for i, ev := range evenings {
-		matches, err := uc.matches.FindByEvening(ctx, ev.ID)
+		var matches []domain.Match
+		if ev.IsInhaalAvond {
+			matches, err = uc.matches.FindCancelledByScheduleBeforeDate(ctx, sched.ID, ev.Date)
+		} else {
+			matches, err = uc.matches.FindByEvening(ctx, ev.ID)
+		}
 		if err != nil {
 			return sched, err
 		}

@@ -224,7 +224,7 @@ export interface ScoreDialogData {
             <label><input type="radio" [value]="data.match.playerB" formControlName="leg1Winner"> {{ data.nameB }}</label>
           </mat-radio-group>
           <mat-form-field style="width:110px">
-            <mat-label>Aantal beurten</mat-label>
+            <mat-label>Beurten</mat-label>
             <input matInput type="number" formControlName="leg1Turns" min="1">
           </mat-form-field>
         </div>
@@ -236,7 +236,7 @@ export interface ScoreDialogData {
             <label><input type="radio" [value]="data.match.playerB" formControlName="leg2Winner"> {{ data.nameB }}</label>
           </mat-radio-group>
           <mat-form-field style="width:110px">
-            <mat-label>Aantal beurten</mat-label>
+            <mat-label>Beurten</mat-label>
             <input matInput type="number" formControlName="leg2Turns" min="1">
           </mat-form-field>
         </div>
@@ -248,31 +248,31 @@ export interface ScoreDialogData {
             <label><input type="radio" [value]="data.match.playerB" formControlName="leg3Winner"> {{ data.nameB }}</label>
           </mat-radio-group>
           <mat-form-field style="width:110px">
-            <mat-label>Aantal beurten</mat-label>
+            <mat-label>Beurten</mat-label>
             <input matInput type="number" formControlName="leg3Turns" min="1">
           </mat-form-field>
         </div>
         <!-- Administrative fields -->
-        <div class="admin-row">
-          <mat-form-field style="flex:1;min-width:150px">
+        <div class="admin-row" style="margin-top:12px">
+          <mat-form-field style="flex:1;min-width:160px">
             <mat-label>Afgemeld door</mat-label>
-            <input matInput formControlName="reportedBy">
+            <mat-select formControlName="reportedBy">
+              <mat-option value="">—</mat-option>
+              <mat-option [value]="data.nameA">{{ data.nrA }} {{ data.nameA }}</mat-option>
+              <mat-option [value]="data.nameB">{{ data.nrB }} {{ data.nameB }}</mat-option>
+            </mat-select>
           </mat-form-field>
-          <mat-form-field style="flex:1;min-width:130px">
-            <mat-label>Vooruitgooi datum</mat-label>
-            <input matInput formControlName="rescheduleDate" placeholder="DD-MM-JJJJ">
-          </mat-form-field>
-        </div>
-        <div class="admin-row">
           <mat-form-field style="flex:1;min-width:160px">
             <mat-label>Schrijver</mat-label>
             <mat-select formControlName="secretaryNr">
+              <mat-option value="">—</mat-option>
               <mat-option *ngFor="let p of data.players" [value]="p.nr">{{ p.nr }} – {{ p.name }}</mat-option>
             </mat-select>
           </mat-form-field>
           <mat-form-field style="flex:1;min-width:160px">
             <mat-label>Teller</mat-label>
             <mat-select formControlName="counterNr">
+              <mat-option value="">—</mat-option>
               <mat-option *ngFor="let p of data.players" [value]="p.nr">{{ p.nr }} – {{ p.name }}</mat-option>
             </mat-select>
           </mat-form-field>
@@ -280,28 +280,27 @@ export interface ScoreDialogData {
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Annuleren</button>
+      <button mat-button (click)="dialogRef.close()">Annuleren</button>
       <button mat-raised-button color="primary" [disabled]="!isValid()" (click)="submit()">Opslaan</button>
     </mat-dialog-actions>
   `,
 })
 export class ScoreDialogComponent {
-  private dialogRef = inject(MatDialogRef<ScoreDialogComponent>);
+  dialogRef = inject(MatDialogRef<ScoreDialogComponent>);
   fb = inject(FormBuilder);
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: ScoreDialogData) {}
 
   form = this.fb.group({
     leg1Winner: ['', Validators.required],
-    leg1Turns:  [null as number | null, Validators.min(1)],
+    leg1Turns:  [null as number | null],
     leg2Winner: ['', Validators.required],
-    leg2Turns:  [null as number | null, Validators.min(1)],
-    leg3Winner: ['', Validators.required],
-    leg3Turns:  [null as number | null, Validators.min(1)],
-    reportedBy:     [''],
-    rescheduleDate: [''],
-    secretaryNr:    [''],
-    counterNr:      [''],
+    leg2Turns:  [null as number | null],
+    leg3Winner: [''],
+    leg3Turns:  [null as number | null],
+    reportedBy:  [''],
+    secretaryNr: [''],
+    counterNr:   [''],
   });
 
   isValid(): boolean {
@@ -320,7 +319,7 @@ export class ScoreDialogComponent {
       leg3Winner:     v.leg3Winner ?? '',
       leg3Turns:      v.leg3Turns ?? 0,
       reportedBy:     v.reportedBy ?? '',
-      rescheduleDate: v.rescheduleDate ?? '',
+      rescheduleDate: '',
       secretaryNr:    v.secretaryNr ?? '',
       counterNr:      v.counterNr ?? '',
     });
@@ -546,7 +545,7 @@ export class OverviewComponent implements OnInit {
       reportedBy: string; rescheduleDate: string;
       secretaryNr: string; counterNr: string;
     } | undefined) => {
-      if (result == null) return;
+      if (!result) return;
       this.scoreService.submitResult(match.id, result).subscribe({
         next: () => {
           this.snackBar.open('Resultaat opgeslagen!', 'OK', { duration: 2000 });
