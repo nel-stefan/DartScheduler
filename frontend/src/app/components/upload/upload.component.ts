@@ -216,8 +216,15 @@ export class BuddyDialogComponent {
             <td mat-cell *matCellDef="let p">{{ p.city }}</td>
           </ng-container>
           <ng-container matColumnDef="class">
-            <th mat-header-cell *matHeaderCellDef style="width:80px">Klasse</th>
-            <td mat-cell *matCellDef="let p">{{ p.class || '—' }}</td>
+            <th mat-header-cell *matHeaderCellDef style="width:110px">Klasse</th>
+            <td mat-cell *matCellDef="let p">
+              <mat-select [value]="p.class" (selectionChange)="updateClass(p, $event.value)"
+                          style="font-size:14px" panelWidth="">
+                <mat-option value="">—</mat-option>
+                <mat-option value="1">Klasse 1</mat-option>
+                <mat-option value="2">Klasse 2</mat-option>
+              </mat-select>
+            </td>
           </ng-container>
           <ng-container matColumnDef="buddies">
             <th mat-header-cell *matHeaderCellDef>Speelpartners</th>
@@ -304,6 +311,13 @@ export class UploadComponent implements OnInit {
   toggleOne(id: string): void {
     if (this.selection.has(id)) this.selection.delete(id);
     else this.selection.add(id);
+  }
+
+  updateClass(player: Player, cls: string): void {
+    this.playerService.update({ ...player, class: cls }).subscribe({
+      next: (p) => { this.players = this.players.map(x => x.id === p.id ? p : x); },
+      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+    });
   }
 
   applyBatchClass(): void {

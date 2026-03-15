@@ -305,7 +305,7 @@ export class ScoreDialogComponent {
 
   isValid(): boolean {
     const v = this.form.value;
-    return !!(v.leg1Winner && v.leg2Winner && v.leg3Winner);
+    return !!(v.leg1Winner && v.leg2Winner && v.leg3Winner) || !!v.reportedBy;
   }
 
   submit(): void {
@@ -430,12 +430,12 @@ export class ScoreDialogComponent {
               </button>
             </div>
           </mat-card-header>
-          <mat-card-content *ngIf="ev.isInhaalAvond" style="padding:16px 0 8px 0;color:#757575;text-align:center">
-            <mat-icon style="font-size:40px;width:40px;height:40px;color:#ce93d8">replay</mat-icon>
-            <p style="margin:8px 0 0 0">Op deze avond kunnen uitgestelde wedstrijden worden ingehaald.</p>
-          </mat-card-content>
-          <mat-card-content *ngIf="!ev.isInhaalAvond">
-            <table mat-table [dataSource]="ev.matches ?? []">
+          <mat-card-content>
+            <p *ngIf="ev.isInhaalAvond && (ev.matches?.length ?? 0) === 0"
+               style="color:#757575;text-align:center;padding:24px 0;margin:0">
+              Geen uitgestelde wedstrijden gevonden voor deze inhaalavond.
+            </p>
+            <table mat-table [dataSource]="ev.matches ?? []" *ngIf="(ev.matches?.length ?? 0) > 0">
               <ng-container matColumnDef="playerA">
                 <th mat-header-cell *matHeaderCellDef>Speler A</th>
                 <td mat-cell *matCellDef="let m">{{ playerName(m.playerA) }}</td>
@@ -451,7 +451,13 @@ export class ScoreDialogComponent {
               <ng-container matColumnDef="score">
                 <th mat-header-cell *matHeaderCellDef>Score</th>
                 <td mat-cell *matCellDef="let m" class="score-cell">
-                  {{ m.played ? (m.scoreA + ' – ' + m.scoreB) : '—' }}
+                  <span *ngIf="m.played">{{ m.scoreA }} – {{ m.scoreB }}</span>
+                  <span *ngIf="!m.played && m.reportedBy"
+                        style="color:#e65100;font-size:12px;font-weight:500">
+                    <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">schedule</mat-icon>
+                    Afgemeld: {{ m.reportedBy }}
+                  </span>
+                  <span *ngIf="!m.played && !m.reportedBy" style="color:#bdbdbd">—</span>
                 </td>
               </ng-container>
               <ng-container matColumnDef="actions">
@@ -504,7 +510,16 @@ export class OverviewComponent implements OnInit {
 
   loadScheduleById(id: string): void {
     this.scheduleService.getById(id).subscribe({
-      next: (s) => { this.schedule = s; this.activeTab = 0; },
+      next: (s) => {
+        this.schedule = s;
+        this.activeTab = 0;
+        console.log('[overview] schedule loaded', s.id, `evenings: ${s.evenings.length}`);
+        s.evenings.forEach(ev => {
+          if (ev.isInhaalAvond) {
+            console.log(`[overview] inhaalavond ev#${ev.number} (${ev.date}) matches:`, ev.matches);
+          }
+        });
+      },
       error: () => {},
     });
   }
@@ -546,6 +561,7 @@ export class OverviewComponent implements OnInit {
       secretaryNr: string; counterNr: string;
     } | undefined) => {
       if (!result) return;
+      console.log('[openScore] submitting result', match.id, result);
       this.scoreService.submitResult(match.id, result).subscribe({
         next: () => {
           this.snackBar.open('Resultaat opgeslagen!', 'OK', { duration: 2000 });

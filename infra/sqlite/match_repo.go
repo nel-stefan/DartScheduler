@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
+	"log"
 
 	"DartScheduler/domain"
 
@@ -219,7 +219,8 @@ func scanMatches(rows *sql.Rows) ([]domain.Match, error) {
 	return out, rows.Err()
 }
 
-func (r *MatchRepo) FindCancelledByScheduleBeforeDate(ctx context.Context, scheduleID domain.ScheduleID, before time.Time) ([]domain.Match, error) {
+func (r *MatchRepo) FindCancelledBySchedule(ctx context.Context, scheduleID domain.ScheduleID) ([]domain.Match, error) {
+	log.Printf("[FindCancelledBySchedule] scheduleID=%s", scheduleID)
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT m.id, m.evening_id, m.player_a, m.player_b, m.score_a, m.score_b, m.played,
 			m.leg1_winner, m.leg1_turns, m.leg2_winner, m.leg2_turns,
@@ -229,11 +230,9 @@ func (r *MatchRepo) FindCancelledByScheduleBeforeDate(ctx context.Context, sched
 		JOIN evenings e ON m.evening_id = e.id
 		WHERE e.schedule_id = ?
 		  AND e.is_inhaal_avond = 0
-		  AND datetime(e.date) < datetime(?)
 		  AND m.reported_by != ''
-		  AND m.played = 0
 		ORDER BY e.date, m.rowid`,
-		scheduleID.String(), before.UTC().Format(time.RFC3339))
+		scheduleID.String())
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"log"
 	"strings"
 	"time"
 
@@ -268,7 +269,9 @@ func (uc *ScheduleUseCase) hydrate(ctx context.Context, sched domain.Schedule) (
 	for i, ev := range evenings {
 		var matches []domain.Match
 		if ev.IsInhaalAvond {
-			matches, err = uc.matches.FindCancelledByScheduleBeforeDate(ctx, sched.ID, ev.Date)
+			log.Printf("[hydrate] inhaalavond ev=%s → querying cancelled matches", ev.ID)
+			matches, err = uc.matches.FindCancelledBySchedule(ctx, sched.ID)
+			log.Printf("[hydrate] inhaalavond ev=%s → %d cancelled matches found", ev.ID, len(matches))
 		} else {
 			matches, err = uc.matches.FindByEvening(ctx, ev.ID)
 		}

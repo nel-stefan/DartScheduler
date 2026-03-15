@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"log"
 
 	"DartScheduler/domain"
 )
@@ -48,7 +49,11 @@ func (uc *ScoreUseCase) Submit(ctx context.Context, in SubmitScoreInput) error {
 	match.CounterNr = in.CounterNr
 	match.ScoreA = &scoreA
 	match.ScoreB = &scoreB
-	match.Played = true
+	match.Played = scoreA+scoreB > 0
+
+	log.Printf("[Submit] matchID=%s reportedBy=%q leg1=%q leg2=%q leg3=%q scoreA=%d scoreB=%d played=%v",
+		match.ID, match.ReportedBy, match.Leg1Winner, match.Leg2Winner, match.Leg3Winner,
+		scoreA, scoreB, match.Played)
 
 	return uc.matches.UpdateResult(ctx, match)
 }
