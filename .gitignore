@@ -1,9 +1,17 @@
 dartscheduler
+cmd/server/server
 *.db
 *.db-shm
 *.db-wal
 frontend/node_modules/
 frontend/dist/
 frontend/.angular/
+web/dist/
 .idea/
 .claude/
+*.xlsx
+*:MSOAVINFO
+*:Zone.Identifier
+*:AFP_Resource
+*:com.apple.decmpfs
+~$*
