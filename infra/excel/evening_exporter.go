@@ -96,9 +96,13 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	f.SetRowHeight(ws, 1, 21)
 
 	// ------------------------------------------------------------------ Row 2
+	dateLabel := ev.Date.Format("2-1-2006")
+	if ev.IsCatchUpEvening {
+		dateLabel = "Inhaal"
+	}
 	f.SetCellValue(ws, "A2", fmt.Sprintf(
 		"                                          Wedstrijdformulier        Spelsoort: 501 dubbel uit best of 3       Speeldatum: %s",
-		ev.Date.Format("2-1-2006")))
+		dateLabel))
 	f.SetCellStyle(ws, "A2", "A2", ns(&excelize.Style{
 		Font:      &excelize.Font{Family: fontCalibri, Size: 11, Bold: true},
 		Alignment: &excelize.Alignment{Horizontal: "left"},
