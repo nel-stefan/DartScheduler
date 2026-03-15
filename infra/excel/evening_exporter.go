@@ -14,8 +14,9 @@ import (
 const (
 	fontCalibri = "Calibri"
 	colorBlack  = "000000"
-	styleThin   = 1
-	styleThick  = 2
+	styleThin   = 1 // thin continuous border   (excelize index 1)
+	styleMedium = 2 // medium continuous border  (excelize index 2)
+	styleThick  = 5 // thick continuous border   (excelize index 5)
 )
 
 // EveningExporter implements usecase.EveningExporter for the wedstrijdformulier Excel format.
@@ -70,7 +71,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 
 	hdrCenter := &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true}
 
-	// hdrStyle returns a style ID for a header cell with bold Calibri 9 and the given borders.
+	// hdrStyle returns a style ID for a header cell: bold Calibri 9 with the given borders.
 	hdrStyle := func(l, r, t, b int) int {
 		return ns(&excelize.Style{
 			Font:      &excelize.Font{Family: fontCalibri, Bold: true, Size: 9},
@@ -104,7 +105,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	}))
 	f.SetRowHeight(ws, 2, 15)
 
-	// ------------------------------------------------------------------ Row 3 (spacer with top-rule borders)
+	// ------------------------------------------------------------------ Row 3 (spacer with thick bottom rule above the header)
 	f.SetRowHeight(ws, 3, 13.5)
 	row3Style := ns(&excelize.Style{
 		Font:   &excelize.Font{Family: fontCalibri, Size: 11},
@@ -114,70 +115,71 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		f.SetCellStyle(ws, cell, cell, row3Style)
 	}
 
-	// ------------------------------------------------------------------ Rows 4-6: column headers with merged cells
+	// ------------------------------------------------------------------ Rows 4-6: column headers
 	f.SetRowHeight(ws, 4, 15)
 	f.SetRowHeight(ws, 5, 13.5)
 	f.SetRowHeight(ws, 6, 13.5)
 
-	allBorder := brd(styleThick, styleThick, styleThick, styleThick)
-
-	setCellMergedHdr := func(topLeft, bottomRight, value string, l, r, t, b int) {
+	// mergedHdr merges cells, sets the value and a bold-9pt header style.
+	mergedHdr := func(topLeft, bottomRight, value string, l, r, t, b int) {
 		f.MergeCell(ws, topLeft, bottomRight)
 		f.SetCellValue(ws, topLeft, value)
 		f.SetCellStyle(ws, topLeft, topLeft, hdrStyle(l, r, t, b))
 	}
 
-	// Player A columns (A-B span rows 4-6)
-	setCellMergedHdr("A4", "A6", "nr", styleThick, styleThin, styleThick, styleThick)
-	setCellMergedHdr("B4", "B6", "naam", styleThin, styleThick, styleThick, styleThick)
+	// Player A: nr (A4:A6) and naam (B4:B6)
+	mergedHdr("A4", "A6", "nr", styleThick, styleMedium, styleMedium, styleThin)
+	mergedHdr("B4", "B6", "naam", 0, styleThick, styleThick, styleThin)
 
-	// Separator column C (span rows 4-6)
+	// Separator /  (C4:C6)
 	f.MergeCell(ws, "C4", "C6")
 	f.SetCellValue(ws, "C4", "/")
 	f.SetCellStyle(ws, "C4", "C4", ns(&excelize.Style{
 		Font:      &excelize.Font{Family: fontCalibri, Size: 10},
 		Alignment: hdrCenter,
-		Border:    allBorder,
+		Border:    brd(styleThick, styleThick, styleThick, styleThin),
 	}))
 
-	// Player B columns (D-E span rows 4-6)
-	setCellMergedHdr("D4", "D6", "nr", styleThick, styleThin, styleThick, styleThick)
-	setCellMergedHdr("E4", "E6", "naam", styleThin, styleThick, styleThick, styleThick)
+	// Player B: nr (D4:D6) and naam (E4:E6)
+	mergedHdr("D4", "D6", "nr", styleThick, 0, styleThick, styleThin)
+	mergedHdr("E4", "E6", "naam", styleThick, styleThick, styleThick, styleThin)
 
-	// Partij 1: F4:G4 = "Partij 1", F5:F6 = "voornaam+nr.", G5:G6 = "aantal beurten"
-	setCellMergedHdr("F4", "G4", "Partij 1", styleThick, styleThick, styleThick, styleThin)
+	// Partij 1: group header F4:G4 (thick bottom to separate from sub-headers),
+	// then sub-headers F5:F6 (winner name) and G5:G6 (number of turns).
+	mergedHdr("F4", "G4", "Partij 1", styleThick, styleMedium, styleThick, styleThick)
 	f.MergeCell(ws, "F5", "F6")
 	f.SetCellValue(ws, "F5", "voornaam+nr.")
-	f.SetCellStyle(ws, "F5", "F5", hdrStyle(styleThick, styleThin, styleThin, styleThick))
+	f.SetCellStyle(ws, "F5", "F5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 	f.MergeCell(ws, "G5", "G6")
 	f.SetCellValue(ws, "G5", "aantal beurten")
-	f.SetCellStyle(ws, "G5", "G5", hdrStyle(styleThin, styleThick, styleThin, styleThick))
+	f.SetCellStyle(ws, "G5", "G5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 
-	// Partij 2: H4:I4 = "Partij 2", H5:H6 = "voornaam+nr.", I5:I6 = "aantal beurten"
-	setCellMergedHdr("H4", "I4", "Partij 2", styleThick, styleThick, styleThick, styleThin)
+	// Partij 2: group header H4:I4 (no bottom — sub-headers form the visual bottom),
+	// then sub-headers H5:H6 and I5:I6.
+	mergedHdr("H4", "I4", "Partij 2", styleThick, styleMedium, styleThick, 0)
 	f.MergeCell(ws, "H5", "H6")
 	f.SetCellValue(ws, "H5", "voornaam+nr.")
-	f.SetCellStyle(ws, "H5", "H5", hdrStyle(styleThick, styleThin, styleThin, styleThick))
+	f.SetCellStyle(ws, "H5", "H5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 	f.MergeCell(ws, "I5", "I6")
 	f.SetCellValue(ws, "I5", "aantal beurten")
-	f.SetCellStyle(ws, "I5", "I5", hdrStyle(styleThin, styleThick, styleThin, styleThick))
+	f.SetCellStyle(ws, "I5", "I5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 
-	// Partij 3: J4:K4 = "Partij 3", J5:J6 = "voornaam+nr.", K5:K6 = "aantal beurten"
-	setCellMergedHdr("J4", "K4", "Partij 3", styleThick, styleThick, styleThick, styleThin)
+	// Partij 3: group header J4:K4 (no left, no bottom), then sub-headers J5:J6 and K5:K6.
+	mergedHdr("J4", "K4", "Partij 3", 0, styleMedium, styleThick, 0)
 	f.MergeCell(ws, "J5", "J6")
 	f.SetCellValue(ws, "J5", "voornaam+nr.")
-	f.SetCellStyle(ws, "J5", "J5", hdrStyle(styleThick, styleThin, styleThin, styleThick))
+	f.SetCellStyle(ws, "J5", "J5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 	f.MergeCell(ws, "K5", "K6")
 	f.SetCellValue(ws, "K5", "aantal beurten")
-	f.SetCellStyle(ws, "K5", "K5", hdrStyle(styleThin, styleThick, styleThin, styleThick))
+	f.SetCellStyle(ws, "K5", "K5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 
-	// Summary + admin columns (each spans rows 4-6)
-	setCellMergedHdr("L4", "L6", "totaal\nwinnaar", styleThick, styleThick, styleThick, styleThick)
-	setCellMergedHdr("M4", "M6", "eind-\nstand", styleThick, styleThick, styleThick, styleThick)
-	setCellMergedHdr("N4", "N6", "afgemeld\ndoor", styleThick, styleThick, styleThick, styleThick)
-	setCellMergedHdr("O4", "O6", "vooruit-\ngooi\ndatum", styleThick, styleThick, styleThick, styleThick)
-	setCellMergedHdr("P4", "P6", "nr.\nschrij-\nver", styleThick, styleThick, styleThick, styleThick)
-	setCellMergedHdr("Q4", "Q6", "nr.\ntel-\nler", styleThick, styleThick, styleThick, styleThick)
+	// Summary and admin columns (each spans rows 4-6, medium bottom separates header from data).
+	mergedHdr("L4", "L6", "totaal\nwinnaar", styleThick, styleThick, styleThick, styleMedium)
+	mergedHdr("M4", "M6", "eind-\nstand", styleThick, styleThick, styleThick, styleMedium)
+	mergedHdr("N4", "N6", "afgemeld\ndoor", styleThick, styleThick, styleThick, styleMedium)
+	mergedHdr("O4", "O6", "vooruit-\ngooi\ndatum", styleThick, styleThick, styleThick, styleMedium)
+	mergedHdr("P4", "P6", "nr.\nschrij-\nver", styleThick, styleThick, styleThick, styleMedium)
+	mergedHdr("Q4", "Q6", "nr.\ntel-\nler", styleThick, styleThick, styleThick, styleMedium)
 
 	// ------------------------------------------------------------------ Column widths
 	for col, width := range map[string]float64{
@@ -192,68 +194,67 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	// ------------------------------------------------------------------ Data rows
 	cols := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"}
 
-	// per-column style spec: {sz, halign, valign, shrinkToFit, l, r, t, b}
+	// colSpec defines per-column style: font size, horizontal align, shrink-to-fit, and border sides.
 	type colSpec struct {
-		sz           float64
-		ha, va       string
-		shrinkToFit  bool
+		sz          float64
+		ha          string
+		shrinkToFit bool
 		l, r, t, b  int
 	}
 
-	// Row 7 (first data row – thick top border).
+	// Row 7: first data row — thick top on B/C/E/N–Q to mark the start of data;
+	// no top on A/D/F–M (visually bounded by the header bottom borders above).
 	row7 := []colSpec{
-		{12, "right", "", false, styleThick, styleThin, styleThick, styleThin},  // A: nr
-		{11, "", "", true, styleThin, styleThin, styleThick, styleThin},            // B: naam (shrink)
-		{10, "center", "", false, styleThick, styleThick, styleThick, styleThin}, // C: /
-		{12, "right", "center", false, styleThick, styleThin, styleThick, styleThin}, // D: nr
-		{11, "", "center", true, styleThin, styleThick, styleThick, styleThin},   // E: naam (shrink)
-		{11, "", "", true, styleThick, styleThin, styleThick, styleThin},          // F: leg1 winner
-		{11, "", "", false, styleThin, styleThick, styleThick, styleThin},         // G: leg1 turns
-		{11, "", "", true, styleThick, styleThin, styleThick, styleThin},          // H: leg2 winner
-		{11, "", "", false, styleThin, styleThick, styleThick, styleThin},         // I: leg2 turns
-		{11, "", "", true, styleThick, styleThin, styleThick, styleThin},          // J: leg3 winner
-		{11, "", "", false, styleThin, styleThick, styleThick, styleThin},         // K: leg3 turns
-		{11, "", "", true, styleThick, styleThin, styleThick, styleThin},          // L: totaal winnaar
-		{11, "center", "", false, styleThin, styleThick, styleThick, styleThin},   // M: eindstand
-		{11, "", "", true, styleThick, styleThick, styleThick, styleThin},          // N: afgemeld door
-		{11, "", "", false, styleThick, styleThick, styleThick, styleThin},        // O: vooruitgooi
-		{11, "center", "", false, styleThick, styleThick, styleThick, styleThin},  // P: schrijver nr
-		{11, "center", "", false, styleThick, styleThick, styleThick, styleThin},  // Q: teller nr
+		{12, "right", false, styleThick, styleThin, 0, styleThin},              // A: nr
+		{11, "", true, styleThin, styleMedium, styleThick, styleThin},           // B: naam
+		{10, "center", false, styleMedium, styleMedium, styleThick, styleThin},  // C: /
+		{12, "right", false, styleMedium, styleThin, 0, styleThin},              // D: nr
+		{11, "", true, styleThin, styleMedium, styleThick, styleThin},           // E: naam
+		{11, "", true, styleMedium, styleThin, 0, styleThin},                    // F: leg1 winner
+		{11, "", false, styleThin, styleMedium, 0, styleThin},                   // G: leg1 turns
+		{11, "", true, styleMedium, styleThin, 0, styleThin},                    // H: leg2 winner
+		{11, "", false, styleThin, styleMedium, 0, styleThin},                   // I: leg2 turns
+		{11, "", true, styleMedium, styleThin, 0, styleThin},                    // J: leg3 winner
+		{11, "", false, styleThin, styleMedium, 0, styleThin},                   // K: leg3 turns
+		{11, "", true, styleMedium, styleThin, 0, styleThin},                    // L: totaal winnaar
+		{11, "center", false, styleThin, styleMedium, 0, styleThin},             // M: eindstand
+		{11, "", true, styleMedium, styleMedium, styleThick, styleThin},         // N: afgemeld door
+		{11, "", false, styleMedium, styleMedium, styleThick, styleThin},        // O: vooruitgooi datum
+		{11, "center", false, styleMedium, styleMedium, styleThick, styleThin},  // P: nr. schrijver
+		{11, "center", false, styleMedium, styleThick, styleThick, styleThin},   // Q: nr. teller
 	}
 
-	// Row 8+ (subsequent data rows – thin top border).
+	// Rows 8+: subsequent data rows — thin top on B/C/E/N–Q; no top on A/D/F–M.
 	rowN := []colSpec{
-		{12, "right", "center", false, styleThick, styleThin, styleThin, styleThin},  // A
-		{11, "", "center", true, styleThin, styleThin, styleThin, styleThin},           // B
-		{10, "center", "", false, styleThick, styleThick, styleThin, styleThin},       // C
-		{12, "right", "center", false, styleThick, styleThin, styleThin, styleThin},   // D
-		{11, "", "center", true, styleThin, styleThick, styleThin, styleThin},         // E
-		{11, "", "", true, styleThick, styleThin, styleThin, styleThin},               // F
-		{11, "", "", false, styleThin, styleThick, styleThin, styleThin},              // G
-		{11, "", "", true, styleThick, styleThin, styleThin, styleThin},               // H
-		{11, "", "", false, styleThin, styleThick, styleThin, styleThin},              // I
-		{11, "", "", true, styleThick, styleThin, styleThin, styleThin},               // J
-		{11, "", "", false, styleThin, styleThick, styleThin, styleThin},              // K
-		{11, "", "", true, styleThick, styleThin, styleThin, styleThin},               // L
-		{11, "center", "", false, styleThin, styleThick, styleThin, styleThin},        // M
-		{11, "", "", true, styleThick, styleThick, styleThin, styleThin},               // N
-		{11, "", "", false, styleThick, styleThick, styleThin, styleThin},             // O
-		{11, "center", "", false, styleThick, styleThick, styleThin, styleThin},       // P
-		{11, "center", "", false, styleThick, styleThick, styleThin, styleThin},       // Q
+		{12, "right", false, styleThick, styleThin, 0, styleThin},              // A
+		{11, "", true, styleThin, styleMedium, styleThin, styleThin},           // B
+		{10, "center", false, styleMedium, styleMedium, styleThin, styleThin},  // C
+		{12, "right", false, styleMedium, styleThin, 0, styleThin},             // D
+		{11, "", true, styleThin, styleMedium, styleThin, styleThin},           // E
+		{11, "", true, styleMedium, styleThin, 0, styleThin},                   // F
+		{11, "", false, styleThin, styleMedium, 0, styleThin},                  // G
+		{11, "", true, styleMedium, styleThin, 0, styleThin},                   // H
+		{11, "", false, styleThin, styleMedium, 0, styleThin},                  // I
+		{11, "", true, styleMedium, styleThin, 0, styleThin},                   // J
+		{11, "", false, styleThin, styleMedium, 0, styleThin},                  // K
+		{11, "", true, styleMedium, styleThin, 0, styleThin},                   // L
+		{11, "center", false, styleThin, styleMedium, 0, styleThin},            // M
+		{11, "", true, styleMedium, styleMedium, styleThin, styleThin},         // N
+		{11, "", false, styleMedium, styleMedium, styleThin, styleThin},        // O
+		{11, "center", false, styleMedium, styleMedium, styleThin, styleThin},  // P
+		{11, "center", false, styleMedium, styleThick, styleThin, styleThin},   // Q
 	}
 
 	buildStyles := func(specs []colSpec) []int {
 		ids := make([]int, len(specs))
 		for i, sp := range specs {
-			a := &excelize.Alignment{
-				Horizontal:  sp.ha,
-				Vertical:    sp.va,
-				ShrinkToFit: sp.shrinkToFit,
-			}
 			ids[i], _ = f.NewStyle(&excelize.Style{
-				Font:      &excelize.Font{Family: fontCalibri, Size: sp.sz},
-				Alignment: a,
-				Border:    brd(sp.l, sp.r, sp.t, sp.b),
+				Font: &excelize.Font{Family: fontCalibri, Size: sp.sz},
+				Alignment: &excelize.Alignment{
+					Horizontal:  sp.ha,
+					ShrinkToFit: sp.shrinkToFit,
+				},
+				Border: brd(sp.l, sp.r, sp.t, sp.b),
 			})
 		}
 		return ids
@@ -311,7 +312,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	}
 
 	// ------------------------------------------------------------------ Page setup
-	// Landscape orientation, A4, fit all columns to one page wide.
+	// Landscape orientation, A4 paper, fit all content to one page.
 	orientation := "landscape"
 	pageSize := 9 // A4
 	fitToWidth := 1
@@ -323,11 +324,11 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		FitToHeight: &fitToHeight,
 	})
 
-	// Enable fit-to-page in sheet properties.
+	// FitToPage is a sheet property separate from the page layout options.
 	fitToPage := true
 	f.SetSheetProps(ws, &excelize.SheetPropsOptions{FitToPage: &fitToPage})
 
-	// Reduced margins.
+	// Reduced margins (in inches).
 	left, right, top, bottom, header, footer := 0.7, 0.7, 0.75, 0.75, 0.3, 0.3
 	f.SetPageMargins(ws, &excelize.PageLayoutMarginsOptions{
 		Left:   &left,
