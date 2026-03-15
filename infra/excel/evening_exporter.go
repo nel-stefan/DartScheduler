@@ -104,8 +104,15 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	}))
 	f.SetRowHeight(ws, 2, 15)
 
-	// ------------------------------------------------------------------ Row 3 (spacer)
+	// ------------------------------------------------------------------ Row 3 (spacer with top-rule borders)
 	f.SetRowHeight(ws, 3, 13.5)
+	row3Style := ns(&excelize.Style{
+		Font:   &excelize.Font{Family: fontCalibri, Size: 11},
+		Border: brd(0, 0, 0, styleThick),
+	})
+	for _, cell := range []string{"B3", "D3", "H3", "L3", "M3", "N3"} {
+		f.SetCellStyle(ws, cell, cell, row3Style)
+	}
 
 	// ------------------------------------------------------------------ Rows 4-6: column headers with merged cells
 	f.SetRowHeight(ws, 4, 15)
@@ -302,6 +309,34 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		}
 		f.SetRowHeight(ws, row, 17.25)
 	}
+
+	// ------------------------------------------------------------------ Page setup
+	// Landscape orientation, A4, fit all columns to one page wide.
+	orientation := "landscape"
+	pageSize := 9 // A4
+	fitToWidth := 1
+	fitToHeight := 1
+	f.SetPageLayout(ws, &excelize.PageLayoutOptions{
+		Orientation: &orientation,
+		Size:        &pageSize,
+		FitToWidth:  &fitToWidth,
+		FitToHeight: &fitToHeight,
+	})
+
+	// Enable fit-to-page in sheet properties.
+	fitToPage := true
+	f.SetSheetProps(ws, &excelize.SheetPropsOptions{FitToPage: &fitToPage})
+
+	// Reduced margins.
+	left, right, top, bottom, header, footer := 0.7, 0.7, 0.75, 0.75, 0.3, 0.3
+	f.SetPageMargins(ws, &excelize.PageLayoutMarginsOptions{
+		Left:   &left,
+		Right:  &right,
+		Top:    &top,
+		Bottom: &bottom,
+		Header: &header,
+		Footer: &footer,
+	})
 
 	return f.Write(w)
 }
