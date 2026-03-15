@@ -120,66 +120,78 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	f.SetRowHeight(ws, 5, 13.5)
 	f.SetRowHeight(ws, 6, 13.5)
 
-	// mergedHdr merges cells, sets the value and a bold-9pt header style.
-	mergedHdr := func(topLeft, bottomRight, value string, l, r, t, b int) {
-		f.MergeCell(ws, topLeft, bottomRight)
-		f.SetCellValue(ws, topLeft, value)
-		f.SetCellStyle(ws, topLeft, topLeft, hdrStyle(l, r, t, b))
+	// Phase 1: merge all header regions before applying any styles.
+	// (excelize clears cell styles when merging, so merges must come first.)
+	for _, m := range [][2]string{
+		{"A4", "A6"}, {"B4", "B6"}, {"C4", "C6"}, {"D4", "D6"}, {"E4", "E6"},
+		{"F4", "G4"}, {"F5", "F6"}, {"G5", "G6"},
+		{"H4", "I4"}, {"H5", "H6"}, {"I5", "I6"},
+		{"J4", "K4"}, {"J5", "J6"}, {"K5", "K6"},
+		{"L4", "L6"}, {"M4", "M6"}, {"N4", "N6"}, {"O4", "O6"}, {"P4", "P6"}, {"Q4", "Q6"},
+	} {
+		f.MergeCell(ws, m[0], m[1])
 	}
 
-	// Player A: nr (A4:A6) and naam (B4:B6)
-	mergedHdr("A4", "A6", "nr", styleThick, styleMedium, styleMedium, styleThin)
-	mergedHdr("B4", "B6", "naam", 0, styleThick, styleThick, styleThin)
+	// Phase 2: set values, then apply styles to the full merged range so that
+	// borders appear correctly on every edge cell of the merged region.
 
-	// Separator /  (C4:C6)
-	f.MergeCell(ws, "C4", "C6")
+	// Player A: nr and naam
+	f.SetCellValue(ws, "A4", "nr")
+	f.SetCellStyle(ws, "A4", "A6", hdrStyle(styleThick, styleMedium, styleMedium, styleThin))
+	f.SetCellValue(ws, "B4", "naam")
+	f.SetCellStyle(ws, "B4", "B6", hdrStyle(0, styleThick, styleThick, styleThin))
+
+	// Separator /
 	f.SetCellValue(ws, "C4", "/")
-	f.SetCellStyle(ws, "C4", "C4", ns(&excelize.Style{
+	f.SetCellStyle(ws, "C4", "C6", ns(&excelize.Style{
 		Font:      &excelize.Font{Family: fontCalibri, Size: 10},
 		Alignment: hdrCenter,
 		Border:    brd(styleThick, styleThick, styleThick, styleThin),
 	}))
 
-	// Player B: nr (D4:D6) and naam (E4:E6)
-	mergedHdr("D4", "D6", "nr", styleThick, 0, styleThick, styleThin)
-	mergedHdr("E4", "E6", "naam", styleThick, styleThick, styleThick, styleThin)
+	// Player B: nr and naam
+	f.SetCellValue(ws, "D4", "nr")
+	f.SetCellStyle(ws, "D4", "D6", hdrStyle(styleThick, 0, styleThick, styleThin))
+	f.SetCellValue(ws, "E4", "naam")
+	f.SetCellStyle(ws, "E4", "E6", hdrStyle(styleThick, styleThick, styleThick, styleThin))
 
-	// Partij 1: group header F4:G4 (thick bottom to separate from sub-headers),
-	// then sub-headers F5:F6 (winner name) and G5:G6 (number of turns).
-	mergedHdr("F4", "G4", "Partij 1", styleThick, styleMedium, styleThick, styleThick)
-	f.MergeCell(ws, "F5", "F6")
+	// Partij 1: group header (thick bottom), sub-headers for winner name and turns.
+	f.SetCellValue(ws, "F4", "Partij 1")
+	f.SetCellStyle(ws, "F4", "G4", hdrStyle(styleThick, styleMedium, styleThick, styleThick))
 	f.SetCellValue(ws, "F5", "voornaam+nr.")
-	f.SetCellStyle(ws, "F5", "F5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
-	f.MergeCell(ws, "G5", "G6")
+	f.SetCellStyle(ws, "F5", "F6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 	f.SetCellValue(ws, "G5", "aantal beurten")
-	f.SetCellStyle(ws, "G5", "G5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "G5", "G6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 
-	// Partij 2: group header H4:I4 (no bottom — sub-headers form the visual bottom),
-	// then sub-headers H5:H6 and I5:I6.
-	mergedHdr("H4", "I4", "Partij 2", styleThick, styleMedium, styleThick, 0)
-	f.MergeCell(ws, "H5", "H6")
+	// Partij 2: group header (no bottom — sub-headers form the visual separator).
+	f.SetCellValue(ws, "H4", "Partij 2")
+	f.SetCellStyle(ws, "H4", "I4", hdrStyle(styleThick, styleMedium, styleThick, 0))
 	f.SetCellValue(ws, "H5", "voornaam+nr.")
-	f.SetCellStyle(ws, "H5", "H5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
-	f.MergeCell(ws, "I5", "I6")
+	f.SetCellStyle(ws, "H5", "H6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 	f.SetCellValue(ws, "I5", "aantal beurten")
-	f.SetCellStyle(ws, "I5", "I5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "I5", "I6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 
-	// Partij 3: group header J4:K4 (no left, no bottom), then sub-headers J5:J6 and K5:K6.
-	mergedHdr("J4", "K4", "Partij 3", 0, styleMedium, styleThick, 0)
-	f.MergeCell(ws, "J5", "J6")
+	// Partij 3: group header (no left, no bottom).
+	f.SetCellValue(ws, "J4", "Partij 3")
+	f.SetCellStyle(ws, "J4", "K4", hdrStyle(0, styleMedium, styleThick, 0))
 	f.SetCellValue(ws, "J5", "voornaam+nr.")
-	f.SetCellStyle(ws, "J5", "J5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
-	f.MergeCell(ws, "K5", "K6")
+	f.SetCellStyle(ws, "J5", "J6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 	f.SetCellValue(ws, "K5", "aantal beurten")
-	f.SetCellStyle(ws, "K5", "K5", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "K5", "K6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 
-	// Summary and admin columns (each spans rows 4-6, medium bottom separates header from data).
-	mergedHdr("L4", "L6", "totaal\nwinnaar", styleThick, styleThick, styleThick, styleMedium)
-	mergedHdr("M4", "M6", "eind-\nstand", styleThick, styleThick, styleThick, styleMedium)
-	mergedHdr("N4", "N6", "afgemeld\ndoor", styleThick, styleThick, styleThick, styleMedium)
-	mergedHdr("O4", "O6", "vooruit-\ngooi\ndatum", styleThick, styleThick, styleThick, styleMedium)
-	mergedHdr("P4", "P6", "nr.\nschrij-\nver", styleThick, styleThick, styleThick, styleMedium)
-	mergedHdr("Q4", "Q6", "nr.\ntel-\nler", styleThick, styleThick, styleThick, styleMedium)
+	// Summary and admin columns (medium bottom separates header row from data rows).
+	f.SetCellValue(ws, "L4", "totaal\nwinnaar")
+	f.SetCellStyle(ws, "L4", "L6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellValue(ws, "M4", "eind-\nstand")
+	f.SetCellStyle(ws, "M4", "M6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellValue(ws, "N4", "afgemeld\ndoor")
+	f.SetCellStyle(ws, "N4", "N6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellValue(ws, "O4", "vooruit-\ngooi\ndatum")
+	f.SetCellStyle(ws, "O4", "O6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellValue(ws, "P4", "nr.\nschrij-\nver")
+	f.SetCellStyle(ws, "P4", "P6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellValue(ws, "Q4", "nr.\ntel-\nler")
+	f.SetCellStyle(ws, "Q4", "Q6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 
 	// ------------------------------------------------------------------ Column widths
 	for col, width := range map[string]float64{
