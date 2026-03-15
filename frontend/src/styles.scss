@@ -1,4 +1,32 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+@include mat.core();
+
+$dart-primary: mat.define-palette(mat.$green-palette, 800, 600, 900);
+$dart-accent:  mat.define-palette(mat.$amber-palette, A400);
+$dart-warn:    mat.define-palette(mat.$red-palette);
+
+$dart-theme: mat.define-light-theme((
+  color: (
+    primary: $dart-primary,
+    accent:  $dart-accent,
+    warn:    $dart-warn,
+  ),
+  typography: mat.define-typography-config(),
+  density: 0,
+));
+
+@include mat.all-component-themes($dart-theme);
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: #f4f6f4;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+/* Gespeelde wedstrijdrijen: subtiel groen */
+.match-played td {
+  background: #e8f5e9 !important;
+  color: #2e7d32;
+}

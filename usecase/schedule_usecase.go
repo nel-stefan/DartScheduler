@@ -2,9 +2,13 @@ package usecase
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"DartScheduler/domain"
 	"DartScheduler/scheduler"
+
+	"github.com/google/uuid"
 )
 
 type ScheduleUseCase struct {
@@ -33,13 +37,22 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 	if err != nil {
 		return domain.Schedule{}, err
 	}
+
+	// Sponsoren (nr bevat "-s") doen niet mee in het speelschema.
+	participants := make([]domain.Player, 0, len(allPlayers))
+	for _, p := range allPlayers {
+		if !strings.Contains(strings.ToLower(p.Nr), "-s") {
+			participants = append(participants, p)
+		}
+	}
+
 	buddyPairs, err := uc.players.FindAllBuddyPairs(ctx)
 	if err != nil {
 		return domain.Schedule{}, err
 	}
 
 	sched, err := scheduler.Generate(scheduler.Input{
-		Players:         allPlayers,
+		Players:         participants,
 		BuddyPairs:      buddyPairs,
 		NumEvenings:     in.NumEvenings,
 		CompetitionName: in.CompetitionName,
@@ -50,6 +63,7 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 		return domain.Schedule{}, err
 	}
 
+	sched.Season = in.Season
 	if err := uc.schedules.Save(ctx, sched); err != nil {
 		return domain.Schedule{}, err
 	}
@@ -79,6 +93,139 @@ func (uc *ScheduleUseCase) GetByID(ctx context.Context, id domain.ScheduleID) (d
 	if err != nil {
 		return domain.Schedule{}, err
 	}
+	return uc.hydrate(ctx, sched)
+}
+
+func (uc *ScheduleUseCase) ListSchedules(ctx context.Context) ([]SeasonSummary, error) {
+	schedules, err := uc.schedules.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]SeasonSummary, len(schedules))
+	for i, s := range schedules {
+		evenings, err := uc.evenings.FindBySchedule(ctx, s.ID)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = SeasonSummary{
+			ID:              s.ID.String(),
+			CompetitionName: s.CompetitionName,
+			Season:          s.Season,
+			CreatedAt:       s.CreatedAt,
+			EveningCount:    len(evenings),
+		}
+	}
+	return out, nil
+}
+
+// ImportSeason creates a schedule from historically imported match rows and optional inhaalavonden.
+// Players are matched by nr from the existing player list.
+func (uc *ScheduleUseCase) ImportSeason(ctx context.Context, competitionName, season string, matchRows []SeasonMatchRow, inhaalEvenings []InhaalEvening) (domain.Schedule, error) {
+	allPlayers, err := uc.players.FindAll(ctx)
+	if err != nil {
+		return domain.Schedule{}, err
+	}
+	// Build player lookup by nr
+	byNr := make(map[string]domain.Player, len(allPlayers))
+	for _, p := range allPlayers {
+		byNr[p.Nr] = p
+	}
+
+	// Group rows by evening number
+	eveningOrder := []int{}
+	eveningDates := map[int]time.Time{}
+	matchesByEvening := map[int][]SeasonMatchRow{}
+	for _, row := range matchRows {
+		if _, seen := eveningDates[row.EveningNr]; !seen {
+			eveningOrder = append(eveningOrder, row.EveningNr)
+			eveningDates[row.EveningNr] = row.Date
+		}
+		matchesByEvening[row.EveningNr] = append(matchesByEvening[row.EveningNr], row)
+	}
+
+	sched := domain.Schedule{
+		ID:              uuid.New(),
+		CompetitionName: competitionName,
+		Season:          season,
+		CreatedAt:       time.Now(),
+	}
+	if err := uc.schedules.Save(ctx, sched); err != nil {
+		return domain.Schedule{}, err
+	}
+
+	for _, evNr := range eveningOrder {
+		ev := domain.Evening{
+			ID:     uuid.New(),
+			Number: evNr,
+			Date:   eveningDates[evNr],
+		}
+		if err := uc.evenings.Save(ctx, ev, sched.ID); err != nil {
+			return domain.Schedule{}, err
+		}
+
+		var matches []domain.Match
+		for _, row := range matchesByEvening[evNr] {
+			pA, okA := byNr[row.NrA]
+			pB, okB := byNr[row.NrB]
+			if !okA || !okB {
+				continue // skip if players not in system
+			}
+			scoreA, scoreB := row.ScoreA, row.ScoreB
+			// derive score from legs if not provided
+			if scoreA == 0 && scoreB == 0 && (row.Leg1Winner != "" || row.Leg2Winner != "") {
+				for _, w := range []string{row.Leg1Winner, row.Leg2Winner, row.Leg3Winner} {
+					if w == "" {
+						continue
+					}
+					if w == pA.Nr || strings.EqualFold(w, pA.Name) {
+						scoreA++
+					} else {
+						scoreB++
+					}
+				}
+			}
+			played := scoreA > 0 || scoreB > 0
+			m := domain.Match{
+				ID:          uuid.New(),
+				EveningID:   ev.ID,
+				PlayerA:     pA.ID,
+				PlayerB:     pB.ID,
+				Played:      played,
+				Leg1Winner:  row.Leg1Winner,
+				Leg1Turns:   row.Leg1Turns,
+				Leg2Winner:  row.Leg2Winner,
+				Leg2Turns:   row.Leg2Turns,
+				Leg3Winner:  row.Leg3Winner,
+				Leg3Turns:   row.Leg3Turns,
+				SecretaryNr: row.Secretary,
+				CounterNr:   row.Counter,
+			}
+			if played {
+				m.ScoreA = &scoreA
+				m.ScoreB = &scoreB
+			}
+			matches = append(matches, m)
+		}
+		if len(matches) > 0 {
+			if err := uc.matches.SaveBatch(ctx, matches); err != nil {
+				return domain.Schedule{}, err
+			}
+		}
+	}
+
+	// Create inhaalavonden (no pre-assigned matches).
+	for _, ie := range inhaalEvenings {
+		ev := domain.Evening{
+			ID:            uuid.New(),
+			Number:        ie.EveningNr,
+			Date:          ie.Date,
+			IsInhaalAvond: true,
+		}
+		if err := uc.evenings.Save(ctx, ev, sched.ID); err != nil {
+			return domain.Schedule{}, err
+		}
+	}
+
 	return uc.hydrate(ctx, sched)
 }
 

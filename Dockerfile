@@ -7,7 +7,7 @@ COPY frontend/ ./
 RUN npm run build -- --configuration=production
 
 # Stage 2: Build Go binary
-FROM golang:1.24-alpine AS go-builder
+FROM golang:1.26-alpine AS go-builder
 WORKDIR /app
 # Copy Angular output into the embed path
 COPY --from=frontend-builder /app/frontend/dist/dart-scheduler/browser ./web/dist/dart-scheduler/browser

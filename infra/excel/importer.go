@@ -11,7 +11,11 @@ import (
 )
 
 // ImportPlayers reads an Excel file from r.
-// Expected columns (row 1 = header): Name, Email, Sponsor
+// Supports the Dutch ledenlijst format with columns:
+//
+//	nr, Naam, Adres, Pc, Woonpl., Telefoon, Mobiel, E-mail adres, Lid Sinds
+//
+// Also supports the legacy English format: Name, Email, Sponsor
 // Returns PlayerInput slice ready for PlayerUseCase.ImportPlayers.
 func ImportPlayers(r io.Reader) ([]usecase.PlayerInput, error) {
 	f, err := excelize.OpenReader(r)
@@ -34,19 +38,38 @@ func ImportPlayers(r io.Reader) ([]usecase.PlayerInput, error) {
 
 	// Detect column indices from header row.
 	header := rows[0]
-	colName, colEmail, colSponsor := -1, -1, -1
+	colNr, colName, colEmail, colSponsor := -1, -1, -1, -1
+	colAddress, colPostalCode, colCity := -1, -1, -1
+	colPhone, colMobile, colMemberSince, colClass := -1, -1, -1, -1
+
 	for i, h := range header {
 		switch strings.ToLower(strings.TrimSpace(h)) {
-		case "name":
+		case "nr":
+			colNr = i
+		case "naam", "name":
 			colName = i
-		case "email":
+		case "e-mail adres", "e-mailadres", "email adres", "email":
 			colEmail = i
 		case "sponsor":
 			colSponsor = i
+		case "adres":
+			colAddress = i
+		case "pc", "postcode":
+			colPostalCode = i
+		case "woonpl.", "woonpl", "woonplaats":
+			colCity = i
+		case "telefoon":
+			colPhone = i
+		case "mobiel":
+			colMobile = i
+		case "lid sinds":
+			colMemberSince = i
+		case "klasse", "class":
+			colClass = i
 		}
 	}
 	if colName < 0 {
-		return nil, fmt.Errorf("%w: missing 'Name' column", usecase.ErrImport)
+		return nil, fmt.Errorf("%w: missing 'Naam' or 'Name' column", usecase.ErrImport)
 	}
 
 	cell := func(row []string, col int) string {
@@ -62,10 +85,22 @@ func ImportPlayers(r io.Reader) ([]usecase.PlayerInput, error) {
 		if name == "" {
 			continue
 		}
+		nr := cell(row, colNr)
+		if strings.Contains(strings.ToLower(nr), "-s") {
+			continue // skip sponsor members
+		}
 		out = append(out, usecase.PlayerInput{
-			Name:    name,
-			Email:   cell(row, colEmail),
-			Sponsor: cell(row, colSponsor),
+			Nr:          nr,
+			Name:        name,
+			Email:       cell(row, colEmail),
+			Sponsor:     cell(row, colSponsor),
+			Address:     cell(row, colAddress),
+			PostalCode:  cell(row, colPostalCode),
+			City:        cell(row, colCity),
+			Phone:       cell(row, colPhone),
+			Mobile:      cell(row, colMobile),
+			MemberSince: cell(row, colMemberSince),
+			Class:       cell(row, colClass),
 		})
 	}
 	return out, nil

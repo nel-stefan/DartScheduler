@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"DartScheduler/domain"
+	"DartScheduler/infra/excel"
 	"DartScheduler/usecase"
 
 	"github.com/go-chi/chi/v5"
@@ -83,4 +84,90 @@ func (h *ScheduleHandler) GetEvening(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	http.Error(w, "evening not found", http.StatusNotFound)
+}
+
+func (h *ScheduleHandler) List(w http.ResponseWriter, r *http.Request) {
+	list, err := h.uc.ListSchedules(r.Context())
+	if err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	writeJSON(w, list)
+}
+
+func (h *ScheduleHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	sched, err := h.uc.GetByID(r.Context(), domain.ScheduleID(id))
+	if err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	writeJSON(w, sched)
+}
+
+func (h *ScheduleHandler) ImportSeason(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	competitionName := r.FormValue("competitionName")
+	season := r.FormValue("season")
+	if competitionName == "" {
+		competitionName = "Geïmporteerd seizoen"
+	}
+	if season == "" {
+		season = competitionName
+	}
+
+	imported, err := excel.ImportSeason(file)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	// Convert excel.SeasonMatchRow → usecase.SeasonMatchRow
+	rows := make([]usecase.SeasonMatchRow, len(imported.Matches))
+	for i, er := range imported.Matches {
+		rows[i] = usecase.SeasonMatchRow{
+			EveningNr:  er.EveningNr,
+			Date:       er.Date,
+			NrA:        er.NrA,
+			NameA:      er.NameA,
+			NrB:        er.NrB,
+			NameB:      er.NameB,
+			Leg1Winner: er.Leg1Winner,
+			Leg1Turns:  er.Leg1Turns,
+			Leg2Winner: er.Leg2Winner,
+			Leg2Turns:  er.Leg2Turns,
+			Leg3Winner: er.Leg3Winner,
+			Leg3Turns:  er.Leg3Turns,
+			ScoreA:     er.ScoreA,
+			ScoreB:     er.ScoreB,
+			Secretary:  er.Secretary,
+			Counter:    er.Counter,
+		}
+	}
+	inhaalEvenings := make([]usecase.InhaalEvening, len(imported.InhaalEvenings))
+	for i, ie := range imported.InhaalEvenings {
+		inhaalEvenings[i] = usecase.InhaalEvening{EveningNr: ie.EveningNr, Date: ie.Date}
+	}
+
+	sched, err := h.uc.ImportSeason(r.Context(), competitionName, season, rows, inhaalEvenings)
+	if err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	writeJSON(w, sched)
 }

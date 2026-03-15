@@ -13,6 +13,18 @@ export class PlayerService {
     return this.http.get<Player[]>(`${this.base}/players`);
   }
 
+  update(player: Player): Observable<Player> {
+    return this.http.put<Player>(`${this.base}/players/${player.id}`, player);
+  }
+
+  getBuddies(playerId: string): Observable<string[]> {
+    return this.http.get<string[]>(`${this.base}/players/${playerId}/buddies`);
+  }
+
+  setBuddies(playerId: string, buddyIds: string[]): Observable<void> {
+    return this.http.put<void>(`${this.base}/players/${playerId}/buddies`, { buddyIds });
+  }
+
   import(file: File): Observable<{ imported: number }> {
     const fd = new FormData();
     fd.append('file', file);

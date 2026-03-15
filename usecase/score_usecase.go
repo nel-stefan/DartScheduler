@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 
 	"DartScheduler/domain"
 )
@@ -15,25 +14,104 @@ func NewScoreUseCase(matches domain.MatchRepository) *ScoreUseCase {
 	return &ScoreUseCase{matches: matches}
 }
 
+// Submit slaat het resultaat op voor een wedstrijd.
+// Berekent ScoreA/ScoreB op basis van de leg-winnaars.
 func (uc *ScoreUseCase) Submit(ctx context.Context, in SubmitScoreInput) error {
 	match, err := uc.matches.FindByID(ctx, in.MatchID)
 	if err != nil {
 		return err
 	}
-	if match.Played {
-		return fmt.Errorf("%w: match %s", domain.ErrMatchAlreadyPlayed, in.MatchID)
+
+	// Compute scores from leg winners
+	scoreA, scoreB := 0, 0
+	paStr := match.PlayerA.String()
+	for _, winner := range []string{in.Leg1Winner, in.Leg2Winner, in.Leg3Winner} {
+		if winner == "" {
+			continue
+		}
+		if winner == paStr {
+			scoreA++
+		} else {
+			scoreB++
+		}
 	}
-	return uc.matches.UpdateScore(ctx, in.MatchID, in.ScoreA, in.ScoreB)
+
+	match.Leg1Winner = in.Leg1Winner
+	match.Leg1Turns = in.Leg1Turns
+	match.Leg2Winner = in.Leg2Winner
+	match.Leg2Turns = in.Leg2Turns
+	match.Leg3Winner = in.Leg3Winner
+	match.Leg3Turns = in.Leg3Turns
+	match.ReportedBy = in.ReportedBy
+	match.RescheduleDate = in.RescheduleDate
+	match.SecretaryNr = in.SecretaryNr
+	match.CounterNr = in.CounterNr
+	match.ScoreA = &scoreA
+	match.ScoreB = &scoreB
+	match.Played = true
+
+	return uc.matches.UpdateResult(ctx, match)
 }
 
-func (uc *ScoreUseCase) GetStats(ctx context.Context, players []domain.Player) ([]PlayerStats, error) {
+// GetDutyStats counts secretary+counter appearances per player from played matches.
+func (uc *ScoreUseCase) GetDutyStats(ctx context.Context, players []domain.Player, scheduleID *domain.ScheduleID) ([]DutyStats, error) {
+	var matchList []domain.Match
+	var err error
+	if scheduleID != nil {
+		// collect all played matches for this schedule via all players (dedup by match ID)
+		seen := make(map[domain.MatchID]struct{})
+		for _, p := range players {
+			pm, e := uc.matches.FindByPlayerAndSchedule(ctx, p.ID, *scheduleID)
+			if e != nil {
+				return nil, e
+			}
+			for _, m := range pm {
+				if m.Played {
+					if _, ok := seen[m.ID]; !ok {
+						seen[m.ID] = struct{}{}
+						matchList = append(matchList, m)
+					}
+				}
+			}
+		}
+	} else {
+		matchList, err = uc.matches.FindAllPlayed(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	counts := make(map[string]int, len(players))
+	for _, m := range matchList {
+		if m.SecretaryNr != "" {
+			counts[m.SecretaryNr]++
+		}
+		if m.CounterNr != "" {
+			counts[m.CounterNr]++
+		}
+	}
+	out := make([]DutyStats, 0, len(players))
+	for _, p := range players {
+		out = append(out, DutyStats{Player: p, Count: counts[p.Nr]})
+	}
+	return out, nil
+}
+
+// GetStats berekent de ranglijststatistieken voor de opgegeven spelers.
+// Alleen gespeelde wedstrijden (Played == true) tellen mee.
+func (uc *ScoreUseCase) GetStats(ctx context.Context, players []domain.Player, scheduleID *domain.ScheduleID) ([]PlayerStats, error) {
 	statsMap := make(map[domain.PlayerID]*PlayerStats, len(players))
 	for i := range players {
 		statsMap[players[i].ID] = &PlayerStats{Player: players[i]}
 	}
 
 	for _, p := range players {
-		matches, err := uc.matches.FindByPlayer(ctx, p.ID)
+		var matches []domain.Match
+		var err error
+		if scheduleID != nil {
+			matches, err = uc.matches.FindByPlayerAndSchedule(ctx, p.ID, *scheduleID)
+		} else {
+			matches, err = uc.matches.FindByPlayer(ctx, p.ID)
+		}
 		if err != nil {
 			return nil, err
 		}
