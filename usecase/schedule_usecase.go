@@ -286,6 +286,23 @@ func (uc *ScheduleUseCase) ImportSeason(ctx context.Context, competitionName, se
 // AddInhaalAvond creates an inhaalavond for the given schedule and date.
 // Matches are not moved — the inhaalavond dynamically shows all unplayed
 // matches with a non-empty ReportedBy from earlier evenings (see hydrate).
+func (uc *ScheduleUseCase) DeleteSchedule(ctx context.Context, id domain.ScheduleID) error {
+	if err := uc.matches.DeleteBySchedule(ctx, id); err != nil {
+		return err
+	}
+	if err := uc.evenings.DeleteBySchedule(ctx, id); err != nil {
+		return err
+	}
+	return uc.schedules.Delete(ctx, id)
+}
+
+func (uc *ScheduleUseCase) DeleteEvening(ctx context.Context, id domain.EveningID) error {
+	if err := uc.matches.DeleteByEvening(ctx, id); err != nil {
+		return err
+	}
+	return uc.evenings.Delete(ctx, id)
+}
+
 func (uc *ScheduleUseCase) AddInhaalAvond(ctx context.Context, scheduleID domain.ScheduleID, date time.Time) (domain.Schedule, error) {
 	evenings, err := uc.evenings.FindBySchedule(ctx, scheduleID)
 	if err != nil {

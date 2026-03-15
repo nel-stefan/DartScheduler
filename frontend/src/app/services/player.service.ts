@@ -21,6 +21,10 @@ export class PlayerService {
     return this.http.get<string[]>(`${this.base}/players/${playerId}/buddies`);
   }
 
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/players/${id}`);
+  }
+
   setBuddies(playerId: string, buddyIds: string[]): Observable<void> {
     return this.http.put<void>(`${this.base}/players/${playerId}/buddies`, { buddyIds });
   }

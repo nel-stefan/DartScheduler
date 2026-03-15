@@ -53,6 +53,11 @@ func (r *ScheduleRepo) FindAll(ctx context.Context) ([]domain.Schedule, error) {
 	return out, rows.Err()
 }
 
+func (r *ScheduleRepo) Delete(ctx context.Context, id domain.ScheduleID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM schedules WHERE id=?`, id.String())
+	return err
+}
+
 func scanSchedule(s scanner) (domain.Schedule, error) {
 	var sc domain.Schedule
 	var idStr string

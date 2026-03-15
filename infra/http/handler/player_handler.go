@@ -107,6 +107,20 @@ type setBuddiesRequest struct {
 	BuddyIDs []string `json:"buddyIds"`
 }
 
+func (h *PlayerHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	if err := h.uc.DeletePlayer(r.Context(), id); err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *PlayerHandler) GetBuddies(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)

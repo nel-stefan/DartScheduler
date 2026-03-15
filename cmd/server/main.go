@@ -34,7 +34,7 @@ func main() {
 	matchRepo := sqlite.NewMatchRepo(db)
 
 	// Use cases
-	playerUC := usecase.NewPlayerUseCase(playerRepo)
+	playerUC := usecase.NewPlayerUseCase(playerRepo, matchRepo)
 	scheduleUC := usecase.NewScheduleUseCase(playerRepo, scheduleRepo, eveningRepo, matchRepo)
 	scoreUC := usecase.NewScoreUseCase(matchRepo)
 	exportUC := usecase.NewExportUseCase(scheduleRepo, eveningRepo, matchRepo, playerRepo)

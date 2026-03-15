@@ -246,6 +246,9 @@ export class BuddyDialogComponent {
               <button mat-icon-button color="accent" (click)="openBuddies(p)" matTooltip="Speelpartners instellen">
                 <mat-icon>group</mat-icon>
               </button>
+              <button mat-icon-button color="warn" (click)="deletePlayer(p)" matTooltip="Lid verwijderen">
+                <mat-icon>delete</mat-icon>
+              </button>
             </td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="cols"></tr>
@@ -361,6 +364,18 @@ export class UploadComponent implements OnInit {
         this.fileInputRef.nativeElement.value = '';
         this.loading = false;
       },
+    });
+  }
+
+  deletePlayer(player: Player): void {
+    if (!confirm(`Lid "${player.name}" verwijderen inclusief alle wedstrijden?`)) return;
+    this.playerService.delete(player.id).subscribe({
+      next: () => {
+        this.players = this.players.filter(p => p.id !== player.id);
+        this.selection.delete(player.id);
+        this.snackBar.open('Lid verwijderd', 'OK', { duration: 2000 });
+      },
+      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
     });
   }
 

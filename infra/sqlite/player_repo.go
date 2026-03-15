@@ -79,6 +79,11 @@ func (r *PlayerRepo) FindAll(ctx context.Context) ([]domain.Player, error) {
 	return out, rows.Err()
 }
 
+func (r *PlayerRepo) Delete(ctx context.Context, id domain.PlayerID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM players WHERE id=?`, id.String())
+	return err
+}
+
 func (r *PlayerRepo) DeleteAll(ctx context.Context) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM players`)
 	return err

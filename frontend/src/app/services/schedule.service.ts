@@ -29,6 +29,14 @@ export class ScheduleService {
     return this.http.post<Schedule>(`${this.base}/schedules/${scheduleId}/inhaal-avond`, { date });
   }
 
+  deleteSchedule(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/schedules/${id}`);
+  }
+
+  deleteEvening(scheduleId: string, eveningId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/schedules/${scheduleId}/evenings/${eveningId}`);
+  }
+
   importSeason(file: File, competitionName: string, season: string): Observable<Schedule> {
     const form = new FormData();
     form.append('file', file);

@@ -43,6 +43,7 @@ func NewRouter(
 		r.Post("/import", playerH.Import)
 		r.Get("/players", playerH.List)
 		r.Put("/players/{id}", playerH.Update)
+		r.Delete("/players/{id}", playerH.Delete)
 		r.Get("/players/{id}/buddies", playerH.GetBuddies)
 		r.Put("/players/{id}/buddies", playerH.SetBuddies)
 
@@ -52,7 +53,9 @@ func NewRouter(
 		r.Get("/schedules", schedH.List)
 		r.Get("/schedules/{id}", schedH.GetByID)
 		r.Post("/schedules/import-season", schedH.ImportSeason)
+		r.Delete("/schedules/{id}", schedH.DeleteSchedule)
 		r.Post("/schedules/{id}/inhaal-avond", schedH.AddInhaalAvond)
+		r.Delete("/schedules/{id}/evenings/{eveningId}", schedH.DeleteEvening)
 
 		r.Put("/matches/{id}/score", scoreH.Submit)
 

@@ -13,11 +13,12 @@ import (
 )
 
 type PlayerUseCase struct {
-	repo domain.PlayerRepository
+	repo    domain.PlayerRepository
+	matches domain.MatchRepository
 }
 
-func NewPlayerUseCase(repo domain.PlayerRepository) *PlayerUseCase {
-	return &PlayerUseCase{repo: repo}
+func NewPlayerUseCase(repo domain.PlayerRepository, matches domain.MatchRepository) *PlayerUseCase {
+	return &PlayerUseCase{repo: repo, matches: matches}
 }
 
 // ImportPlayers vervangt alle bestaande spelers door de opgegeven lijst en slaat
@@ -74,6 +75,17 @@ func (uc *PlayerUseCase) UpdatePlayer(ctx context.Context, p domain.Player) erro
 // GetBuddies returns the buddy player IDs for the given player.
 func (uc *PlayerUseCase) GetBuddies(ctx context.Context, playerID domain.PlayerID) ([]domain.PlayerID, error) {
 	return uc.repo.FindBuddiesForPlayer(ctx, playerID)
+}
+
+// DeletePlayer verwijdert een speler inclusief alle wedstrijden en buddy-voorkeuren.
+func (uc *PlayerUseCase) DeletePlayer(ctx context.Context, id domain.PlayerID) error {
+	if err := uc.matches.DeleteByPlayer(ctx, id); err != nil {
+		return err
+	}
+	if err := uc.repo.DeleteBuddiesForPlayer(ctx, id); err != nil {
+		return err
+	}
+	return uc.repo.Delete(ctx, id)
 }
 
 // SetBuddies replaces all buddy preferences for the given player.

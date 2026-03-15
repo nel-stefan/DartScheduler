@@ -455,6 +455,9 @@ export class ScoreDialogComponent {
       <button mat-stroked-button color="accent" *ngIf="schedule" (click)="openAddInhaalAvond()">
         <mat-icon>replay</mat-icon> Inhaalavond toevoegen
       </button>
+      <button mat-icon-button color="warn" *ngIf="schedule" (click)="deleteSchedule()" matTooltip="Seizoen verwijderen">
+        <mat-icon>delete</mat-icon>
+      </button>
     </div>
 
     <div *ngIf="!schedule" class="empty-state">
@@ -497,10 +500,16 @@ export class ScoreDialogComponent {
                   Vrije avond voor uitgestelde wedstrijden
                 </mat-card-subtitle>
               </div>
-              <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel"
-                      *ngIf="!ev.isInhaalAvond">
-                <mat-icon>file_download</mat-icon>
-              </button>
+              <div style="display:flex;gap:4px">
+                <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel"
+                        *ngIf="!ev.isInhaalAvond">
+                  <mat-icon>file_download</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="deleteEvening(ev)" matTooltip="Avond verwijderen"
+                        *ngIf="ev.isInhaalAvond">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
             </div>
           </mat-card-header>
           <mat-card-content>
@@ -647,6 +656,30 @@ export class OverviewComponent implements OnInit {
 
   exportEvening(eveningId: string): void {
     window.open(`${environment.apiBaseUrl}/export/evening/${eveningId}/excel`, '_blank');
+  }
+
+  deleteSchedule(): void {
+    if (!this.schedule) return;
+    if (!confirm(`Seizoen "${this.schedule.competitionName}" verwijderen? Dit verwijdert ook alle avonden en wedstrijden.`)) return;
+    this.scheduleService.deleteSchedule(this.schedule.id).subscribe({
+      next: () => {
+        this.schedule = null;
+        this.snackBar.open('Seizoen verwijderd', 'OK', { duration: 2000 });
+        this.seasonService.load();
+      },
+      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+    });
+  }
+
+  deleteEvening(ev: Evening): void {
+    if (!confirm(`Inhaalavond ${ev.number} verwijderen?`)) return;
+    this.scheduleService.deleteEvening(this.schedule!.id, ev.id).subscribe({
+      next: () => {
+        this.snackBar.open('Avond verwijderd', 'OK', { duration: 2000 });
+        this.loadScheduleById(this.schedule!.id);
+      },
+      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+    });
   }
 
   openGenerate(): void {

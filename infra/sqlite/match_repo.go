@@ -219,6 +219,25 @@ func scanMatches(rows *sql.Rows) ([]domain.Match, error) {
 	return out, rows.Err()
 }
 
+func (r *MatchRepo) DeleteByEvening(ctx context.Context, eveningID domain.EveningID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM matches WHERE evening_id=?`, eveningID.String())
+	return err
+}
+
+func (r *MatchRepo) DeleteBySchedule(ctx context.Context, scheduleID domain.ScheduleID) error {
+	_, err := r.db.ExecContext(ctx,
+		`DELETE FROM matches WHERE evening_id IN (SELECT id FROM evenings WHERE schedule_id=?)`,
+		scheduleID.String())
+	return err
+}
+
+func (r *MatchRepo) DeleteByPlayer(ctx context.Context, playerID domain.PlayerID) error {
+	_, err := r.db.ExecContext(ctx,
+		`DELETE FROM matches WHERE player_a=? OR player_b=?`,
+		playerID.String(), playerID.String())
+	return err
+}
+
 func (r *MatchRepo) FindCancelledBySchedule(ctx context.Context, scheduleID domain.ScheduleID) ([]domain.Match, error) {
 	log.Printf("[FindCancelledBySchedule] scheduleID=%s", scheduleID)
 	rows, err := r.db.QueryContext(ctx,

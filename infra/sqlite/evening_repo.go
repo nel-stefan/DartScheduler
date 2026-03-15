@@ -52,6 +52,16 @@ func (r *EveningRepo) FindBySchedule(ctx context.Context, scheduleID domain.Sche
 	return out, rows.Err()
 }
 
+func (r *EveningRepo) Delete(ctx context.Context, id domain.EveningID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM evenings WHERE id=?`, id.String())
+	return err
+}
+
+func (r *EveningRepo) DeleteBySchedule(ctx context.Context, scheduleID domain.ScheduleID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM evenings WHERE schedule_id=?`, scheduleID.String())
+	return err
+}
+
 func scanEvening(s scanner) (domain.Evening, error) {
 	var e domain.Evening
 	var idStr string

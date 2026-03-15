@@ -9,6 +9,7 @@ type PlayerRepository interface {
 	SaveBatch(ctx context.Context, players []Player) error
 	FindByID(ctx context.Context, id PlayerID) (Player, error)
 	FindAll(ctx context.Context) ([]Player, error)
+	Delete(ctx context.Context, id PlayerID) error
 	DeleteAll(ctx context.Context) error
 	SaveBuddyPreference(ctx context.Context, bp BuddyPreference) error
 	FindBuddiesForPlayer(ctx context.Context, id PlayerID) ([]PlayerID, error)
@@ -21,6 +22,8 @@ type EveningRepository interface {
 	Save(ctx context.Context, e Evening, scheduleID ScheduleID) error
 	FindByID(ctx context.Context, id EveningID) (Evening, error)
 	FindBySchedule(ctx context.Context, scheduleID ScheduleID) ([]Evening, error)
+	Delete(ctx context.Context, id EveningID) error
+	DeleteBySchedule(ctx context.Context, scheduleID ScheduleID) error
 }
 
 // MatchRepository definieert persistentieoperaties voor wedstrijden en scores.
@@ -36,6 +39,9 @@ type MatchRepository interface {
 	// FindCancelledBySchedule returns all matches with a non-empty ReportedBy
 	// from non-inhaal evenings in the given schedule. Used to populate inhaalavonden.
 	FindCancelledBySchedule(ctx context.Context, scheduleID ScheduleID) ([]Match, error)
+	DeleteByEvening(ctx context.Context, eveningID EveningID) error
+	DeleteBySchedule(ctx context.Context, scheduleID ScheduleID) error
+	DeleteByPlayer(ctx context.Context, playerID PlayerID) error
 }
 
 // ScheduleRepository definieert persistentieoperaties voor schema's.
@@ -45,4 +51,5 @@ type ScheduleRepository interface {
 	FindLatest(ctx context.Context) (Schedule, error)
 	FindByID(ctx context.Context, id ScheduleID) (Schedule, error)
 	FindAll(ctx context.Context) ([]Schedule, error)
+	Delete(ctx context.Context, id ScheduleID) error
 }
