@@ -218,6 +218,28 @@ func scanMatches(rows *sql.Rows) ([]domain.Match, error) {
 	return out, rows.Err()
 }
 
+func (r *MatchRepo) MoveToEvening(ctx context.Context, matchIDs []domain.MatchID, eveningID domain.EveningID) error {
+	if len(matchIDs) == 0 {
+		return nil
+	}
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	stmt, err := tx.PrepareContext(ctx, `UPDATE matches SET evening_id=? WHERE id=?`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for _, id := range matchIDs {
+		if _, err := stmt.ExecContext(ctx, eveningID.String(), id.String()); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 func boolToInt(b bool) int {
 	if b {
 		return 1

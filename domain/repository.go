@@ -33,6 +33,7 @@ type MatchRepository interface {
 	FindByPlayerAndSchedule(ctx context.Context, playerID PlayerID, scheduleID ScheduleID) ([]Match, error)
 	FindAllPlayed(ctx context.Context) ([]Match, error)
 	UpdateResult(ctx context.Context, m Match) error
+	MoveToEvening(ctx context.Context, matchIDs []MatchID, eveningID EveningID) error
 }
 
 // ScheduleRepository definieert persistentieoperaties voor schema's.

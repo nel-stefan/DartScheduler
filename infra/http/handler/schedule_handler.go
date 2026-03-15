@@ -110,6 +110,35 @@ func (h *ScheduleHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, sched)
 }
 
+type addInhaalAvondRequest struct {
+	Date string `json:"date"` // "2026-03-15"
+}
+
+func (h *ScheduleHandler) AddInhaalAvond(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	schedID, err := uuid.Parse(idStr)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	var req addInhaalAvondRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	date, err := time.Parse("2006-01-02", req.Date)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	sched, err := h.uc.AddInhaalAvond(r.Context(), domain.ScheduleID(schedID), date)
+	if err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	writeJSON(w, sched)
+}
+
 func (h *ScheduleHandler) ImportSeason(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(32 << 20); err != nil {
 		httpError(w, err, http.StatusBadRequest)

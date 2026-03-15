@@ -52,6 +52,7 @@ func NewRouter(
 		r.Get("/schedules", schedH.List)
 		r.Get("/schedules/{id}", schedH.GetByID)
 		r.Post("/schedules/import-season", schedH.ImportSeason)
+		r.Post("/schedules/{id}/inhaal-avond", schedH.AddInhaalAvond)
 
 		r.Put("/matches/{id}/score", scoreH.Submit)
 

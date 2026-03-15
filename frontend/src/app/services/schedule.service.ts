@@ -25,6 +25,10 @@ export class ScheduleService {
     return this.http.get<SeasonSummary[]>(`${this.base}/schedules`);
   }
 
+  addInhaalAvond(scheduleId: string, date: string): Observable<Schedule> {
+    return this.http.post<Schedule>(`${this.base}/schedules/${scheduleId}/inhaal-avond`, { date });
+  }
+
   importSeason(file: File, competitionName: string, season: string): Observable<Schedule> {
     const form = new FormData();
     form.append('file', file);

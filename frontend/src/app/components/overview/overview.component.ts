@@ -142,6 +142,47 @@ export class ImportSeasonDialogComponent {
 }
 
 // ---------------------------------------------------------------------------
+// Add-inhaalavond-dialog
+// ---------------------------------------------------------------------------
+
+@Component({
+  selector: 'app-add-inhaal-dialog',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
+            MatFormFieldModule, MatInputModule],
+  template: `
+    <h2 mat-dialog-title>Inhaalavond toevoegen</h2>
+    <mat-dialog-content>
+      <form [formGroup]="form" style="display:flex;flex-direction:column;gap:12px;min-width:300px;padding-top:8px">
+        <mat-form-field>
+          <mat-label>Datum (JJJJ-MM-DD)</mat-label>
+          <input matInput formControlName="date" placeholder="2026-03-22">
+        </mat-form-field>
+      </form>
+      <p style="color:#757575;font-size:12px;margin-top:8px">
+        Alle ongespeelde wedstrijden van avonden vóór deze datum worden naar deze inhaalavond verplaatst.
+      </p>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Annuleren</button>
+      <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="submit()">Toevoegen</button>
+    </mat-dialog-actions>
+  `,
+})
+export class AddInhaalAvondDialogComponent {
+  private dialogRef = inject(MatDialogRef<AddInhaalAvondDialogComponent>);
+  fb = inject(FormBuilder);
+
+  form = this.fb.group({
+    date: ['', [Validators.required, Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
+  });
+
+  submit(): void {
+    if (this.form.valid) this.dialogRef.close(this.form.value.date as string);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Score-dialog (leg-entry for best of 3)
 // ---------------------------------------------------------------------------
 
@@ -297,7 +338,9 @@ export class ScoreDialogComponent {
     CommonModule,
     MatButtonModule, MatCardModule, MatTableModule, MatTabsModule,
     MatSnackBarModule, MatDialogModule, MatChipsModule, MatIconModule,
-    MatTooltipModule, MatSelectModule, MatFormFieldModule,
+    MatTooltipModule, MatSelectModule, MatFormFieldModule, MatInputModule,
+    ReactiveFormsModule,
+    AddInhaalAvondDialogComponent,
   ],
   styles: [`
     .schedule-header {
@@ -336,6 +379,9 @@ export class ScoreDialogComponent {
       </button>
       <button mat-stroked-button (click)="openImportSeason()">
         <mat-icon>history</mat-icon> Oud seizoen importeren
+      </button>
+      <button mat-stroked-button color="accent" *ngIf="schedule" (click)="openAddInhaalAvond()">
+        <mat-icon>replay</mat-icon> Inhaalavond toevoegen
       </button>
     </div>
 
@@ -523,6 +569,23 @@ export class OverviewComponent implements OnInit {
         next: (s) => {
           this.snackBar.open('Schema gegenereerd!', 'OK', { duration: 3000 });
           this.seasonService.load(s.id);
+        },
+        error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+      });
+    });
+  }
+
+  openAddInhaalAvond(): void {
+    if (!this.schedule) return;
+    const scheduleId = this.schedule.id;
+    const ref = this.dialog.open(AddInhaalAvondDialogComponent);
+    ref.afterClosed().subscribe((date: string | undefined) => {
+      if (!date) return;
+      this.scheduleService.addInhaalAvond(scheduleId, date).subscribe({
+        next: (s) => {
+          this.schedule = s;
+          this.activeTab = s.evenings.length - 1;
+          this.snackBar.open('Inhaalavond toegevoegd!', 'OK', { duration: 2000 });
         },
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
       });
