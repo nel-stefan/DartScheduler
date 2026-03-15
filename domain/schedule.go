@@ -6,11 +6,11 @@ import (
 	"github.com/google/uuid"
 )
 
-// ScheduleID is een UUID die een competitieschema uniek identificeert.
+// ScheduleID uniquely identifies a competition schedule.
 type ScheduleID = uuid.UUID
 
-// Schedule stelt een volledig competitieschema voor met alle speelavonden.
-// Per competitie is er één actief schema; een nieuw gegenereerd schema vervangt het vorige.
+// Schedule represents a complete competition schedule with all playing evenings.
+// Each competition has one active schedule; generating a new one replaces the previous.
 type Schedule struct {
 	ID              ScheduleID `json:"id"`
 	CompetitionName string     `json:"competitionName"`

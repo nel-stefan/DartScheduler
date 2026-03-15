@@ -2,8 +2,8 @@ package domain
 
 import "context"
 
-// PlayerRepository definieert persistentieoperaties voor spelers en buddy-voorkeuren.
-// Implementaties bevinden zich in infra/sqlite.
+// PlayerRepository defines persistence operations for players and buddy preferences.
+// Implementations are in infra/sqlite.
 type PlayerRepository interface {
 	Save(ctx context.Context, p Player) error
 	SaveBatch(ctx context.Context, players []Player) error
@@ -18,7 +18,7 @@ type PlayerRepository interface {
 	DeleteAllBuddyPairs(ctx context.Context) error
 }
 
-// EveningRepository definieert persistentieoperaties voor speelavonden.
+// EveningRepository defines persistence operations for playing evenings.
 type EveningRepository interface {
 	Save(ctx context.Context, e Evening, scheduleID ScheduleID) error
 	FindByID(ctx context.Context, id EveningID) (Evening, error)
@@ -27,7 +27,7 @@ type EveningRepository interface {
 	DeleteBySchedule(ctx context.Context, scheduleID ScheduleID) error
 }
 
-// MatchRepository definieert persistentieoperaties voor wedstrijden en scores.
+// MatchRepository defines persistence operations for matches and scores.
 type MatchRepository interface {
 	Save(ctx context.Context, m Match) error
 	SaveBatch(ctx context.Context, matches []Match) error
@@ -45,8 +45,8 @@ type MatchRepository interface {
 	DeleteByPlayer(ctx context.Context, playerID PlayerID) error
 }
 
-// ScheduleRepository definieert persistentieoperaties voor schema's.
-// FindLatest geeft het meest recent aangemaakte schema terug.
+// ScheduleRepository defines persistence operations for schedules.
+// FindLatest returns the most recently created schedule.
 type ScheduleRepository interface {
 	Save(ctx context.Context, s Schedule) error
 	FindLatest(ctx context.Context) (Schedule, error)

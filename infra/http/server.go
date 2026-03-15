@@ -1,19 +1,19 @@
-// Package http registreert alle API-routes en monteert de Angular SPA-handler.
+// Package http registers all API routes and mounts the Angular SPA handler.
 //
-// Routeoverzicht:
+// Route overview:
 //
-//	POST   /api/import                  — spelers importeren vanuit Excel
-//	GET    /api/players                 — alle spelers ophalen
-//	POST   /api/schedule/generate       — nieuw schema genereren
-//	GET    /api/schedule                — huidig schema ophalen
-//	GET    /api/schedule/evening/{id}   — één speelavond ophalen
-//	PUT    /api/matches/{id}/score      — score invoeren
-//	GET    /api/stats                   — ranglijst ophalen
-//	GET    /api/stats/duties              — schrijver/teller statistieken
-//	GET    /api/export/excel                    — schema als Excel downloaden
-//	GET    /api/export/pdf                      — schema als PDF downloaden
-//	GET    /api/export/evening/{id}/excel       — één avond als wedstrijdformulier Excel
-//	/*                                          — Angular SPA (fallback)
+//	POST   /api/import                        — import players from Excel
+//	GET    /api/players                       — list all players
+//	POST   /api/schedule/generate             — generate a new schedule
+//	GET    /api/schedule                      — get the current schedule
+//	GET    /api/schedule/evening/{id}         — get a single playing evening
+//	PUT    /api/matches/{id}/score            — submit a match score
+//	GET    /api/stats                         — get standings
+//	GET    /api/stats/duties                  — get secretary/counter duty statistics
+//	GET    /api/export/excel                  — download schedule as Excel
+//	GET    /api/export/pdf                    — download schedule as PDF
+//	GET    /api/export/evening/{id}/excel     — download a single evening as match form Excel
+//	/*                                        — Angular SPA (fallback)
 package http
 
 import (
@@ -55,7 +55,7 @@ func NewRouter(
 		r.Get("/schedules/{id}/info", schedH.GetInfo)
 		r.Post("/schedules/import-season", schedH.ImportSeason)
 		r.Delete("/schedules/{id}", schedH.DeleteSchedule)
-		r.Post("/schedules/{id}/inhaal-avond", schedH.AddInhaalAvond)
+		r.Post("/schedules/{id}/inhaal-avond", schedH.AddCatchUpEvening)
 		r.Delete("/schedules/{id}/evenings/{eveningId}", schedH.DeleteEvening)
 
 		r.Put("/matches/{id}/score", scoreH.Submit)

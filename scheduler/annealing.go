@@ -1,12 +1,12 @@
-// Dit bestand implementeert het simulated annealing algoritme.
+// This file implements the simulated annealing algorithm.
 //
-// Energiefunctie (lagere waarde = beter schema):
+// Energy function (lower = better schedule):
 //
-//	energie = wBuddyHard    × paren zonder gedeelde avond        (hard)
-//	        + wMaxViolation × avond-overschrijdingen boven max    (hard)
-//	        + wTripleConsec × avonden in reeks > 2 achter elkaar  (hard)
-//	        + wExcessTriple × extra 3-wedstrijd-avonden (>10%)    (medium)
-//	        + wVariance     × variantie wedstrijden per avond     (soft)
+//	energy = wBuddyHard    × buddy pairs without a shared evening         (hard)
+//	       + wMaxViolation × per-evening match counts above the cap        (hard)
+//	       + wTripleConsec × evenings in a run of >2 consecutive           (hard)
+//	       + wExcessTriple × extra 3-match evenings per player (>10%)      (medium)
+//	       + wVariance     × variance of total matches per evening          (soft)
 package scheduler
 
 import (
@@ -21,10 +21,10 @@ const (
 	tEnd  = 0.001
 	steps = 400_000
 
-	wBuddyHard    = 10_000.0 // buddy pair heeft geen gedeelde avond
-	wMaxViolation = 10_000.0 // speler heeft >4 wedstrijden op één avond
-	wTripleConsec = 5_000.0  // speler speelt 3+ avonden op rij
-	wExcessTriple = 2_000.0  // >10% van actieve avonden hebben 3 wedstrijden
+	wBuddyHard    = 10_000.0 // buddy pair has no shared evening
+	wMaxViolation = 10_000.0 // player has more than the allowed matches on one evening
+	wTripleConsec = 5_000.0  // player plays 3+ evenings in a row
+	wExcessTriple = 2_000.0  // >10% of active evenings have 3 matches for a player
 	wVariance     = 1.0
 
 	// Fraction of steps that use a targeted move instead of a random swap.

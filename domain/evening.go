@@ -6,17 +6,17 @@ import (
 	"github.com/google/uuid"
 )
 
-// EveningID is een UUID die een speelavond uniek identificeert.
+// EveningID uniquely identifies a playing evening.
 type EveningID = uuid.UUID
 
-// Evening stelt één speelavond voor binnen een competitieschema.
-// Number is het volgnummer (1-gebaseerd); Date is de geplande speeldatum.
-// IsInhaalAvond geeft aan dat het een inhaalavond is: een avond zonder vaste
-// wedstrijden waarop uitgestelde partijen ingehaald kunnen worden.
+// Evening represents a single playing evening within a competition schedule.
+// Number is the sequential index (1-based); Date is the scheduled playing date.
+// IsCatchUpEvening indicates this is a catch-up evening: an evening with no
+// pre-assigned matches where postponed games can be rescheduled.
 type Evening struct {
-	ID            EveningID `json:"id"`
-	Number        int       `json:"number"`
-	Date          time.Time `json:"date"`
-	IsInhaalAvond bool      `json:"isInhaalAvond"`
-	Matches       []Match   `json:"matches"`
+	ID               EveningID `json:"id"`
+	Number           int       `json:"number"`
+	Date             time.Time `json:"date"`
+	IsCatchUpEvening bool      `json:"isInhaalAvond"`
+	Matches          []Match   `json:"matches"`
 }

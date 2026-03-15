@@ -13,12 +13,12 @@ import (
 
 // ImportedSeason is the result of parsing a season Excel file.
 type ImportedSeason struct {
-	Matches        []SeasonMatchRow
-	InhaalEvenings []InhaalEvening
+	Matches         []SeasonMatchRow
+	CatchUpEvenings []CatchUpEvening
 }
 
-// InhaalEvening represents a catch-up evening (inhaalavond) with no pre-assigned matches.
-type InhaalEvening struct {
+// CatchUpEvening represents a catch-up evening with no pre-assigned matches.
+type CatchUpEvening struct {
 	EveningNr int
 	Date      time.Time
 }
@@ -52,9 +52,9 @@ var matchPairNameRe = regexp.MustCompile(`^(\d+)\s*\(([^)]+)\)\s*-\s*(\d+)\s*\((
 // ImportSeason reads a historical season Excel file.
 // Supports two formats:
 //
-// 1. Flat table (headers: avond/evening, datum/date, nr a/naam a, nr b/naam b, leg1, beurten1, …)
+// 1. Flat table (headers: avond/evening, datum/date, nr a/naam a, nr b/naam b, leg1, turns1, …)
 // 2. Schedule matrix (row 1 = dates, subsequent rows = "NR - NR" match pairs per column;
-//    columns whose cells spell "INHAAL" are treated as inhaalavonden)
+//    columns whose cells spell "INHAAL" are treated as catch-up evenings)
 func ImportSeason(r io.Reader) (ImportedSeason, error) {
 	f, err := excelize.OpenReader(r)
 	if err != nil {
@@ -82,7 +82,7 @@ func ImportSeason(r io.Reader) (ImportedSeason, error) {
 		}
 	}
 
-	return ImportedSeason{}, fmt.Errorf("season import: could not recognise format — expected either a flat table (with avond/datum/nr columns) or a schedule matrix (dates in row 1, 'NR - NR' match pairs in cells)")
+	return ImportedSeason{}, fmt.Errorf("season import: could not recognise format — expected either a flat table (with evening/date/nr columns) or a schedule matrix (dates in row 1, 'NR - NR' match pairs in cells)")
 }
 
 // isFlatTableHeader returns true when the header row contains flat-table keywords.
@@ -108,7 +108,7 @@ func isFlatTableHeader(header []string) bool {
 // parseMatrixSchedule parses a schedule matrix where row 0 = dates and each
 // subsequent row contains "NR - NR" match pairs per evening column.
 // Columns whose non-empty cell values concatenate to contain "inhaal" (case-insensitive)
-// are treated as inhaalavonden (catch-up evenings) with no pre-assigned matches.
+// are treated as catch-up evenings with no pre-assigned matches.
 // Returns (result, true) when the sheet looks like a schedule matrix, (zero, false) otherwise.
 func parseMatrixSchedule(rows [][]string) (ImportedSeason, bool) {
 	header := rows[0]
@@ -136,8 +136,8 @@ func parseMatrixSchedule(rows [][]string) (ImportedSeason, bool) {
 		return ImportedSeason{}, false
 	}
 
-	// Determine which columns are inhaalavond by concatenating their cell values.
-	inhaalCols := make(map[int]bool, len(cols))
+	// Determine which columns are catch-up evenings by concatenating their cell values.
+	catchUpCols := make(map[int]bool, len(cols))
 	for _, ec := range cols {
 		var sb strings.Builder
 		for _, row := range rows[1:] {
@@ -146,14 +146,14 @@ func parseMatrixSchedule(rows [][]string) (ImportedSeason, bool) {
 			}
 		}
 		if strings.Contains(strings.ToLower(sb.String()), "inhaal") {
-			inhaalCols[ec.colIdx] = true
+			catchUpCols[ec.colIdx] = true
 		}
 	}
 
 	var result ImportedSeason
 	for _, ec := range cols {
-		if inhaalCols[ec.colIdx] {
-			result.InhaalEvenings = append(result.InhaalEvenings, InhaalEvening{
+		if catchUpCols[ec.colIdx] {
+			result.CatchUpEvenings = append(result.CatchUpEvenings, CatchUpEvening{
 				EveningNr: ec.eveningNr,
 				Date:      ec.date,
 			})
@@ -317,14 +317,14 @@ func parseFlatTable(rows [][]string) ([]SeasonMatchRow, error) {
 	cNrB := col("nrb", "nr2", "nrspelerb", "nrspeler2")
 	cNameB := col("naamb", "spelerb", "speler2", "naam2")
 	cLeg1 := col("leg1", "partij1", "winnaar1", "w1")
-	cBeurten1 := col("beurten1", "aantalbeurt1", "turns1")
+	cTurns1 := col("beurten1", "aantalbeurt1", "turns1")
 	cLeg2 := col("leg2", "partij2", "winnaar2", "w2")
-	cBeurten2 := col("beurten2", "aantalbeurt2", "turns2")
+	cTurns2 := col("beurten2", "aantalbeurt2", "turns2")
 	cLeg3 := col("leg3", "partij3", "winnaar3", "w3")
-	cBeurten3 := col("beurten3", "aantalbeurt3", "turns3")
+	cTurns3 := col("beurten3", "aantalbeurt3", "turns3")
 	cScore := col("score", "eindstand", "uitslag")
-	cSecr := col("schrijver", "secretary", "nrschrijver")
-	cTeller := col("teller", "counter", "nrteller")
+	cSecretary := col("schrijver", "secretary", "nrschrijver")
+	cCounter := col("teller", "counter", "nrteller")
 
 	var out []SeasonMatchRow
 	for _, row := range rows[1:] {
@@ -349,15 +349,15 @@ func parseFlatTable(rows [][]string) ([]SeasonMatchRow, error) {
 			NrB:        nrB,
 			NameB:      cell(row, cNameB),
 			Leg1Winner: cell(row, cLeg1),
-			Leg1Turns:  atoi(cell(row, cBeurten1)),
+			Leg1Turns:  atoi(cell(row, cTurns1)),
 			Leg2Winner: cell(row, cLeg2),
-			Leg2Turns:  atoi(cell(row, cBeurten2)),
+			Leg2Turns:  atoi(cell(row, cTurns2)),
 			Leg3Winner: cell(row, cLeg3),
-			Leg3Turns:  atoi(cell(row, cBeurten3)),
+			Leg3Turns:  atoi(cell(row, cTurns3)),
 			ScoreA:     scoreA,
 			ScoreB:     scoreB,
-			Secretary:  cell(row, cSecr),
-			Counter:    cell(row, cTeller),
+			Secretary:  cell(row, cSecretary),
+			Counter:    cell(row, cCounter),
 		})
 	}
 	return out, nil

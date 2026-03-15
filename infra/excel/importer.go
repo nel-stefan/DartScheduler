@@ -41,7 +41,7 @@ func ImportPlayers(r io.Reader) ([]usecase.PlayerInput, error) {
 	header := rows[0]
 	colNr, colName, colEmail, colSponsor := -1, -1, -1, -1
 	colAddress, colPostalCode, colCity := -1, -1, -1
-	colPhone, colMobile, colMemberSince, colClass, colSamen := -1, -1, -1, -1, -1
+	colPhone, colMobile, colMemberSince, colClass, colBuddy := -1, -1, -1, -1, -1
 
 	for i, h := range header {
 		switch strings.ToLower(strings.TrimSpace(h)) {
@@ -68,7 +68,7 @@ func ImportPlayers(r io.Reader) ([]usecase.PlayerInput, error) {
 		case "klasse", "class":
 			colClass = i
 		case "samen":
-			colSamen = i
+			colBuddy = i
 		}
 	}
 	if colName < 0 {
@@ -104,7 +104,7 @@ func ImportPlayers(r io.Reader) ([]usecase.PlayerInput, error) {
 			Mobile:      cell(row, colMobile),
 			MemberSince: cell(row, colMemberSince),
 			Class:       cell(row, colClass),
-			SamenNr:     cell(row, colSamen),
+			BuddyNr:     cell(row, colBuddy),
 		})
 	}
 	return out, nil

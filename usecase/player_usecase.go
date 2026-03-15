@@ -1,6 +1,6 @@
-// Package usecase bevat de bedrijfslogica van DartScheduler georganiseerd als use cases.
-// Use cases orkestreren domeinoperaties en zijn onafhankelijk van de infrastructuurlaag;
-// ze communiceren via de repository-interfaces uit het domain-pakket.
+// Package usecase contains the business logic of DartScheduler, organised as use cases.
+// Use cases orchestrate domain operations and are independent of the infrastructure layer;
+// they communicate through the repository interfaces from the domain package.
 package usecase
 
 import (
@@ -22,9 +22,9 @@ func NewPlayerUseCase(repo domain.PlayerRepository, matches domain.MatchReposito
 	return &PlayerUseCase{repo: repo, matches: matches}
 }
 
-// ImportPlayers voegt spelers toe of werkt ze bij (upsert op lidnummer).
-// Bestaande spelers behouden hun UUID zodat wedstrijdreferenties intact blijven.
-// Buddy-voorkeuren uit de "samen"-kolom vervangen alle bestaande buddy-instellingen.
+// ImportPlayers upserts players by member number, preserving existing UUIDs so that
+// match references remain intact. Buddy preferences from the "samen" column replace
+// all existing buddy settings.
 func (uc *PlayerUseCase) ImportPlayers(ctx context.Context, inputs []PlayerInput, buddies []BuddyPairInput) error {
 	log.Printf("[ImportPlayers] count=%d", len(inputs))
 	if len(inputs) == 0 {
@@ -54,7 +54,7 @@ func (uc *PlayerUseCase) ImportPlayers(ctx context.Context, inputs []PlayerInput
 	}
 	log.Printf("[ImportPlayers] upserted %d players", len(players))
 
-	// Resolve SamenNr → player IDs using the just-saved players.
+	// Resolve BuddyNr → player IDs using the just-saved (or pre-existing) players.
 	// Re-fetch so we have the actual (possibly pre-existing) UUIDs.
 	allPlayers, err := uc.repo.FindAll(ctx)
 	if err != nil {
@@ -67,19 +67,19 @@ func (uc *PlayerUseCase) ImportPlayers(ctx context.Context, inputs []PlayerInput
 		}
 	}
 
-	// Collect buddy pairs from the "samen" column.
+	// Collect buddy pairs from the "samen" (buddy) column.
 	var fromExcel []BuddyPairInput
 	for _, in := range inputs {
-		if in.SamenNr == "" || in.Nr == "" {
+		if in.BuddyNr == "" || in.Nr == "" {
 			continue
 		}
 		playerID, ok := nrToID[in.Nr]
 		if !ok {
 			continue
 		}
-		buddyID, ok := nrToID[in.SamenNr]
+		buddyID, ok := nrToID[in.BuddyNr]
 		if !ok {
-			log.Printf("[ImportPlayers] samen nr %q not found for player %q", in.SamenNr, in.Nr)
+			log.Printf("[ImportPlayers] buddy nr %q not found for player %q", in.BuddyNr, in.Nr)
 			continue
 		}
 		fromExcel = append(fromExcel, BuddyPairInput{PlayerID: playerID, BuddyID: buddyID})
@@ -124,7 +124,7 @@ func (uc *PlayerUseCase) GetBuddies(ctx context.Context, playerID domain.PlayerI
 	return uc.repo.FindBuddiesForPlayer(ctx, playerID)
 }
 
-// DeletePlayer verwijdert een speler inclusief alle wedstrijden en buddy-voorkeuren.
+// DeletePlayer removes a player along with all their matches and buddy preferences.
 func (uc *PlayerUseCase) DeletePlayer(ctx context.Context, id domain.PlayerID) error {
 	log.Printf("[DeletePlayer] id=%s", id)
 	if err := uc.matches.DeleteByPlayer(ctx, id); err != nil {

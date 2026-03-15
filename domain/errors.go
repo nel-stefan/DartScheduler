@@ -2,22 +2,22 @@ package domain
 
 import "errors"
 
-// Schildwachtfouten die door use cases en handlers worden herkend via errors.Is.
+// Sentinel errors recognised by use cases and handlers via errors.Is.
 var (
-	// ErrNotFound wordt teruggegeven wanneer een gevraagde entiteit niet bestaat.
+	// ErrNotFound is returned when a requested entity does not exist.
 	ErrNotFound = errors.New("not found")
 
-	// ErrAlreadyExists wordt teruggegeven bij een poging een entiteit aan te maken die al bestaat.
+	// ErrAlreadyExists is returned when attempting to create an entity that already exists.
 	ErrAlreadyExists = errors.New("already exists")
 
-	// ErrInvalidInput wordt teruggegeven wanneer invoervalidatie mislukt.
+	// ErrInvalidInput is returned when input validation fails.
 	ErrInvalidInput = errors.New("invalid input")
 
-	// ErrScheduleConflict wordt teruggegeven wanneer een schema-operatie niet mogelijk is
-	// vanwege conflicterende gegevens.
+	// ErrScheduleConflict is returned when a schedule operation cannot proceed
+	// due to conflicting data.
 	ErrScheduleConflict = errors.New("schedule conflict")
 
-	// ErrMatchAlreadyPlayed wordt teruggegeven wanneer een score wordt ingevoerd
-	// voor een wedstrijd die al is gespeeld.
+	// ErrMatchAlreadyPlayed is returned when a score is submitted for a match
+	// that has already been played.
 	ErrMatchAlreadyPlayed = errors.New("match already played")
 )

@@ -2,12 +2,12 @@ package domain
 
 import "github.com/google/uuid"
 
-// MatchID is een UUID die een wedstrijd uniek identificeert.
+// MatchID uniquely identifies a match.
 type MatchID = uuid.UUID
 
-// Match stelt één wedstrijd voor tussen twee spelers op een speelavond.
-// ScoreA en ScoreB zijn nil totdat de wedstrijd is gespeeld.
-// Played wordt true nadat UpdateResult succesvol is aangeroepen.
+// Match represents a single match between two players on a playing evening.
+// ScoreA and ScoreB are nil until the match has been played.
+// Played becomes true after UpdateResult is called successfully.
 type Match struct {
 	ID        MatchID   `json:"id"`
 	EveningID EveningID `json:"eveningId"`

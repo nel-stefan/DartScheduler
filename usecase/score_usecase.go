@@ -15,8 +15,8 @@ func NewScoreUseCase(matches domain.MatchRepository) *ScoreUseCase {
 	return &ScoreUseCase{matches: matches}
 }
 
-// Submit slaat het resultaat op voor een wedstrijd.
-// Berekent ScoreA/ScoreB op basis van de leg-winnaars.
+// Submit records the result for a match.
+// ScoreA/ScoreB are computed from the leg winners.
 func (uc *ScoreUseCase) Submit(ctx context.Context, in SubmitScoreInput) error {
 	match, err := uc.matches.FindByID(ctx, in.MatchID)
 	if err != nil {
@@ -101,8 +101,8 @@ func (uc *ScoreUseCase) GetDutyStats(ctx context.Context, players []domain.Playe
 	return out, nil
 }
 
-// GetStats berekent de ranglijststatistieken voor de opgegeven spelers.
-// Alleen gespeelde wedstrijden (Played == true) tellen mee.
+// GetStats computes standings statistics for the given players.
+// Only played matches (Played == true) are counted.
 func (uc *ScoreUseCase) GetStats(ctx context.Context, players []domain.Player, scheduleID *domain.ScheduleID) ([]PlayerStats, error) {
 	statsMap := make(map[domain.PlayerID]*PlayerStats, len(players))
 	for i := range players {

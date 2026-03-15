@@ -16,14 +16,14 @@ type EveningRepo struct{ db *sql.DB }
 func NewEveningRepo(db *sql.DB) *EveningRepo { return &EveningRepo{db: db} }
 
 func (r *EveningRepo) Save(ctx context.Context, e domain.Evening, scheduleID domain.ScheduleID) error {
-	inhaal := 0
-	if e.IsInhaalAvond {
-		inhaal = 1
+	catchUp := 0
+	if e.IsCatchUpEvening {
+		catchUp = 1
 	}
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO evenings(id,schedule_id,number,date,is_inhaal_avond) VALUES(?,?,?,?,?)
          ON CONFLICT(id) DO UPDATE SET number=excluded.number, date=excluded.date, is_inhaal_avond=excluded.is_inhaal_avond`,
-		e.ID.String(), scheduleID.String(), e.Number, e.Date, inhaal)
+		e.ID.String(), scheduleID.String(), e.Number, e.Date, catchUp)
 	return err
 }
 
@@ -65,8 +65,8 @@ func (r *EveningRepo) DeleteBySchedule(ctx context.Context, scheduleID domain.Sc
 func scanEvening(s scanner) (domain.Evening, error) {
 	var e domain.Evening
 	var idStr string
-	var inhaal int
-	if err := s.Scan(&idStr, &e.Number, &e.Date, &inhaal); err != nil {
+	var catchUp int
+	if err := s.Scan(&idStr, &e.Number, &e.Date, &catchUp); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return e, domain.ErrNotFound
 		}
@@ -77,6 +77,6 @@ func scanEvening(s scanner) (domain.Evening, error) {
 		return e, fmt.Errorf("invalid evening id %q: %w", idStr, err)
 	}
 	e.ID = uid
-	e.IsInhaalAvond = inhaal != 0
+	e.IsCatchUpEvening = catchUp != 0
 	return e, nil
 }

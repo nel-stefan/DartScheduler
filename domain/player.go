@@ -1,14 +1,14 @@
-// Package domain bevat de kerndomeintypes en repository-interfaces van DartScheduler.
-// Dit pakket heeft geen afhankelijkheden op infrastructuur of use-case pakketten;
-// alle andere lagen mogen alleen inwaarts verwijzen naar domain.
+// Package domain contains the core domain types and repository interfaces for DartScheduler.
+// This package has no dependencies on infrastructure or use-case packages;
+// all other layers may only reference domain inward.
 package domain
 
 import "github.com/google/uuid"
 
-// PlayerID is een UUID die een speler uniek identificeert.
+// PlayerID uniquely identifies a player.
 type PlayerID = uuid.UUID
 
-// Player stelt een lid van de dartclub voor.
+// Player represents a member of the dart club.
 type Player struct {
 	ID          PlayerID `json:"id"`
 	Nr          string   `json:"nr"`
@@ -24,8 +24,8 @@ type Player struct {
 	Class       string   `json:"class"`
 }
 
-// BuddyPreference geeft aan dat twee spelers bij voorkeur op dezelfde avond spelen.
-// De scheduler probeert buddy-koppels op dezelfde avond in te plannen.
+// BuddyPreference indicates that two players prefer to play on the same evening.
+// The scheduler attempts to assign buddy pairs to the same evenings.
 type BuddyPreference struct {
 	PlayerID PlayerID
 	BuddyID  PlayerID

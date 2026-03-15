@@ -20,7 +20,7 @@ type PlayerInput struct {
 	Mobile      string
 	MemberSince string
 	Class       string
-	SamenNr     string // member nr of the buddy to play together with (from "samen" column)
+	BuddyNr     string // member nr of the buddy player (from the "samen" column in the Excel import)
 }
 
 type BuddyPairInput struct {
@@ -33,11 +33,11 @@ type BuddyPairInput struct {
 type GenerateScheduleInput struct {
 	CompetitionName string
 	Season          string
-	NumEvenings     int // total slots including inhaal and vrij
+	NumEvenings     int // total slot count including catch-up and skipped slots
 	StartDate       time.Time
 	IntervalDays    int
-	InhaalNrs       []int // slot numbers that become inhaalavonden
-	VrijeNrs        []int // slot numbers that are skipped (no evening created)
+	CatchUpNrs      []int // slot numbers that become catch-up evenings (no pre-assigned matches)
+	SkipNrs         []int // slot numbers that are entirely skipped (no evening created)
 }
 
 // --- Score ---
@@ -83,8 +83,8 @@ type SeasonSummary struct {
 	EveningCount    int       `json:"eveningCount"`
 }
 
-// InhaalEvening represents a catch-up evening with no pre-assigned matches.
-type InhaalEvening struct {
+// CatchUpEvening represents a catch-up evening with no pre-assigned matches.
+type CatchUpEvening struct {
 	EveningNr int
 	Date      time.Time
 }

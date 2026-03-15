@@ -27,8 +27,8 @@ type generateRequest struct {
 	NumEvenings     int    `json:"numEvenings"`
 	StartDate       string `json:"startDate"` // "2026-04-01"
 	IntervalDays    int    `json:"intervalDays"`
-	InhaalNrs       []int  `json:"inhaalNrs"`
-	VrijeNrs        []int  `json:"vrijeNrs"`
+	CatchUpNrs      []int  `json:"inhaalNrs"`
+	SkipNrs         []int  `json:"vrijeNrs"`
 }
 
 func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
@@ -52,8 +52,8 @@ func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		NumEvenings:     req.NumEvenings,
 		StartDate:       startDate,
 		IntervalDays:    req.IntervalDays,
-		InhaalNrs:       req.InhaalNrs,
-		VrijeNrs:        req.VrijeNrs,
+		CatchUpNrs:      req.CatchUpNrs,
+		SkipNrs:         req.SkipNrs,
 	})
 	if err != nil {
 		httpErrorDomain(w, err)
@@ -116,18 +116,18 @@ func (h *ScheduleHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, sched)
 }
 
-type addInhaalAvondRequest struct {
+type addCatchUpEveningRequest struct {
 	Date string `json:"date"` // "2026-03-15"
 }
 
-func (h *ScheduleHandler) AddInhaalAvond(w http.ResponseWriter, r *http.Request) {
+func (h *ScheduleHandler) AddCatchUpEvening(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	schedID, err := uuid.Parse(idStr)
 	if err != nil {
 		httpError(w, err, http.StatusBadRequest)
 		return
 	}
-	var req addInhaalAvondRequest
+	var req addCatchUpEveningRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httpError(w, err, http.StatusBadRequest)
 		return
@@ -137,7 +137,7 @@ func (h *ScheduleHandler) AddInhaalAvond(w http.ResponseWriter, r *http.Request)
 		httpError(w, err, http.StatusBadRequest)
 		return
 	}
-	sched, err := h.uc.AddInhaalAvond(r.Context(), domain.ScheduleID(schedID), date)
+	sched, err := h.uc.AddCatchUpEvening(r.Context(), domain.ScheduleID(schedID), date)
 	if err != nil {
 		httpErrorDomain(w, err)
 		return
@@ -203,7 +203,7 @@ func (h *ScheduleHandler) ImportSeason(w http.ResponseWriter, r *http.Request) {
 	competitionName := r.FormValue("competitionName")
 	season := r.FormValue("season")
 	if competitionName == "" {
-		competitionName = "Geïmporteerd seizoen"
+		competitionName = "Imported season"
 	}
 	if season == "" {
 		season = competitionName
@@ -237,12 +237,12 @@ func (h *ScheduleHandler) ImportSeason(w http.ResponseWriter, r *http.Request) {
 			Counter:    er.Counter,
 		}
 	}
-	inhaalEvenings := make([]usecase.InhaalEvening, len(imported.InhaalEvenings))
-	for i, ie := range imported.InhaalEvenings {
-		inhaalEvenings[i] = usecase.InhaalEvening{EveningNr: ie.EveningNr, Date: ie.Date}
+	catchUpEvenings := make([]usecase.CatchUpEvening, len(imported.CatchUpEvenings))
+	for i, ie := range imported.CatchUpEvenings {
+		catchUpEvenings[i] = usecase.CatchUpEvening{EveningNr: ie.EveningNr, Date: ie.Date}
 	}
 
-	sched, err := h.uc.ImportSeason(r.Context(), competitionName, season, rows, inhaalEvenings)
+	sched, err := h.uc.ImportSeason(r.Context(), competitionName, season, rows, catchUpEvenings)
 	if err != nil {
 		httpErrorDomain(w, err)
 		return

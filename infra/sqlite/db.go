@@ -1,10 +1,10 @@
-// Package sqlite implementeert de domain repository-interfaces met een SQLite-database
-// via modernc.org/sqlite (een pure-Go SQLite driver zonder CGO).
+// Package sqlite implements the domain repository interfaces using a SQLite database
+// via modernc.org/sqlite (a pure-Go SQLite driver without CGO).
 //
-// Schema-migratie verloopt in twee stappen:
-//  1. Het basisschema (schema.sql) wordt uitgevoerd via CREATE TABLE IF NOT EXISTS.
-//  2. Alteraties (ALTER TABLE ADD COLUMN) worden toegepast voor bestaande databases;
-//     fouten over dubbele kolommen worden stilzwijgend genegeerd.
+// Schema migration runs in two steps:
+//  1. The base schema (schema.sql) is executed via CREATE TABLE IF NOT EXISTS.
+//  2. Column additions (ALTER TABLE ADD COLUMN) are applied for existing databases;
+//     duplicate-column errors are silently ignored.
 package sqlite
 
 import (

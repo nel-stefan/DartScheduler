@@ -35,15 +35,15 @@ func NewScheduleUseCase(
 }
 
 func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInput) (domain.Schedule, error) {
-	log.Printf("[Generate] competition=%q season=%q numEvenings=%d startDate=%s intervalDays=%d inhaalNrs=%v vrijeNrs=%v",
+	log.Printf("[Generate] competition=%q season=%q numEvenings=%d startDate=%s intervalDays=%d catchUpNrs=%v skipNrs=%v",
 		in.CompetitionName, in.Season, in.NumEvenings, in.StartDate.Format("2006-01-02"),
-		in.IntervalDays, in.InhaalNrs, in.VrijeNrs)
+		in.IntervalDays, in.CatchUpNrs, in.SkipNrs)
 	allPlayers, err := uc.players.FindAll(ctx)
 	if err != nil {
 		return domain.Schedule{}, err
 	}
 
-	// Sponsoren (nr bevat "-s") doen niet mee in het speelschema.
+	// Sponsors (nr contains "-s") are excluded from the playing schedule.
 	participants := make([]domain.Player, 0, len(allPlayers))
 	for _, p := range allPlayers {
 		if !strings.Contains(strings.ToLower(p.Nr), "-s") {
@@ -59,23 +59,23 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 	}
 	log.Printf("[Generate] buddyPairs=%d", len(buddyPairs))
 
-	// Verdeel de slots over normaal, inhaal en vrij.
-	inhaalSet := toIntSet(in.InhaalNrs)
-	vrijSet := toIntSet(in.VrijeNrs)
+	// Distribute slots into regular, catch-up, and skipped categories.
+	catchUpSet := toIntSet(in.CatchUpNrs)
+	skipSet := toIntSet(in.SkipNrs)
 
 	type slotInfo struct {
 		nr   int
 		date time.Time
 	}
-	var regularSlots, inhaalSlots []slotInfo
+	var regularSlots, catchUpSlots []slotInfo
 	for i := range in.NumEvenings {
 		nr := i + 1
 		date := in.StartDate.AddDate(0, 0, i*in.IntervalDays)
 		switch {
-		case inhaalSet[nr]:
-			inhaalSlots = append(inhaalSlots, slotInfo{nr, date})
-		case vrijSet[nr]:
-			// vrije avond: datum wordt overgeslagen, geen evening aangemaakt
+		case catchUpSet[nr]:
+			catchUpSlots = append(catchUpSlots, slotInfo{nr, date})
+		case skipSet[nr]:
+			// skipped slot: date is advanced but no evening is created
 		default:
 			regularSlots = append(regularSlots, slotInfo{nr, date})
 		}
@@ -86,7 +86,7 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 		regularDates[i] = s.date
 	}
 
-	log.Printf("[Generate] slots: regular=%d inhaal=%d vrij=%d", len(regularSlots), len(inhaalSlots), len(in.VrijeNrs))
+	log.Printf("[Generate] slots: regular=%d catchUp=%d skip=%d", len(regularSlots), len(catchUpSlots), len(in.SkipNrs))
 	sched, err := scheduler.Generate(scheduler.Input{
 		Players:         participants,
 		BuddyPairs:      buddyPairs,
@@ -99,7 +99,7 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 	}
 	log.Printf("[Generate] scheduler done: scheduleID=%s evenings=%d", sched.ID, len(sched.Evenings))
 
-	// Hernum evenings naar hun slot-nummer.
+	// Re-number evenings to their original slot numbers.
 	for i := range sched.Evenings {
 		sched.Evenings[i].Number = regularSlots[i].nr
 	}
@@ -122,19 +122,19 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 	}
 	log.Printf("[Generate] saved %d regular evenings, %d matches", len(sched.Evenings), totalMatches)
 
-	// Sla inhaalavonden op.
-	for _, s := range inhaalSlots {
+	// Save catch-up evenings (no pre-assigned matches).
+	for _, s := range catchUpSlots {
 		ev := domain.Evening{
-			ID:            uuid.New(),
-			Number:        s.nr,
-			Date:          s.date,
-			IsInhaalAvond: true,
+			ID:               uuid.New(),
+			Number:           s.nr,
+			Date:             s.date,
+			IsCatchUpEvening: true,
 		}
 		if err := uc.evenings.Save(ctx, ev, sched.ID); err != nil {
 			return domain.Schedule{}, err
 		}
 	}
-	log.Printf("[Generate] saved %d inhaalavonden", len(inhaalSlots))
+	log.Printf("[Generate] saved %d catch-up evenings", len(catchUpSlots))
 
 	return sched, nil
 }
@@ -185,11 +185,11 @@ func (uc *ScheduleUseCase) ListSchedules(ctx context.Context) ([]SeasonSummary, 
 	return out, nil
 }
 
-// ImportSeason creates a schedule from historically imported match rows and optional inhaalavonden.
-// Players are matched by nr from the existing player list.
-func (uc *ScheduleUseCase) ImportSeason(ctx context.Context, competitionName, season string, matchRows []SeasonMatchRow, inhaalEvenings []InhaalEvening) (domain.Schedule, error) {
-	log.Printf("[ImportSeason] competition=%q season=%q matchRows=%d inhaalEvenings=%d",
-		competitionName, season, len(matchRows), len(inhaalEvenings))
+// ImportSeason creates a schedule from historically imported match rows and optional catch-up evenings.
+// Players are matched by member number from the existing player list.
+func (uc *ScheduleUseCase) ImportSeason(ctx context.Context, competitionName, season string, matchRows []SeasonMatchRow, catchUpEvenings []CatchUpEvening) (domain.Schedule, error) {
+	log.Printf("[ImportSeason] competition=%q season=%q matchRows=%d catchUpEvenings=%d",
+		competitionName, season, len(matchRows), len(catchUpEvenings))
 	allPlayers, err := uc.players.FindAll(ctx)
 	if err != nil {
 		return domain.Schedule{}, err
@@ -282,13 +282,13 @@ func (uc *ScheduleUseCase) ImportSeason(ctx context.Context, competitionName, se
 		}
 	}
 
-	// Create inhaalavonden (no pre-assigned matches).
-	for _, ie := range inhaalEvenings {
+	// Create catch-up evenings (no pre-assigned matches).
+	for _, ie := range catchUpEvenings {
 		ev := domain.Evening{
-			ID:            uuid.New(),
-			Number:        ie.EveningNr,
-			Date:          ie.Date,
-			IsInhaalAvond: true,
+			ID:               uuid.New(),
+			Number:           ie.EveningNr,
+			Date:             ie.Date,
+			IsCatchUpEvening: true,
 		}
 		if err := uc.evenings.Save(ctx, ev, sched.ID); err != nil {
 			return domain.Schedule{}, err
@@ -299,9 +299,7 @@ func (uc *ScheduleUseCase) ImportSeason(ctx context.Context, competitionName, se
 	return uc.hydrate(ctx, sched)
 }
 
-// AddInhaalAvond creates an inhaalavond for the given schedule and date.
-// Matches are not moved — the inhaalavond dynamically shows all unplayed
-// matches with a non-empty ReportedBy from earlier evenings (see hydrate).
+// DeleteSchedule removes a schedule and all its evenings and matches.
 func (uc *ScheduleUseCase) DeleteSchedule(ctx context.Context, id domain.ScheduleID) error {
 	log.Printf("[DeleteSchedule] id=%s", id)
 	if err := uc.matches.DeleteBySchedule(ctx, id); err != nil {
@@ -329,8 +327,11 @@ func (uc *ScheduleUseCase) DeleteEvening(ctx context.Context, id domain.EveningI
 	return nil
 }
 
-func (uc *ScheduleUseCase) AddInhaalAvond(ctx context.Context, scheduleID domain.ScheduleID, date time.Time) (domain.Schedule, error) {
-	log.Printf("[AddInhaalAvond] scheduleID=%s date=%s", scheduleID, date.Format("2006-01-02"))
+// AddCatchUpEvening appends a catch-up evening to the given schedule.
+// No matches are pre-assigned; the evening dynamically shows all unplayed matches
+// with a non-empty ReportedBy from earlier evenings (see hydrate).
+func (uc *ScheduleUseCase) AddCatchUpEvening(ctx context.Context, scheduleID domain.ScheduleID, date time.Time) (domain.Schedule, error) {
+	log.Printf("[AddCatchUpEvening] scheduleID=%s date=%s", scheduleID, date.Format("2006-01-02"))
 	evenings, err := uc.evenings.FindBySchedule(ctx, scheduleID)
 	if err != nil {
 		return domain.Schedule{}, err
@@ -341,13 +342,13 @@ func (uc *ScheduleUseCase) AddInhaalAvond(ctx context.Context, scheduleID domain
 			maxNr = ev.Number
 		}
 	}
-	inhaalEv := domain.Evening{
-		ID:            uuid.New(),
-		Number:        maxNr + 1,
-		Date:          date,
-		IsInhaalAvond: true,
+	catchUpEv := domain.Evening{
+		ID:               uuid.New(),
+		Number:           maxNr + 1,
+		Date:             date,
+		IsCatchUpEvening: true,
 	}
-	if err := uc.evenings.Save(ctx, inhaalEv, scheduleID); err != nil {
+	if err := uc.evenings.Save(ctx, catchUpEv, scheduleID); err != nil {
 		return domain.Schedule{}, err
 	}
 	sched, err := uc.schedules.FindByID(ctx, scheduleID)
@@ -374,10 +375,10 @@ func (uc *ScheduleUseCase) GetInfo(ctx context.Context, scheduleID domain.Schedu
 		return ScheduleInfoResult{}, err
 	}
 
-	// Only regular (non-inhaal) evenings have pre-assigned matches.
+	// Only regular (non-catch-up) evenings have pre-assigned matches.
 	var regularEvenings []domain.Evening
 	for _, ev := range evenings {
-		if !ev.IsInhaalAvond {
+		if !ev.IsCatchUpEvening {
 			regularEvenings = append(regularEvenings, ev)
 		}
 	}
@@ -505,10 +506,10 @@ func (uc *ScheduleUseCase) hydrate(ctx context.Context, sched domain.Schedule) (
 	}
 	for i, ev := range evenings {
 		var matches []domain.Match
-		if ev.IsInhaalAvond {
-			log.Printf("[hydrate] inhaalavond ev=%s → querying cancelled matches", ev.ID)
+		if ev.IsCatchUpEvening {
+			log.Printf("[hydrate] catch-up evening ev=%s → querying cancelled matches", ev.ID)
 			matches, err = uc.matches.FindCancelledBySchedule(ctx, sched.ID)
-			log.Printf("[hydrate] inhaalavond ev=%s → %d cancelled matches found", ev.ID, len(matches))
+			log.Printf("[hydrate] catch-up evening ev=%s → %d cancelled matches found", ev.ID, len(matches))
 		} else {
 			matches, err = uc.matches.FindByEvening(ctx, ev.ID)
 		}
