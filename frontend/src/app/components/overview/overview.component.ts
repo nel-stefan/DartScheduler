@@ -15,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatSelectModule } from '@angular/material/select';
 import { ScheduleService } from '../../services/schedule.service';
 import { PlayerService } from '../../services/player.service';
@@ -274,77 +275,89 @@ export interface ScoreDialogData {
   selector: 'app-score-dialog',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-            MatFormFieldModule, MatInputModule, MatRadioModule, MatSelectModule],
+            MatFormFieldModule, MatInputModule, MatRadioModule, MatSelectModule, MatDividerModule],
   styles: [`
-    .leg-row { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
-    .leg-label { font-weight: 600; min-width: 60px; }
-    .leg-note { font-size: 11px; color: #757575; margin-left: 4px; }
-    .admin-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+    .matchup { font-size: 13px; text-align: center; margin-bottom: 12px; color: #444; }
+    .matchup strong { font-size: 14px; color: #111; }
+    .matchup .vs { color: #999; margin: 0 6px; }
+    .matchup .bof { font-size: 11px; color: #aaa; margin-left: 6px; }
+    .legs-grid {
+      display: grid;
+      grid-template-columns: 48px 1fr 80px;
+      align-items: center;
+      gap: 6px 10px;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+    .leg-label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: .4px; }
+    .radio-group { display: flex; gap: 16px; align-items: center; }
+    .radio-group label { display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer; }
+    .radio-group input[type=radio] { cursor: pointer; accent-color: #1976d2; }
+    .turns-field { width: 80px; }
+    .admin-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   `],
   template: `
-    <h2 mat-dialog-title>Wedstrijdresultaat invoeren</h2>
-    <mat-dialog-content style="min-width:420px">
-      <div style="margin-bottom:16px;font-size:15px;text-align:center">
-        <strong>{{ data.nrA }} {{ data.nameA }}</strong>
-        &nbsp;vs&nbsp;
-        <strong>{{ data.nrB }} {{ data.nameB }}</strong>
-        &nbsp;&nbsp;<span style="color:#757575;font-size:12px">Best of 3</span>
+    <h2 mat-dialog-title style="font-size:16px;margin-bottom:4px">Score invoeren</h2>
+    <mat-dialog-content style="min-width:400px;padding-top:0">
+      <div class="matchup">
+        <strong>{{ data.nameA }}</strong>
+        <span class="vs">vs</span>
+        <strong>{{ data.nameB }}</strong>
+        <span class="bof">best of 3</span>
       </div>
-      <form [formGroup]="form" style="padding-top:4px">
-        <!-- Leg 1 -->
-        <div class="leg-row">
-          <span class="leg-label">Partij 1</span>
-          <mat-radio-group formControlName="leg1Winner" style="display:flex;gap:12px">
+      <form [formGroup]="form">
+        <div class="legs-grid">
+          <!-- headers -->
+          <span></span>
+          <span style="font-size:11px;color:#999;font-weight:600">Winnaar</span>
+          <span style="font-size:11px;color:#999;font-weight:600">Beurten</span>
+          <!-- Partij 1 -->
+          <span class="leg-label">P1</span>
+          <div class="radio-group">
             <label><input type="radio" [value]="data.match.playerA" formControlName="leg1Winner"> {{ data.nameA }}</label>
             <label><input type="radio" [value]="data.match.playerB" formControlName="leg1Winner"> {{ data.nameB }}</label>
-          </mat-radio-group>
-          <mat-form-field style="width:110px">
-            <mat-label>Beurten</mat-label>
-            <input matInput type="number" formControlName="leg1Turns" min="1">
+          </div>
+          <mat-form-field class="turns-field" subscriptSizing="dynamic">
+            <input matInput type="number" formControlName="leg1Turns" min="1" placeholder="—">
           </mat-form-field>
-        </div>
-        <!-- Leg 2 -->
-        <div class="leg-row">
-          <span class="leg-label">Partij 2</span>
-          <mat-radio-group formControlName="leg2Winner" style="display:flex;gap:12px">
+          <!-- Partij 2 -->
+          <span class="leg-label">P2</span>
+          <div class="radio-group">
             <label><input type="radio" [value]="data.match.playerA" formControlName="leg2Winner"> {{ data.nameA }}</label>
             <label><input type="radio" [value]="data.match.playerB" formControlName="leg2Winner"> {{ data.nameB }}</label>
-          </mat-radio-group>
-          <mat-form-field style="width:110px">
-            <mat-label>Beurten</mat-label>
-            <input matInput type="number" formControlName="leg2Turns" min="1">
+          </div>
+          <mat-form-field class="turns-field" subscriptSizing="dynamic">
+            <input matInput type="number" formControlName="leg2Turns" min="1" placeholder="—">
           </mat-form-field>
-        </div>
-        <!-- Leg 3 -->
-        <div class="leg-row">
-          <span class="leg-label">Partij 3</span>
-          <mat-radio-group formControlName="leg3Winner" style="display:flex;gap:12px">
+          <!-- Partij 3 -->
+          <span class="leg-label">P3</span>
+          <div class="radio-group">
             <label><input type="radio" [value]="data.match.playerA" formControlName="leg3Winner"> {{ data.nameA }}</label>
             <label><input type="radio" [value]="data.match.playerB" formControlName="leg3Winner"> {{ data.nameB }}</label>
-          </mat-radio-group>
-          <mat-form-field style="width:110px">
-            <mat-label>Beurten</mat-label>
-            <input matInput type="number" formControlName="leg3Turns" min="1">
+          </div>
+          <mat-form-field class="turns-field" subscriptSizing="dynamic">
+            <input matInput type="number" formControlName="leg3Turns" min="1" placeholder="—">
           </mat-form-field>
         </div>
         <!-- Administrative fields -->
-        <div class="admin-row" style="margin-top:12px">
-          <mat-form-field style="flex:1;min-width:160px">
+        <mat-divider style="margin:10px 0 8px"></mat-divider>
+        <div class="admin-row">
+          <mat-form-field style="flex:1;min-width:130px" subscriptSizing="dynamic">
             <mat-label>Afgemeld door</mat-label>
             <mat-select formControlName="reportedBy">
               <mat-option value="">—</mat-option>
-              <mat-option [value]="data.nameA">{{ data.nrA }} {{ data.nameA }}</mat-option>
-              <mat-option [value]="data.nameB">{{ data.nrB }} {{ data.nameB }}</mat-option>
+              <mat-option [value]="data.nameA">{{ data.nameA }}</mat-option>
+              <mat-option [value]="data.nameB">{{ data.nameB }}</mat-option>
             </mat-select>
           </mat-form-field>
-          <mat-form-field style="flex:1;min-width:160px">
+          <mat-form-field style="flex:1;min-width:130px" subscriptSizing="dynamic">
             <mat-label>Schrijver</mat-label>
             <mat-select formControlName="secretaryNr">
               <mat-option value="">—</mat-option>
               <mat-option *ngFor="let p of data.players" [value]="p.nr">{{ p.nr }} – {{ p.name }}</mat-option>
             </mat-select>
           </mat-form-field>
-          <mat-form-field style="flex:1;min-width:160px">
+          <mat-form-field style="flex:1;min-width:130px" subscriptSizing="dynamic">
             <mat-label>Teller</mat-label>
             <mat-select formControlName="counterNr">
               <mat-option value="">—</mat-option>
@@ -471,14 +484,17 @@ export class ScoreDialogComponent {
                    (selectedIndexChange)="activeTab = $event" color="primary" backgroundColor="primary">
       <mat-tab *ngFor="let ev of schedule.evenings">
         <ng-template mat-tab-label>
-          <span class="tab-label">
-            <span class="dot"
-              [class.dot-inhaal]="ev.isInhaalAvond"
-              [class.dot-done]="!ev.isInhaalAvond && allPlayed(ev)"
-              [class.dot-partial]="!ev.isInhaalAvond && somePlayed(ev)"
-              [class.dot-open]="!ev.isInhaalAvond && nonePlayed(ev)">
+          <span class="tab-label" style="flex-direction:column;align-items:center;gap:1px;line-height:1.2">
+            <span style="display:flex;align-items:center;gap:5px">
+              <span class="dot"
+                [class.dot-inhaal]="ev.isInhaalAvond"
+                [class.dot-done]="!ev.isInhaalAvond && allPlayed(ev)"
+                [class.dot-partial]="!ev.isInhaalAvond && somePlayed(ev)"
+                [class.dot-open]="!ev.isInhaalAvond && nonePlayed(ev)">
+              </span>
+              {{ ev.number }}
             </span>
-            {{ ev.number }}
+            <span style="font-size:9px;opacity:0.75;font-weight:400;letter-spacing:0">{{ ev.date | date:'d MMM' }}</span>
           </span>
         </ng-template>
 
