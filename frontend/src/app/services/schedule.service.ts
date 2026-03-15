@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Schedule, GenerateScheduleRequest } from '../models';
+import { Schedule, SeasonSummary, GenerateScheduleRequest } from '../models';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -15,5 +15,21 @@ export class ScheduleService {
 
   get(): Observable<Schedule> {
     return this.http.get<Schedule>(`${this.base}/schedule`);
+  }
+
+  getById(id: string): Observable<Schedule> {
+    return this.http.get<Schedule>(`${this.base}/schedules/${id}`);
+  }
+
+  listSeasons(): Observable<SeasonSummary[]> {
+    return this.http.get<SeasonSummary[]>(`${this.base}/schedules`);
+  }
+
+  importSeason(file: File, competitionName: string, season: string): Observable<Schedule> {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('competitionName', competitionName);
+    form.append('season', season);
+    return this.http.post<Schedule>(`${this.base}/schedules/import-season`, form);
   }
 }

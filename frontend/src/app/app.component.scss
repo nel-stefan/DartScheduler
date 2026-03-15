@@ -1,0 +1,62 @@
+.app-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
+
+.toolbar-logo {
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+  filter: brightness(0) invert(1);
+}
+
+.toolbar-title {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: .5px;
+}
+
+.toolbar-spacer { flex: 1; }
+
+.toolbar-nav {
+  display: flex;
+  gap: 4px;
+
+  a {
+    color: rgba(255,255,255,.85);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+    &.nav-active {
+      background: rgba(255,255,255,.18);
+      color: #fff;
+    }
+    &:hover { background: rgba(255,255,255,.12); }
+  }
+}
+
+// Compact season selector in the primary-coloured toolbar
+.toolbar-season-select {
+  min-width: 160px;
+  margin-right: 16px;
+  // White-tinted outline/label on primary background
+  --mdc-outlined-text-field-outline-color:         rgba(255,255,255,.45);
+  --mdc-outlined-text-field-hover-outline-color:   rgba(255,255,255,.75);
+  --mdc-outlined-text-field-focus-outline-color:   #fff;
+  --mdc-outlined-text-field-label-text-color:      rgba(255,255,255,.7);
+  --mdc-outlined-text-field-focus-label-text-color: #fff;
+  --mat-select-trigger-text-color:  #fff;
+  --mat-select-arrow-foreground-color: rgba(255,255,255,.7);
+}
+
+.app-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}

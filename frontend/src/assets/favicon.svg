@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Dartboard -->
+  <circle cx="50" cy="50" r="49" fill="#1b5e20"/>
+  <circle cx="50" cy="50" r="40" fill="#b71c1c"/>
+  <circle cx="50" cy="50" r="30" fill="#f9f9f9"/>
+  <circle cx="50" cy="50" r="20" fill="#1b5e20"/>
+  <circle cx="50" cy="50" r="10" fill="#b71c1c"/>
+  <circle cx="50" cy="50" r="4"  fill="#f9f9f9"/>
+  <!-- Dart -->
+  <line x1="78" y1="22" x2="52" y2="48" stroke="#ffd600" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="52,48 46,44 48,54" fill="#ffd600"/>
+  <line x1="78" y1="22" x2="88" y2="12" stroke="#888" stroke-width="3" stroke-linecap="round"/>
+</svg>

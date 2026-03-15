@@ -12,6 +12,11 @@ type Exporter interface {
 	Export(ctx context.Context, sched domain.Schedule, players []domain.Player, w io.Writer) error
 }
 
+// EveningExporter abstracts single-evening Excel export.
+type EveningExporter interface {
+	ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening, players []domain.Player, w io.Writer) error
+}
+
 type ExportUseCase struct {
 	schedules domain.ScheduleRepository
 	evenings  domain.EveningRepository
@@ -57,4 +62,38 @@ func (uc *ExportUseCase) Export(ctx context.Context, exp Exporter, w io.Writer) 
 	}
 
 	return exp.Export(ctx, sched, players, w)
+}
+
+// ExportEvening exports a single evening's matches in wedstrijdformulier format.
+func (uc *ExportUseCase) ExportEvening(ctx context.Context, exp EveningExporter, eveningID domain.EveningID, w io.Writer) error {
+	sched, err := uc.schedules.FindLatest(ctx)
+	if err != nil {
+		return err
+	}
+	evenings, err := uc.evenings.FindBySchedule(ctx, sched.ID)
+	if err != nil {
+		return err
+	}
+	var targetEvening domain.Evening
+	found := false
+	for _, ev := range evenings {
+		if ev.ID == eveningID {
+			targetEvening = ev
+			found = true
+			break
+		}
+	}
+	if !found {
+		return domain.ErrNotFound
+	}
+	matches, err := uc.matches.FindByEvening(ctx, targetEvening.ID)
+	if err != nil {
+		return err
+	}
+	targetEvening.Matches = matches
+	players, err := uc.players.FindAll(ctx)
+	if err != nil {
+		return err
+	}
+	return exp.ExportEvening(ctx, sched, targetEvening, players, w)
 }

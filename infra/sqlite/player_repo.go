@@ -17,9 +17,13 @@ func NewPlayerRepo(db *sql.DB) *PlayerRepo { return &PlayerRepo{db: db} }
 
 func (r *PlayerRepo) Save(ctx context.Context, p domain.Player) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO players(id,name,email,sponsor) VALUES(?,?,?,?)
-         ON CONFLICT(id) DO UPDATE SET name=excluded.name, email=excluded.email, sponsor=excluded.sponsor`,
-		p.ID.String(), p.Name, p.Email, p.Sponsor)
+		`INSERT INTO players(id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+         ON CONFLICT(id) DO UPDATE SET nr=excluded.nr, name=excluded.name, email=excluded.email, sponsor=excluded.sponsor,
+           address=excluded.address, postal_code=excluded.postal_code, city=excluded.city,
+           phone=excluded.phone, mobile=excluded.mobile, member_since=excluded.member_since,
+           class=excluded.class`,
+		p.ID.String(), p.Nr, p.Name, p.Email, p.Sponsor, p.Address, p.PostalCode, p.City, p.Phone, p.Mobile, p.MemberSince, p.Class)
 	return err
 }
 
@@ -31,15 +35,20 @@ func (r *PlayerRepo) SaveBatch(ctx context.Context, players []domain.Player) err
 	defer tx.Rollback()
 
 	stmt, err := tx.PrepareContext(ctx,
-		`INSERT INTO players(id,name,email,sponsor) VALUES(?,?,?,?)
-         ON CONFLICT(id) DO UPDATE SET name=excluded.name, email=excluded.email, sponsor=excluded.sponsor`)
+		`INSERT INTO players(id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+         ON CONFLICT(id) DO UPDATE SET nr=excluded.nr, name=excluded.name, email=excluded.email, sponsor=excluded.sponsor,
+           address=excluded.address, postal_code=excluded.postal_code, city=excluded.city,
+           phone=excluded.phone, mobile=excluded.mobile, member_since=excluded.member_since,
+           class=excluded.class`)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, p := range players {
-		if _, err := stmt.ExecContext(ctx, p.ID.String(), p.Name, p.Email, p.Sponsor); err != nil {
+		if _, err := stmt.ExecContext(ctx, p.ID.String(), p.Nr, p.Name, p.Email, p.Sponsor,
+			p.Address, p.PostalCode, p.City, p.Phone, p.Mobile, p.MemberSince, p.Class); err != nil {
 			return err
 		}
 	}
@@ -48,18 +57,18 @@ func (r *PlayerRepo) SaveBatch(ctx context.Context, players []domain.Player) err
 
 func (r *PlayerRepo) FindByID(ctx context.Context, id domain.PlayerID) (domain.Player, error) {
 	row := r.db.QueryRowContext(ctx,
-		`SELECT id,name,email,sponsor FROM players WHERE id=?`, id.String())
+		`SELECT id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class FROM players WHERE id=?`, id.String())
 	return scanPlayer(row)
 }
 
 func (r *PlayerRepo) FindAll(ctx context.Context) ([]domain.Player, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT id,name,email,sponsor FROM players ORDER BY name`)
+	rows, err := r.db.QueryContext(ctx, `SELECT id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class FROM players ORDER BY CAST(nr AS INTEGER), nr, name`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var out []domain.Player
+	out := make([]domain.Player, 0)
 	for rows.Next() {
 		p, err := scanPlayer(rows)
 		if err != nil {
@@ -82,6 +91,11 @@ func (r *PlayerRepo) SaveBuddyPreference(ctx context.Context, bp domain.BuddyPre
 	return err
 }
 
+func (r *PlayerRepo) DeleteBuddiesForPlayer(ctx context.Context, id domain.PlayerID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM buddy_preferences WHERE player_id = ?`, id.String())
+	return err
+}
+
 func (r *PlayerRepo) FindBuddiesForPlayer(ctx context.Context, id domain.PlayerID) ([]domain.PlayerID, error) {
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT buddy_id FROM buddy_preferences WHERE player_id=?`, id.String())
@@ -90,7 +104,7 @@ func (r *PlayerRepo) FindBuddiesForPlayer(ctx context.Context, id domain.PlayerI
 	}
 	defer rows.Close()
 
-	var out []domain.PlayerID
+	out := make([]domain.PlayerID, 0)
 	for rows.Next() {
 		var s string
 		if err := rows.Scan(&s); err != nil {
@@ -112,7 +126,7 @@ func (r *PlayerRepo) FindAllBuddyPairs(ctx context.Context) ([]domain.BuddyPrefe
 	}
 	defer rows.Close()
 
-	var out []domain.BuddyPreference
+	out := make([]domain.BuddyPreference, 0)
 	for rows.Next() {
 		var ps, bs string
 		if err := rows.Scan(&ps, &bs); err != nil {
@@ -139,7 +153,7 @@ type scanner interface {
 func scanPlayer(s scanner) (domain.Player, error) {
 	var p domain.Player
 	var idStr string
-	if err := s.Scan(&idStr, &p.Name, &p.Email, &p.Sponsor); err != nil {
+	if err := s.Scan(&idStr, &p.Nr, &p.Name, &p.Email, &p.Sponsor, &p.Address, &p.PostalCode, &p.City, &p.Phone, &p.Mobile, &p.MemberSince, &p.Class); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return p, domain.ErrNotFound
 		}

@@ -1,3 +1,12 @@
+// Package scheduler genereert een dartcompetitie-schema op basis van round-robin
+// met simulated annealing optimalisatie.
+//
+// Werkwijze:
+//  1. roundRobin bouwt alle (N-1) rondes met N*(N-1)/2 wedstrijdparen.
+//  2. greedyAssign verdeelt de wedstrijden gelijkmatig over de avonden als startpunt.
+//  3. anneal optimaliseert de verdeling door willekeurige verwisselingen te accepteren
+//     of te verwerpen op basis van een energiefunctie.
+//  4. De geoptimaliseerde toewijzing wordt omgezet naar domain.Schedule.
 package scheduler
 
 import (

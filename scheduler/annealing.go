@@ -1,3 +1,15 @@
+// Dit bestand implementeert het simulated annealing algoritme dat de
+// wedstrijdverdeling over avonden optimaliseert.
+//
+// Energiefunctie:
+//
+//	energie = wViolation × overtredingen
+//	        + wBuddy    × (1 − buddy_tevredenheid)
+//	        + wVariance × variantie_wedstrijden_per_avond
+//
+// Een overtreding treedt op wanneer een speler meer dan maxMatchesPerPlayerPerEvening
+// wedstrijden op één avond heeft. Buddy-tevredenheid meet de fractie van
+// buddy-koppels die op minstens één avond samen spelen.
 package scheduler
 
 import (
