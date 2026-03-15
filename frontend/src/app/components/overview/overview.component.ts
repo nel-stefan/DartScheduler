@@ -102,22 +102,11 @@ export class GenerateDialogComponent implements OnInit {
   });
 
   slotTypes: Record<number, string> = {};
+  slots: { nr: number; date: Date }[] = [];
 
   ngOnInit(): void {
     this.form.valueChanges.subscribe(() => this.rebuildSlots());
     this.rebuildSlots();
-  }
-
-  get slots(): { nr: number; date: Date }[] {
-    const v = this.form.value;
-    if (!v.numEvenings || !v.startDate || !v.intervalDays) return [];
-    const start = new Date(v.startDate);
-    if (isNaN(start.getTime())) return [];
-    return Array.from({ length: v.numEvenings }, (_, i) => {
-      const d = new Date(start);
-      d.setDate(d.getDate() + i * (v.intervalDays ?? 7));
-      return { nr: i + 1, date: d };
-    });
   }
 
   get regularCount(): number { return this.slots.filter(s => (this.slotTypes[s.nr] ?? 'normaal') === 'normaal').length; }
@@ -127,7 +116,17 @@ export class GenerateDialogComponent implements OnInit {
   private rebuildSlots(): void {
     const v = this.form.value;
     const n = v.numEvenings ?? 0;
-    // Initialize new slots to 'normaal'; keep existing choices
+    const start = v.startDate ? new Date(v.startDate) : null;
+    const interval = v.intervalDays ?? 7;
+    if (n > 0 && start && !isNaN(start.getTime())) {
+      this.slots = Array.from({ length: n }, (_, i) => {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i * interval);
+        return { nr: i + 1, date: d };
+      });
+    } else {
+      this.slots = [];
+    }
     for (let i = 1; i <= n; i++) {
       if (!this.slotTypes[i]) this.slotTypes[i] = 'normaal';
     }
