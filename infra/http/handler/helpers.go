@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"DartScheduler/domain"
@@ -11,25 +12,30 @@ import (
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Printf("[writeJSON] encode error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func httpError(w http.ResponseWriter, err error, code int) {
+	log.Printf("[httpError] status=%d err=%v", code, err)
 	http.Error(w, err.Error(), code)
 }
 
 func httpErrorDomain(w http.ResponseWriter, err error) {
+	var code int
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
-		http.Error(w, err.Error(), http.StatusNotFound)
+		code = http.StatusNotFound
 	case errors.Is(err, domain.ErrInvalidInput):
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		code = http.StatusBadRequest
 	case errors.Is(err, domain.ErrAlreadyExists):
-		http.Error(w, err.Error(), http.StatusConflict)
+		code = http.StatusConflict
 	case errors.Is(err, domain.ErrMatchAlreadyPlayed):
-		http.Error(w, err.Error(), http.StatusConflict)
+		code = http.StatusConflict
 	default:
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		code = http.StatusInternalServerError
 	}
+	log.Printf("[httpErrorDomain] status=%d err=%v", code, err)
+	http.Error(w, err.Error(), code)
 }

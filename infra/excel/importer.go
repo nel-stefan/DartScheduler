@@ -13,9 +13,10 @@ import (
 // ImportPlayers reads an Excel file from r.
 // Supports the Dutch ledenlijst format with columns:
 //
-//	nr, Naam, Adres, Pc, Woonpl., Telefoon, Mobiel, E-mail adres, Lid Sinds
+//	nr, Naam, Adres, Pc, Woonpl., Telefoon, Mobiel, E-mail adres, Lid Sinds, Samen, Klasse
 //
-// Also supports the legacy English format: Name, Email, Sponsor
+// "Samen" (col J) contains the member nr of the player's buddy.
+// "Klasse" (col K) contains the player's competition class.
 // Returns PlayerInput slice ready for PlayerUseCase.ImportPlayers.
 func ImportPlayers(r io.Reader) ([]usecase.PlayerInput, error) {
 	f, err := excelize.OpenReader(r)
@@ -40,7 +41,7 @@ func ImportPlayers(r io.Reader) ([]usecase.PlayerInput, error) {
 	header := rows[0]
 	colNr, colName, colEmail, colSponsor := -1, -1, -1, -1
 	colAddress, colPostalCode, colCity := -1, -1, -1
-	colPhone, colMobile, colMemberSince, colClass := -1, -1, -1, -1
+	colPhone, colMobile, colMemberSince, colClass, colSamen := -1, -1, -1, -1, -1
 
 	for i, h := range header {
 		switch strings.ToLower(strings.TrimSpace(h)) {
@@ -66,6 +67,8 @@ func ImportPlayers(r io.Reader) ([]usecase.PlayerInput, error) {
 			colMemberSince = i
 		case "klasse", "class":
 			colClass = i
+		case "samen":
+			colSamen = i
 		}
 	}
 	if colName < 0 {
@@ -101,6 +104,7 @@ func ImportPlayers(r io.Reader) ([]usecase.PlayerInput, error) {
 			Mobile:      cell(row, colMobile),
 			MemberSince: cell(row, colMemberSince),
 			Class:       cell(row, colClass),
+			SamenNr:     cell(row, colSamen),
 		})
 	}
 	return out, nil

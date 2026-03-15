@@ -52,6 +52,7 @@ func NewRouter(
 		r.Get("/schedule/evening/{id}", schedH.GetEvening)
 		r.Get("/schedules", schedH.List)
 		r.Get("/schedules/{id}", schedH.GetByID)
+		r.Get("/schedules/{id}/info", schedH.GetInfo)
 		r.Post("/schedules/import-season", schedH.ImportSeason)
 		r.Delete("/schedules/{id}", schedH.DeleteSchedule)
 		r.Post("/schedules/{id}/inhaal-avond", schedH.AddInhaalAvond)

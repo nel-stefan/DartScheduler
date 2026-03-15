@@ -43,6 +43,7 @@ var alterations = []string{
 	`ALTER TABLE players ADD COLUMN class TEXT NOT NULL DEFAULT ''`,
 	`ALTER TABLE schedules ADD COLUMN season TEXT NOT NULL DEFAULT ''`,
 	`ALTER TABLE evenings ADD COLUMN is_inhaal_avond INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE players ADD COLUMN schedule_id TEXT REFERENCES schedules(id)`,
 }
 
 // Open opens (or creates) a SQLite database at the given path, runs the

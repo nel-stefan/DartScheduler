@@ -15,6 +15,7 @@ type PlayerRepository interface {
 	FindBuddiesForPlayer(ctx context.Context, id PlayerID) ([]PlayerID, error)
 	FindAllBuddyPairs(ctx context.Context) ([]BuddyPreference, error)
 	DeleteBuddiesForPlayer(ctx context.Context, id PlayerID) error
+	DeleteAllBuddyPairs(ctx context.Context) error
 }
 
 // EveningRepository definieert persistentieoperaties voor speelavonden.

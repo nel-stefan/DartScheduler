@@ -20,6 +20,7 @@ type PlayerInput struct {
 	Mobile      string
 	MemberSince string
 	Class       string
+	SamenNr     string // member nr of the buddy to play together with (from "samen" column)
 }
 
 type BuddyPairInput struct {
@@ -86,6 +87,47 @@ type SeasonSummary struct {
 type InhaalEvening struct {
 	EveningNr int
 	Date      time.Time
+}
+
+// --- Schedule Info ---
+
+// ScheduleInfoResult is the response for the schedule info endpoint.
+type ScheduleInfoResult struct {
+	Players    []PlayerInfoItem  `json:"players"`
+	Evenings   []EveningInfoItem `json:"evenings"`
+	Matrix     []MatrixCellItem  `json:"matrix"`
+	BuddyPairs []BuddyPairItem   `json:"buddyPairs"`
+}
+
+type PlayerInfoItem struct {
+	ID   string `json:"id"`
+	Nr   string `json:"nr"`
+	Name string `json:"name"`
+}
+
+type EveningInfoItem struct {
+	ID     string `json:"id"`
+	Number int    `json:"number"`
+	Date   string `json:"date"`
+}
+
+// MatrixCellItem represents how many matches a player is scheduled for on a given evening.
+type MatrixCellItem struct {
+	PlayerID  string `json:"playerId"`
+	EveningID string `json:"eveningId"`
+	Count     int    `json:"count"`
+}
+
+// BuddyPairItem represents a buddy pair and the evenings they share.
+type BuddyPairItem struct {
+	PlayerAID   string   `json:"playerAId"`
+	PlayerANr   string   `json:"playerANr"`
+	PlayerAName string   `json:"playerAName"`
+	PlayerBID   string   `json:"playerBId"`
+	PlayerBNr   string   `json:"playerBNr"`
+	PlayerBName string   `json:"playerBName"`
+	EveningIDs  []string `json:"eveningIds"`
+	EveningNrs  []int    `json:"eveningNrs"`
 }
 
 // SeasonMatchRow holds one imported match row from a historical season Excel.

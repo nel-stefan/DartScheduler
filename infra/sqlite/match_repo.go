@@ -239,7 +239,6 @@ func (r *MatchRepo) DeleteByPlayer(ctx context.Context, playerID domain.PlayerID
 }
 
 func (r *MatchRepo) FindCancelledBySchedule(ctx context.Context, scheduleID domain.ScheduleID) ([]domain.Match, error) {
-	log.Printf("[FindCancelledBySchedule] scheduleID=%s", scheduleID)
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT m.id, m.evening_id, m.player_a, m.player_b, m.score_a, m.score_b, m.played,
 			m.leg1_winner, m.leg1_turns, m.leg2_winner, m.leg2_turns,
@@ -256,7 +255,9 @@ func (r *MatchRepo) FindCancelledBySchedule(ctx context.Context, scheduleID doma
 		return nil, err
 	}
 	defer rows.Close()
-	return scanMatches(rows)
+	matches, err := scanMatches(rows)
+	log.Printf("[FindCancelledBySchedule] scheduleID=%s → %d matches", scheduleID, len(matches))
+	return matches, err
 }
 
 func boolToInt(b bool) int {

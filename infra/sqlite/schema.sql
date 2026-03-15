@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS evenings (
 
 CREATE TABLE IF NOT EXISTS players (
     id           TEXT PRIMARY KEY,
+    schedule_id  TEXT REFERENCES schedules(id),
     nr           TEXT NOT NULL DEFAULT '',
     name         TEXT NOT NULL,
     email        TEXT NOT NULL DEFAULT '',
@@ -51,3 +52,4 @@ CREATE INDEX IF NOT EXISTS idx_matches_evening   ON matches(evening_id);
 CREATE INDEX IF NOT EXISTS idx_matches_player_a  ON matches(player_a);
 CREATE INDEX IF NOT EXISTS idx_matches_player_b  ON matches(player_b);
 CREATE INDEX IF NOT EXISTS idx_evenings_schedule ON evenings(schedule_id);
+CREATE INDEX IF NOT EXISTS idx_players_schedule  ON players(schedule_id);

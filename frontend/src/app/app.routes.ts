@@ -26,5 +26,10 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/standings/standings.component').then((m) => m.StandingsComponent),
   },
+  {
+    path: 'info',
+    loadComponent: () =>
+      import('./components/info/info.component').then((m) => m.InfoComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

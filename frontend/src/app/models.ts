@@ -72,6 +72,42 @@ export interface DutyStats {
   count: number;
 }
 
+export interface ScheduleInfo {
+  players: PlayerInfoItem[];
+  evenings: EveningInfoItem[];
+  matrix: MatrixCellItem[];
+  buddyPairs: BuddyPairItem[];
+}
+
+export interface PlayerInfoItem {
+  id: string;
+  nr: string;
+  name: string;
+}
+
+export interface EveningInfoItem {
+  id: string;
+  number: number;
+  date: string;
+}
+
+export interface MatrixCellItem {
+  playerId: string;
+  eveningId: string;
+  count: number;
+}
+
+export interface BuddyPairItem {
+  playerAId: string;
+  playerANr: string;
+  playerAName: string;
+  playerBId: string;
+  playerBNr: string;
+  playerBName: string;
+  eveningIds: string[];
+  eveningNrs: number[];
+}
+
 export interface GenerateScheduleRequest {
   competitionName: string;
   season: string;

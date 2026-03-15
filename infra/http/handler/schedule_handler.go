@@ -173,6 +173,21 @@ func (h *ScheduleHandler) DeleteEvening(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *ScheduleHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	info, err := h.uc.GetInfo(r.Context(), domain.ScheduleID(id))
+	if err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	writeJSON(w, info)
+}
+
 func (h *ScheduleHandler) ImportSeason(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(32 << 20); err != nil {
 		httpError(w, err, http.StatusBadRequest)

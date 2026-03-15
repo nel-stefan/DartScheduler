@@ -17,8 +17,8 @@ func NewPlayerRepo(db *sql.DB) *PlayerRepo { return &PlayerRepo{db: db} }
 
 func (r *PlayerRepo) Save(ctx context.Context, p domain.Player) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO players(id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class)
-         VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+		`INSERT INTO players(id,schedule_id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class)
+         VALUES(?,NULL,?,?,?,?,?,?,?,?,?,?,?)
          ON CONFLICT(id) DO UPDATE SET nr=excluded.nr, name=excluded.name, email=excluded.email, sponsor=excluded.sponsor,
            address=excluded.address, postal_code=excluded.postal_code, city=excluded.city,
            phone=excluded.phone, mobile=excluded.mobile, member_since=excluded.member_since,
@@ -28,6 +28,26 @@ func (r *PlayerRepo) Save(ctx context.Context, p domain.Player) error {
 }
 
 func (r *PlayerRepo) SaveBatch(ctx context.Context, players []domain.Player) error {
+	// Build nr → existing UUID map so we preserve IDs (match references stay valid).
+	existingRows, err := r.db.QueryContext(ctx,
+		`SELECT id, nr FROM players WHERE nr != ''`)
+	if err != nil {
+		return err
+	}
+	nrToID := make(map[string]string)
+	for existingRows.Next() {
+		var id, nr string
+		if err := existingRows.Scan(&id, &nr); err != nil {
+			existingRows.Close()
+			return err
+		}
+		nrToID[nr] = id
+	}
+	existingRows.Close()
+	if err := existingRows.Err(); err != nil {
+		return err
+	}
+
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -37,7 +57,8 @@ func (r *PlayerRepo) SaveBatch(ctx context.Context, players []domain.Player) err
 	stmt, err := tx.PrepareContext(ctx,
 		`INSERT INTO players(id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class)
          VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-         ON CONFLICT(id) DO UPDATE SET nr=excluded.nr, name=excluded.name, email=excluded.email, sponsor=excluded.sponsor,
+         ON CONFLICT(id) DO UPDATE SET
+           nr=excluded.nr, name=excluded.name, email=excluded.email, sponsor=excluded.sponsor,
            address=excluded.address, postal_code=excluded.postal_code, city=excluded.city,
            phone=excluded.phone, mobile=excluded.mobile, member_since=excluded.member_since,
            class=excluded.class`)
@@ -47,7 +68,13 @@ func (r *PlayerRepo) SaveBatch(ctx context.Context, players []domain.Player) err
 	defer stmt.Close()
 
 	for _, p := range players {
-		if _, err := stmt.ExecContext(ctx, p.ID.String(), p.Nr, p.Name, p.Email, p.Sponsor,
+		id := p.ID.String()
+		if p.Nr != "" {
+			if existing, ok := nrToID[p.Nr]; ok {
+				id = existing // reuse existing UUID to preserve match references
+			}
+		}
+		if _, err := stmt.ExecContext(ctx, id, p.Nr, p.Name, p.Email, p.Sponsor,
 			p.Address, p.PostalCode, p.City, p.Phone, p.Mobile, p.MemberSince, p.Class); err != nil {
 			return err
 		}
@@ -98,6 +125,11 @@ func (r *PlayerRepo) SaveBuddyPreference(ctx context.Context, bp domain.BuddyPre
 
 func (r *PlayerRepo) DeleteBuddiesForPlayer(ctx context.Context, id domain.PlayerID) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM buddy_preferences WHERE player_id = ?`, id.String())
+	return err
+}
+
+func (r *PlayerRepo) DeleteAllBuddyPairs(ctx context.Context) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM buddy_preferences`)
 	return err
 }
 

@@ -278,7 +278,9 @@ export class UploadComponent implements OnInit {
   batchClass = '';
   cols = ['select', 'nr', 'name', 'class', 'city', 'buddies', 'actions'];
 
-  ngOnInit(): void { this.loadPlayers(); }
+  ngOnInit(): void {
+    this.loadPlayers();
+  }
 
   loadPlayers(): void {
     this.playerService.list().subscribe({

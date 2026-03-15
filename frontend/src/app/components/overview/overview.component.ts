@@ -93,6 +93,8 @@ export class GenerateDialogComponent implements OnInit {
   private dialogRef = inject(MatDialogRef<GenerateDialogComponent>);
   fb = inject(FormBuilder);
 
+  constructor(@Inject(MAT_DIALOG_DATA) public data: null) {}
+
   form = this.fb.group({
     competitionName: ['Liga 2026', Validators.required],
     season:          ['2026', Validators.required],
@@ -683,7 +685,7 @@ export class OverviewComponent implements OnInit {
   }
 
   openGenerate(): void {
-    const ref = this.dialog.open(GenerateDialogComponent);
+    const ref = this.dialog.open(GenerateDialogComponent, { data: null });
     ref.afterClosed().subscribe((req: GenerateScheduleRequest | undefined) => {
       if (!req) return;
       this.scheduleService.generate(req).subscribe({
