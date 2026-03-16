@@ -75,6 +75,9 @@ func (uc *ScoreUseCase) ReportAbsent(ctx context.Context, eveningID domain.Eveni
 		if m.Played {
 			continue // leave played matches untouched
 		}
+		if m.ReportedBy != "" {
+			continue // already reported absent by the other player; keep the original reporter
+		}
 		m.ReportedBy = reportedBy
 		if err := uc.matches.UpdateResult(ctx, m); err != nil {
 			return err
