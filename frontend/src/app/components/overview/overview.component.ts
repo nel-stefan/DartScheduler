@@ -767,11 +767,11 @@ export class OverviewComponent implements OnInit {
     this.playerService.list().subscribe({ next: (ps) => (this.players = ps), error: () => {} });
   }
 
-  loadScheduleById(id: string): void {
+  loadScheduleById(id: string, preserveTab = false): void {
     this.scheduleService.getById(id).subscribe({
       next: (s) => {
         this.schedule = s;
-        this.activeTab = this.firstUpcomingTab(s.evenings);
+        if (!preserveTab) this.activeTab = this.firstUpcomingTab(s.evenings);
         console.log('[overview] schedule loaded', s.id, `evenings: ${s.evenings.length}`);
         s.evenings.forEach(ev => {
           if (ev.isInhaalAvond) {
@@ -833,7 +833,7 @@ export class OverviewComponent implements OnInit {
       this.scoreService.submitResult(match.id, result).subscribe({
         next: () => {
           this.snackBar.open('Resultaat opgeslagen!', 'OK', { duration: 2000 });
-          if (this.schedule) this.loadScheduleById(this.schedule.id);
+          if (this.schedule) this.loadScheduleById(this.schedule.id, true);
         },
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
       });
@@ -886,7 +886,7 @@ export class OverviewComponent implements OnInit {
       this.scoreService.reportAbsent(ev.id, result.playerId, result.reportedBy).subscribe({
         next: () => {
           this.snackBar.open('Speler afgemeld', 'OK', { duration: 2000 });
-          if (this.schedule) this.loadScheduleById(this.schedule.id);
+          if (this.schedule) this.loadScheduleById(this.schedule.id, true);
         },
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
       });

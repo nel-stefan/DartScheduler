@@ -382,6 +382,14 @@ Rijen zonder naam worden overgeslagen. Een nieuw import vervangt alle bestaande 
 docker compose up --build
 ```
 
+### Herstart (stop → build → start)
+
+```bash
+docker compose -f docker-compose.yml down && \
+  docker compose -f docker-compose.yml build && \
+  docker compose -f docker-compose.yml up
+```
+
 De applicatie is beschikbaar op [http://localhost:8080](http://localhost:8080). Het database-bestand wordt opgeslagen in een Docker-volume (`dartscheduler_data`).
 
 ### Handmatig bouwen
@@ -389,6 +397,29 @@ De applicatie is beschikbaar op [http://localhost:8080](http://localhost:8080). 
 ```bash
 docker build -t dartscheduler .
 docker run -p 8080:8080 -v $(pwd)/data:/data dartscheduler
+```
+
+### Database backup
+
+De database staat in het Docker volume `dart_data` op `/data/dartscheduler.db`.
+
+**Bestand kopiëren (terwijl de container draait):**
+```bash
+docker compose cp dartscheduler:/data/dartscheduler.db ./backup-$(date +%Y%m%d).db
+```
+
+**SQL-dump (tekst, makkelijk te lezen/importeren):**
+```bash
+docker compose exec dartscheduler sh -c "sqlite3 /data/dartscheduler.db .dump" > backup-$(date +%Y%m%d).sql
+```
+
+**Terugzetten:**
+```bash
+# Vanuit bestand
+docker compose cp ./backup-20260316.db dartscheduler:/data/dartscheduler.db
+
+# Vanuit SQL-dump
+docker compose exec -T dartscheduler sh -c "sqlite3 /data/dartscheduler.db" < backup-20260316.sql
 ```
 
 ### Multi-stage build
