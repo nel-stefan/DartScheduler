@@ -250,7 +250,53 @@ interface MatchRow {
           </div>
         </mat-tab>
 
-        <!-- Tab 4: Wedstrijdoverzicht per speler -->
+        <!-- Tab 4: Openstaande wedstrijden -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            Openstaand
+            <span *ngIf="openMatchRows.length > 0"
+                  style="margin-left:6px;background:#e53935;color:white;border-radius:10px;
+                         padding:1px 7px;font-size:11px;font-weight:600;line-height:18px">
+              {{ openMatchRows.length }}
+            </span>
+          </ng-template>
+          <div style="padding-top:16px">
+            <p *ngIf="openMatchRows.length === 0" style="color:#9e9e9e;padding-top:8px">
+              Alle wedstrijden zijn gespeeld of afgemeld.
+            </p>
+            <mat-card *ngIf="openMatchRows.length > 0">
+              <mat-card-content>
+                <table mat-table [dataSource]="openMatchRows" style="width:100%">
+
+                  <ng-container matColumnDef="evening">
+                    <th mat-header-cell *matHeaderCellDef style="width:80px">Avond</th>
+                    <td mat-cell *matCellDef="let r">{{ r.eveningNumber }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="date">
+                    <th mat-header-cell *matHeaderCellDef style="width:120px">Datum</th>
+                    <td mat-cell *matCellDef="let r">{{ r.eveningDate | date:'d MMM yyyy' }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="playerA">
+                    <th mat-header-cell *matHeaderCellDef>Speler A</th>
+                    <td mat-cell *matCellDef="let r"><strong>{{ r.playerAName }}</strong></td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="playerB">
+                    <th mat-header-cell *matHeaderCellDef>Speler B</th>
+                    <td mat-cell *matCellDef="let r"><strong>{{ r.playerBName }}</strong></td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="openCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: openCols;"></tr>
+                </table>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 5: Wedstrijdoverzicht per speler -->
         <mat-tab label="Wedstrijden">
           <div style="padding-top:16px">
             <mat-form-field style="min-width:280px;margin-bottom:16px" subscriptSizing="dynamic">
@@ -333,6 +379,7 @@ export class InfoComponent implements OnInit {
   summaryCols = ['nr', 'name', 'eveningCount', 'totalMatches', 'consecutive', 'buddy'];
   statCols    = ['nr', 'name', 'minTurns', 'avgTurns', 'avgScore', '180s', 'hf'];
   matchCols   = ['evening', 'date', 'opponent', 'score', 'result'];
+  openCols    = ['evening', 'date', 'playerA', 'playerB'];
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -376,6 +423,26 @@ export class InfoComponent implements OnInit {
       }
     }
 
+    return rows.sort((a, b) => a.eveningNumber - b.eveningNumber);
+  }
+
+  get openMatchRows(): { eveningNumber: number; eveningDate: string; playerAName: string; playerBName: string }[] {
+    if (!this.schedule || !this.info) return [];
+    const playerMap = new Map(this.info.players.map(p => [p.id, p]));
+    const rows: { eveningNumber: number; eveningDate: string; playerAName: string; playerBName: string }[] = [];
+    for (const ev of this.schedule.evenings) {
+      for (const m of ev.matches) {
+        if (m.played || m.reportedBy) continue;
+        const pA = playerMap.get(m.playerA);
+        const pB = playerMap.get(m.playerB);
+        rows.push({
+          eveningNumber: ev.number,
+          eveningDate:   ev.date,
+          playerAName:   pA ? `${pA.nr} ${pA.name}` : m.playerA.slice(0, 8),
+          playerBName:   pB ? `${pB.nr} ${pB.name}` : m.playerB.slice(0, 8),
+        });
+      }
+    }
     return rows.sort((a, b) => a.eveningNumber - b.eveningNumber);
   }
 
