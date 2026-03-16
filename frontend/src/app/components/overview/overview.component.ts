@@ -277,7 +277,10 @@ export interface ScoreDialogData {
             <label><input type="radio" [value]="data.match.playerB" formControlName="leg1Winner"> {{ data.nameB }}</label>
           </div>
           <mat-form-field class="turns-field" subscriptSizing="dynamic">
-            <input matInput type="number" formControlName="leg1Turns" min="1" placeholder="—">
+            <mat-select formControlName="leg1Turns">
+              <mat-option [value]="null">—</mat-option>
+              <mat-option *ngFor="let n of turnsOptions" [value]="n">{{ n }}</mat-option>
+            </mat-select>
           </mat-form-field>
           <!-- Partij 2 -->
           <span class="leg-label">P2</span>
@@ -286,7 +289,10 @@ export interface ScoreDialogData {
             <label><input type="radio" [value]="data.match.playerB" formControlName="leg2Winner"> {{ data.nameB }}</label>
           </div>
           <mat-form-field class="turns-field" subscriptSizing="dynamic">
-            <input matInput type="number" formControlName="leg2Turns" min="1" placeholder="—">
+            <mat-select formControlName="leg2Turns">
+              <mat-option [value]="null">—</mat-option>
+              <mat-option *ngFor="let n of turnsOptions" [value]="n">{{ n }}</mat-option>
+            </mat-select>
           </mat-form-field>
           <!-- Partij 3 -->
           <span class="leg-label">P3</span>
@@ -295,7 +301,10 @@ export interface ScoreDialogData {
             <label><input type="radio" [value]="data.match.playerB" formControlName="leg3Winner"> {{ data.nameB }}</label>
           </div>
           <mat-form-field class="turns-field" subscriptSizing="dynamic">
-            <input matInput type="number" formControlName="leg3Turns" min="1" placeholder="—">
+            <mat-select formControlName="leg3Turns">
+              <mat-option [value]="null">—</mat-option>
+              <mat-option *ngFor="let n of turnsOptions" [value]="n">{{ n }}</mat-option>
+            </mat-select>
           </mat-form-field>
         </div>
         <!-- 180s and highest finish -->
@@ -350,13 +359,15 @@ export class ScoreDialogComponent {
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: ScoreDialogData) {}
 
+  turnsOptions = Array.from({ length: 18 }, (_, i) => i + 3); // 3..20
+
   form = this.fb.group({
     leg1Winner: ['', Validators.required],
-    leg1Turns:  [null as number | null],
+    leg1Turns:  [this.data.match.leg1Turns || 10 as number | null],
     leg2Winner: ['', Validators.required],
-    leg2Turns:  [null as number | null],
+    leg2Turns:  [this.data.match.leg2Turns || 10 as number | null],
     leg3Winner: [''],
-    leg3Turns:  [null as number | null],
+    leg3Turns:  [this.data.match.leg3Turns || 10 as number | null],
     playerA180s:          [this.data.match.playerA180s || 0],
     playerB180s:          [this.data.match.playerB180s || 0],
     playerAHighestFinish: [this.data.match.playerAHighestFinish || 0],
@@ -611,15 +622,15 @@ export class AbsentDialogComponent {
                   &mdash; {{ ev.date | date:'EEEE d MMMM yyyy' }}
                 </mat-card-title>
                 <mat-card-subtitle *ngIf="!ev.isInhaalAvond">
-                  {{ playedCount(ev) }} / {{ ev.matches?.length ?? 0 }} wedstrijden gespeeld
+                  {{ playedCount(ev) }} / {{ ev.matches.length }} wedstrijden gespeeld
                 </mat-card-subtitle>
                 <mat-card-subtitle *ngIf="ev.isInhaalAvond" style="color:#7b1fa2">
-                  Vrije avond voor uitgestelde wedstrijden
+                  {{ openCount(ev) }} openstaande wedstrijden
                 </mat-card-subtitle>
               </div>
               <div style="display:flex;gap:4px;align-items:center">
                 <button mat-stroked-button (click)="openAbsentDialog(ev)" matTooltip="Speler afmelden"
-                        *ngIf="(ev.matches?.length ?? 0) > 0">
+                        *ngIf="ev.matches.length > 0">
                   <mat-icon>person_off</mat-icon> Afmelden
                 </button>
                 <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel">
@@ -633,11 +644,11 @@ export class AbsentDialogComponent {
             </div>
           </mat-card-header>
           <mat-card-content>
-            <p *ngIf="ev.isInhaalAvond && (ev.matches?.length ?? 0) === 0"
+            <p *ngIf="ev.isInhaalAvond && ev.matches.length === 0"
                style="color:#757575;text-align:center;padding:24px 0;margin:0">
               Geen uitgestelde wedstrijden gevonden voor deze inhaalavond.
             </p>
-            <table mat-table [dataSource]="ev.matches ?? []" *ngIf="(ev.matches?.length ?? 0) > 0">
+            <table mat-table [dataSource]="ev.matches" *ngIf="ev.matches.length > 0">
               <ng-container matColumnDef="playerA">
                 <th mat-header-cell *matHeaderCellDef>Speler A</th>
                 <td mat-cell *matCellDef="let m">{{ playerName(m.playerA) }}</td>
@@ -807,6 +818,7 @@ export class OverviewComponent implements OnInit {
   allPlayed(ev: Evening):  boolean { return (ev.matches?.length ?? 0) > 0 && this.playedCount(ev) === (ev.matches?.length ?? 0); }
   nonePlayed(ev: Evening): boolean { return this.playedCount(ev) === 0; }
   somePlayed(ev: Evening): boolean { return !this.allPlayed(ev) && !this.nonePlayed(ev); }
+  openCount(ev: Evening):  number  { return (ev.matches ?? []).filter(m => !m.played).length; }
 
   openScore(match: Match): void {
     const ref = this.dialog.open(ScoreDialogComponent, {

@@ -20,7 +20,7 @@ import { environment } from '../../../environments/environment';
 
       <mat-card *ngIf="evening">
         <mat-card-content>
-          <table mat-table [dataSource]="evening.matches ?? []" style="width:100%">
+          <table mat-table [dataSource]="evening.matches" style="width:100%">
             <ng-container matColumnDef="playerA">
               <th mat-header-cell *matHeaderCellDef>Player A</th>
               <td mat-cell *matCellDef="let m">{{ playerName(m.playerA) }}</td>
