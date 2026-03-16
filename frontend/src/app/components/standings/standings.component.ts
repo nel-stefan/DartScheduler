@@ -25,7 +25,7 @@ import { PlayerStats, DutyStats } from '../../models';
     table { width: 100%; }
     .rank-col { width: 40px; font-weight: 600; color: #616161; }
     .pts-col  { font-weight: 600; color: #2e7d32; }
-    .highlight-row td { background: #f9fbe7; }
+
 
     .print-only { display: none; }
 
@@ -48,7 +48,7 @@ import { PlayerStats, DutyStats } from '../../models';
       @page { margin: 10mm; }
       .screen-only { display: none !important; }
       .print-only  { display: block !important; }
-      .print-highlight td { background: #f9fbe7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
     }
   `],
   template: `
@@ -130,8 +130,7 @@ import { PlayerStats, DutyStats } from '../../models';
                 </ng-container>
 
                 <tr mat-header-row *matHeaderRowDef="matchCols"></tr>
-                <tr mat-row *matRowDef="let row; columns: matchCols;"
-                    [class.highlight-row]="row.wins === cls.topWins && row.wins > 0"></tr>
+                <tr mat-row *matRowDef="let row; columns: matchCols;"></tr>
               </table>
 
               <p *ngIf="cls.stats.length === 0" style="color:#9e9e9e;text-align:center;padding:24px 0">
@@ -205,8 +204,7 @@ import { PlayerStats, DutyStats } from '../../models';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let s of cls.stats; let i = index"
-                  [class.print-highlight]="s.wins === cls.topWins && s.wins > 0">
+              <tr *ngFor="let s of cls.stats; let i = index">
                 <td>{{ i + 1 }}</td>
                 <td>{{ s.player.nr }}</td>
                 <td><strong>{{ s.player.name }}</strong></td>
@@ -256,7 +254,7 @@ export class StandingsComponent implements OnInit {
   private seasonService = inject(SeasonService);
   private destroyRef    = inject(DestroyRef);
 
-  classes:   { label: string; stats: PlayerStats[]; topWins: number }[] = [];
+  classes:   { label: string; stats: PlayerStats[] }[] = [];
   dutyStats: DutyStats[] = [];
 
   matchCols = ['rank', 'nr', 'name', 'played', 'wins', 'losses', 'pf', 'pa', '180s', 'hf'];
@@ -279,20 +277,20 @@ export class StandingsComponent implements OnInit {
     });
   }
 
-  private buildClasses(allStats: PlayerStats[]): { label: string; stats: PlayerStats[]; topWins: number }[] {
+  private buildClasses(allStats: PlayerStats[]): { label: string; stats: PlayerStats[] }[] {
     const classValues = [...new Set(allStats.map(s => s.player.class || ''))].sort();
     if (classValues.every(c => c === '')) {
-      return [{ label: 'Alle spelers', stats: this.sortedStats(allStats), topWins: this.maxWins(allStats) }];
+      return [{ label: 'Alle spelers', stats: this.sortedStats(allStats) }];
     }
     const result = classValues
       .filter(c => c !== '')
       .map(c => {
         const filtered = allStats.filter(s => (s.player.class || '') === c);
-        return { label: `Klasse ${c}`, stats: this.sortedStats(filtered), topWins: this.maxWins(filtered) };
+        return { label: `Klasse ${c}`, stats: this.sortedStats(filtered) };
       });
     const noClass = allStats.filter(s => !s.player.class);
     if (noClass.length > 0) {
-      result.push({ label: 'Overig', stats: this.sortedStats(noClass), topWins: this.maxWins(noClass) });
+      result.push({ label: 'Overig', stats: this.sortedStats(noClass) });
     }
     return result;
   }
@@ -306,9 +304,6 @@ export class StandingsComponent implements OnInit {
     });
   }
 
-  private maxWins(stats: PlayerStats[]): number {
-    return stats.reduce((m, s) => Math.max(m, s.wins), 0);
-  }
 
   print(): void {
     window.print();

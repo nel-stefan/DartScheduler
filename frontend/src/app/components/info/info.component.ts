@@ -60,13 +60,9 @@ interface MatchRow {
 
     table { width: 100%; }
 
-    .buddy-pair-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-    .buddy-names { min-width: 240px; font-size: 13px; }
-    .buddy-name-a { font-weight: 600; }
-    .buddy-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .buddy-chip-row { display: flex; flex-wrap: wrap; gap: 4px; }
     .evening-chip { display: inline-block; background: #e3f2fd; color: #0277bd; border-radius: 12px;
-                    padding: 2px 10px; font-size: 12px; font-weight: 500; }
-    .no-shared { color: #9e9e9e; font-size: 13px; font-style: italic; }
+                    padding: 2px 8px; font-size: 11px; font-weight: 500; }
 
     .legend { display: flex; gap: 16px; font-size: 12px; color: #616161; margin-bottom: 12px; align-items: center; }
     .legend-item { display: flex; align-items: center; gap: 4px; }
@@ -169,6 +165,21 @@ interface MatchRow {
                     </td>
                   </ng-container>
 
+                  <ng-container matColumnDef="buddy">
+                    <th mat-header-cell *matHeaderCellDef>Koppel</th>
+                    <td mat-cell *matCellDef="let row">
+                      <ng-container *ngIf="getBuddy(row.player.id) as pair; else noBuddy">
+                        <span style="font-size:13px">
+                          {{ pair.partnerNr }} {{ pair.partnerName }}
+                        </span>
+                        <div class="buddy-chip-row" style="margin-top:2px" *ngIf="pair.eveningNrs.length > 0">
+                          <span class="evening-chip" *ngFor="let nr of pair.eveningNrs">Av.{{ nr }}</span>
+                        </div>
+                      </ng-container>
+                      <ng-template #noBuddy><span style="color:#bdbdbd;font-size:12px">—</span></ng-template>
+                    </td>
+                  </ng-container>
+
                   <tr mat-header-row *matHeaderRowDef="summaryCols"></tr>
                   <tr mat-row *matRowDef="let row; columns: summaryCols;"></tr>
                 </table>
@@ -239,32 +250,7 @@ interface MatchRow {
           </div>
         </mat-tab>
 
-        <!-- Tab 4: Koppels -->
-        <mat-tab label="Koppels">
-          <div style="padding-top:16px">
-            <mat-card *ngIf="info.buddyPairs.length > 0">
-              <mat-card-header><mat-card-title>Koppels &amp; gedeelde avonden</mat-card-title></mat-card-header>
-              <mat-card-content>
-                <div class="buddy-pair-row" *ngFor="let pair of info.buddyPairs">
-                  <div class="buddy-names">
-                    <span class="buddy-name-a">{{ pair.playerANr }} {{ pair.playerAName }}</span>
-                    <span style="color:#9e9e9e;margin:0 6px">↔</span>
-                    <span>{{ pair.playerBNr }} {{ pair.playerBName }}</span>
-                  </div>
-                  <div class="buddy-chip-row" *ngIf="pair.eveningNrs.length > 0">
-                    <span class="evening-chip" *ngFor="let nr of pair.eveningNrs">Av.{{ nr }}</span>
-                  </div>
-                  <span class="no-shared" *ngIf="pair.eveningNrs.length === 0">Geen gedeelde avonden</span>
-                </div>
-              </mat-card-content>
-            </mat-card>
-            <p *ngIf="info.buddyPairs.length === 0" style="color:#9e9e9e;padding-top:8px;font-size:13px">
-              Geen koppels geconfigureerd voor dit seizoen.
-            </p>
-          </div>
-        </mat-tab>
-
-        <!-- Tab 5: Wedstrijdoverzicht per speler -->
+        <!-- Tab 4: Wedstrijdoverzicht per speler -->
         <mat-tab label="Wedstrijden">
           <div style="padding-top:16px">
             <mat-form-field style="min-width:280px;margin-bottom:16px" subscriptSizing="dynamic">
@@ -344,7 +330,7 @@ export class InfoComponent implements OnInit {
   statRows:   PlayerStats[]     = [];
   selectedPlayerId              = '';
 
-  summaryCols = ['nr', 'name', 'eveningCount', 'totalMatches', 'consecutive'];
+  summaryCols = ['nr', 'name', 'eveningCount', 'totalMatches', 'consecutive', 'buddy'];
   statCols    = ['nr', 'name', 'minTurns', 'avgTurns', 'avgScore', '180s', 'hf'];
   matchCols   = ['evening', 'date', 'opponent', 'score', 'result'];
 
@@ -433,6 +419,18 @@ export class InfoComponent implements OnInit {
       return { player, cells, totalMatches, eveningCount };
     }).filter(row => row.totalMatches > 0)
       .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999));
+  }
+
+  getBuddy(playerId: string): { partnerNr: string; partnerName: string; eveningNrs: number[] } | null {
+    if (!this.info) return null;
+    const pair = this.info.buddyPairs.find(p => p.playerAId === playerId || p.playerBId === playerId);
+    if (!pair) return null;
+    const isA = pair.playerAId === playerId;
+    return {
+      partnerNr:   isA ? pair.playerBNr   : pair.playerANr,
+      partnerName: isA ? pair.playerBName : pair.playerAName,
+      eveningNrs:  pair.eveningNrs,
+    };
   }
 
   getStreaks(row: PlayerRow): number[][] {
