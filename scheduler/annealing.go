@@ -10,11 +10,14 @@
 package scheduler
 
 import (
+	"log"
 	"math"
 	"math/rand"
 
 	"DartScheduler/domain"
 )
+
+const logInterval = 100_000
 
 const (
 	t0    = 10.0
@@ -50,6 +53,10 @@ func anneal(
 	T := t0
 
 	for step := 0; step < steps; step++ {
+		if step%logInterval == 0 {
+			log.Printf("[anneal] step=%d/%d T=%.4f currentEnergy=%.1f bestEnergy=%.1f",
+				step, steps, T, currentEnergy, bestEnergy)
+		}
 		var i, j int
 
 		if rng.Float64() < targetedFraction {
@@ -86,6 +93,7 @@ func anneal(
 		}
 		T *= alpha
 	}
+	log.Printf("[anneal] done: finalBestEnergy=%.1f", bestEnergy)
 	return best
 }
 

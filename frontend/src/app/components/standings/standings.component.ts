@@ -26,12 +26,42 @@ import { PlayerStats, DutyStats } from '../../models';
     .rank-col { width: 40px; font-weight: 600; color: #616161; }
     .pts-col  { font-weight: 600; color: #2e7d32; }
     .highlight-row td { background: #f9fbe7; }
+
+    .print-only { display: none; }
+
+    .print-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+    }
+    .print-table th, .print-table td {
+      border: 1px solid #ccc;
+      padding: 2px 6px;
+      text-align: left;
+      line-height: 1.3;
+    }
+    .print-table th { background: #f0f0f0; font-weight: 600; }
+    .print-table td.center { text-align: center; }
+    .print-section-title { font-size: 11pt; font-weight: 600; margin: 8px 0 3px 0; }
+
+    @media print {
+      @page { margin: 10mm; }
+      .screen-only { display: none !important; }
+      .print-only  { display: block !important; }
+      .print-highlight td { background: #f9fbe7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
   `],
   template: `
     <div style="padding:24px">
-      <h2 style="margin:0 0 20px 0">Klassement</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 style="margin:0">Klassement</h2>
+        <button mat-stroked-button (click)="print()" class="screen-only">
+          <mat-icon>print</mat-icon> Afdrukken
+        </button>
+      </div>
 
-      <!-- Class standings tabs -->
+      <!-- Screen: tabs -->
+      <div class="screen-only">
       <mat-tab-group animationDuration="150ms" color="primary">
 
         <mat-tab *ngFor="let cls of classes" [label]="cls.label">
@@ -85,6 +115,20 @@ import { PlayerStats, DutyStats } from '../../models';
                   <td mat-cell *matCellDef="let s" style="text-align:center">{{ s.pointsAgainst }}</td>
                 </ng-container>
 
+                <ng-container matColumnDef="180s">
+                  <th mat-header-cell *matHeaderCellDef style="width:52px;text-align:center" title="Aantal 180's">180</th>
+                  <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600;color:#7b1fa2">
+                    {{ s.oneEighties || '—' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="hf">
+                  <th mat-header-cell *matHeaderCellDef style="width:64px;text-align:center" title="Hoogste finish">H.Finish</th>
+                  <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600;color:#0277bd">
+                    {{ s.highestFinish || '—' }}
+                  </td>
+                </ng-container>
+
                 <tr mat-header-row *matHeaderRowDef="matchCols"></tr>
                 <tr mat-row *matRowDef="let row; columns: matchCols;"
                     [class.highlight-row]="row.wins === cls.topWins && row.wins > 0"></tr>
@@ -121,11 +165,6 @@ import { PlayerStats, DutyStats } from '../../models';
                   <td mat-cell *matCellDef="let s"><strong>{{ s.player.name }}</strong></td>
                 </ng-container>
 
-                <ng-container matColumnDef="class">
-                  <th mat-header-cell *matHeaderCellDef style="width:80px">Klasse</th>
-                  <td mat-cell *matCellDef="let s">{{ s.player.class || '—' }}</td>
-                </ng-container>
-
                 <ng-container matColumnDef="count">
                   <th mat-header-cell *matHeaderCellDef style="width:80px;text-align:center">Keer</th>
                   <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600">{{ s.count }}</td>
@@ -143,6 +182,72 @@ import { PlayerStats, DutyStats } from '../../models';
         </mat-tab>
 
       </mat-tab-group>
+      </div><!-- /screen-only -->
+
+      <!-- Print: flat sections -->
+      <div class="print-only">
+        <!-- Page 1: all class standings -->
+        <div *ngFor="let cls of classes">
+          <h3 class="print-section-title">{{ cls.label }}</h3>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th style="width:32px">#</th>
+                <th style="width:40px">Nr</th>
+                <th>Naam</th>
+                <th class="center" style="width:72px">Gespeeld</th>
+                <th class="center" style="width:64px">Gewonnen</th>
+                <th class="center" style="width:64px">Verloren</th>
+                <th class="center" style="width:60px">Legs voor</th>
+                <th class="center" style="width:60px">Legs tegen</th>
+                <th class="center" style="width:44px">180</th>
+                <th class="center" style="width:56px">H.Finish</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of cls.stats; let i = index"
+                  [class.print-highlight]="s.wins === cls.topWins && s.wins > 0">
+                <td>{{ i + 1 }}</td>
+                <td>{{ s.player.nr }}</td>
+                <td><strong>{{ s.player.name }}</strong></td>
+                <td class="center">{{ s.played }}</td>
+                <td class="center" style="font-weight:600">{{ s.wins }}</td>
+                <td class="center">{{ s.losses }}</td>
+                <td class="center">{{ s.pointsFor }}</td>
+                <td class="center">{{ s.pointsAgainst }}</td>
+                <td class="center" style="font-weight:600">{{ s.oneEighties || '—' }}</td>
+                <td class="center" style="font-weight:600">{{ s.highestFinish || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Page 2: duty stats -->
+        <div style="page-break-before:always"></div>
+        <h3 class="print-section-title">Schrijver / Teller</h3>
+        <p style="font-size:10pt;color:#616161;margin:0 0 8px 0">
+          Totaal aantal keer als schrijver of teller ingezet (gecombineerd).
+        </p>
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th style="width:32px">#</th>
+              <th style="width:40px">Nr</th>
+              <th>Naam</th>
+              <th class="center" style="width:56px">Keer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of dutyStats; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td>{{ s.player.nr }}</td>
+              <td><strong>{{ s.player.name }}</strong></td>
+              <td class="center" style="font-weight:600">{{ s.count }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div><!-- /print-only -->
+
     </div>
   `,
 })
@@ -154,8 +259,8 @@ export class StandingsComponent implements OnInit {
   classes:   { label: string; stats: PlayerStats[]; topWins: number }[] = [];
   dutyStats: DutyStats[] = [];
 
-  matchCols = ['rank', 'nr', 'name', 'played', 'wins', 'losses', 'pf', 'pa'];
-  dutyCols  = ['rank', 'nr', 'name', 'class', 'count'];
+  matchCols = ['rank', 'nr', 'name', 'played', 'wins', 'losses', 'pf', 'pa', '180s', 'hf'];
+  dutyCols  = ['rank', 'nr', 'name', 'count'];
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -203,5 +308,9 @@ export class StandingsComponent implements OnInit {
 
   private maxWins(stats: PlayerStats[]): number {
     return stats.reduce((m, s) => Math.max(m, s.wins), 0);
+  }
+
+  print(): void {
+    window.print();
   }
 }

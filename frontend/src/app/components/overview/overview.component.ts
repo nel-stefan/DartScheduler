@@ -2,7 +2,7 @@ import { Component, inject, OnInit, Inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, distinctUntilChanged } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -218,47 +218,6 @@ export class ImportSeasonDialogComponent {
 }
 
 // ---------------------------------------------------------------------------
-// Add-inhaalavond-dialog
-// ---------------------------------------------------------------------------
-
-@Component({
-  selector: 'app-add-inhaal-dialog',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-            MatFormFieldModule, MatInputModule],
-  template: `
-    <h2 mat-dialog-title>Inhaalavond toevoegen</h2>
-    <mat-dialog-content>
-      <form [formGroup]="form" style="display:flex;flex-direction:column;gap:12px;min-width:300px;padding-top:8px">
-        <mat-form-field>
-          <mat-label>Datum (JJJJ-MM-DD)</mat-label>
-          <input matInput formControlName="date" placeholder="2026-03-22">
-        </mat-form-field>
-      </form>
-      <p style="color:#757575;font-size:12px;margin-top:8px">
-        Alle ongespeelde wedstrijden van avonden vóór deze datum worden naar deze inhaalavond verplaatst.
-      </p>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Annuleren</button>
-      <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="submit()">Toevoegen</button>
-    </mat-dialog-actions>
-  `,
-})
-export class AddInhaalAvondDialogComponent {
-  private dialogRef = inject(MatDialogRef<AddInhaalAvondDialogComponent>);
-  fb = inject(FormBuilder);
-
-  form = this.fb.group({
-    date: ['', [Validators.required, Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
-  });
-
-  submit(): void {
-    if (this.form.valid) this.dialogRef.close(this.form.value.date as string);
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Score-dialog (leg-entry for best of 3)
 // ---------------------------------------------------------------------------
 
@@ -339,17 +298,29 @@ export interface ScoreDialogData {
             <input matInput type="number" formControlName="leg3Turns" min="1" placeholder="—">
           </mat-form-field>
         </div>
+        <!-- 180s and highest finish -->
+        <mat-divider style="margin:10px 0 8px"></mat-divider>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>180's {{ data.nameA }}</mat-label>
+            <input matInput type="number" formControlName="playerA180s" min="0" placeholder="0">
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>180's {{ data.nameB }}</mat-label>
+            <input matInput type="number" formControlName="playerB180s" min="0" placeholder="0">
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Hoogste finish {{ data.nameA }}</mat-label>
+            <input matInput type="number" formControlName="playerAHighestFinish" min="0" placeholder="0">
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Hoogste finish {{ data.nameB }}</mat-label>
+            <input matInput type="number" formControlName="playerBHighestFinish" min="0" placeholder="0">
+          </mat-form-field>
+        </div>
         <!-- Administrative fields -->
         <mat-divider style="margin:10px 0 8px"></mat-divider>
         <div class="admin-row">
-          <mat-form-field style="flex:1;min-width:130px" subscriptSizing="dynamic">
-            <mat-label>Afgemeld door</mat-label>
-            <mat-select formControlName="reportedBy">
-              <mat-option value="">—</mat-option>
-              <mat-option [value]="data.nameA">{{ data.nameA }}</mat-option>
-              <mat-option [value]="data.nameB">{{ data.nameB }}</mat-option>
-            </mat-select>
-          </mat-form-field>
           <mat-form-field style="flex:1;min-width:130px" subscriptSizing="dynamic">
             <mat-label>Schrijver</mat-label>
             <mat-select formControlName="secretaryNr">
@@ -386,14 +357,17 @@ export class ScoreDialogComponent {
     leg2Turns:  [null as number | null],
     leg3Winner: [''],
     leg3Turns:  [null as number | null],
-    reportedBy:  [''],
+    playerA180s:          [this.data.match.playerA180s || 0],
+    playerB180s:          [this.data.match.playerB180s || 0],
+    playerAHighestFinish: [this.data.match.playerAHighestFinish || 0],
+    playerBHighestFinish: [this.data.match.playerBHighestFinish || 0],
     secretaryNr: [''],
     counterNr:   [''],
   });
 
   isValid(): boolean {
     const v = this.form.value;
-    return !!(v.leg1Winner && v.leg2Winner && v.leg3Winner) || !!v.reportedBy;
+    return !!(v.leg1Winner && v.leg2Winner && v.leg3Winner);
   }
 
   submit(): void {
@@ -406,11 +380,109 @@ export class ScoreDialogComponent {
       leg2Turns:      v.leg2Turns ?? 0,
       leg3Winner:     v.leg3Winner ?? '',
       leg3Turns:      v.leg3Turns ?? 0,
-      reportedBy:     v.reportedBy ?? '',
+      playerA180s:          v.playerA180s ?? 0,
+      playerB180s:          v.playerB180s ?? 0,
+      playerAHighestFinish: v.playerAHighestFinish ?? 0,
+      playerBHighestFinish: v.playerBHighestFinish ?? 0,
+      reportedBy:     '',
       rescheduleDate: '',
       secretaryNr:    v.secretaryNr ?? '',
       counterNr:      v.counterNr ?? '',
     });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// AbsentDialog — report one player absent for an evening
+// ---------------------------------------------------------------------------
+
+interface AbsentDialogData { evening: Evening; players: Player[]; }
+
+@Component({
+  selector: 'app-absent-dialog',
+  standalone: true,
+  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule,
+            MatSelectModule, MatInputModule, MatIconModule],
+  template: `
+    <h2 mat-dialog-title>Speler afmelden — avond {{ data.evening.number }}</h2>
+    <mat-dialog-content style="min-width:420px;padding-top:8px">
+
+      <mat-form-field style="width:100%">
+        <mat-label>Afwezige speler</mat-label>
+        <mat-select [(ngModel)]="selectedPlayerId" (ngModelChange)="onPlayerChange()">
+          <mat-option *ngFor="let p of selectablePlayers" [value]="p.id">
+            {{ p.nr }} — {{ p.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field style="width:100%;margin-top:4px">
+        <mat-label>Afgemeld door</mat-label>
+        <input matInput [(ngModel)]="reportedBy" placeholder="naam of nr">
+      </mat-form-field>
+
+      <div *ngIf="selectedPlayerId" style="margin-top:12px">
+        <div style="font-size:13px;font-weight:500;margin-bottom:6px;color:#333">
+          Wedstrijden die als afgemeld worden gemarkeerd:
+        </div>
+        <div *ngIf="affectedMatches.length === 0" style="color:#9e9e9e;font-size:13px">
+          Geen openstaande wedstrijden gevonden.
+        </div>
+        <div *ngFor="let m of affectedMatches"
+             style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:#fff3e0;border-radius:4px;margin-bottom:4px;font-size:13px">
+          <mat-icon style="font-size:16px;width:16px;height:16px;color:#e65100">warning</mat-icon>
+          <strong>{{ playerLabel(m.playerA) }}</strong>
+          <span style="color:#999">vs</span>
+          <strong>{{ playerLabel(m.playerB) }}</strong>
+        </div>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Annuleren</button>
+      <button mat-raised-button color="warn"
+              [disabled]="!selectedPlayerId || affectedMatches.length === 0"
+              (click)="confirm()">
+        <mat-icon>person_off</mat-icon> Afmelden
+      </button>
+    </mat-dialog-actions>
+  `,
+})
+export class AbsentDialogComponent {
+  data      = inject<AbsentDialogData>(MAT_DIALOG_DATA);
+  dialogRef = inject(MatDialogRef<AbsentDialogComponent>);
+
+  selectedPlayerId = '';
+  reportedBy = '';
+
+  get selectablePlayers(): Player[] {
+    const ids = new Set<string>();
+    for (const m of this.data.evening.matches ?? []) {
+      if (!m.played) { ids.add(m.playerA); ids.add(m.playerB); }
+    }
+    return this.data.players
+      .filter(p => ids.has(p.id))
+      .sort((a, b) => parseInt(a.nr || '0') - parseInt(b.nr || '0'));
+  }
+
+  get affectedMatches(): Match[] {
+    if (!this.selectedPlayerId) return [];
+    return (this.data.evening.matches ?? []).filter(
+      m => !m.played && (m.playerA === this.selectedPlayerId || m.playerB === this.selectedPlayerId)
+    );
+  }
+
+  playerLabel(id: string): string {
+    const p = this.data.players.find(p => p.id === id);
+    return p ? `${p.nr} ${p.name}` : id.slice(0, 6);
+  }
+
+  onPlayerChange(): void {
+    const p = this.data.players.find(p => p.id === this.selectedPlayerId);
+    if (p) this.reportedBy = p.nr ? `${p.nr} ${p.name}` : p.name;
+  }
+
+  confirm(): void {
+    this.dialogRef.close({ playerId: this.selectedPlayerId, reportedBy: this.reportedBy });
   }
 }
 
@@ -427,7 +499,7 @@ export class ScoreDialogComponent {
     MatSnackBarModule, MatDialogModule, MatChipsModule, MatIconModule,
     MatTooltipModule, MatSelectModule, MatFormFieldModule, MatInputModule,
     ReactiveFormsModule,
-    AddInhaalAvondDialogComponent,
+    AbsentDialogComponent,
   ],
   styles: [`
     .schedule-header {
@@ -456,6 +528,32 @@ export class ScoreDialogComponent {
     }
     .empty-state mat-icon { font-size: 64px; width: 64px; height: 64px; color: #bdbdbd; }
     .card-header-row { display: flex; align-items: flex-start; justify-content: space-between; }
+
+    .print-only { display: none; }
+    .print-schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #bbb;
+      font-size: 8pt;
+      table-layout: fixed;
+    }
+    .print-schedule-table th, .print-schedule-table td {
+      border: 1px solid #bbb;
+      padding: 2px 4px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .print-schedule-table th { background: #f0f0f0; font-weight: 600; }
+    .print-schedule-table td.row-nr { width: 24px; color: #666; font-size: 7pt; }
+    .print-schedule-title { font-size: 11pt; font-weight: 600; margin: 0 0 4px 0; }
+
+    @media print {
+      @page { size: A4 landscape; margin: 8mm; }
+      .schedule-header { display: none !important; }
+      mat-tab-group  { display: none !important; }
+      .print-only    { display: block !important; }
+    }
   `],
   template: `
     <div class="schedule-header">
@@ -467,8 +565,9 @@ export class ScoreDialogComponent {
       <button mat-stroked-button (click)="openImportSeason()">
         <mat-icon>history</mat-icon> Oud seizoen importeren
       </button>
-      <button mat-stroked-button color="accent" *ngIf="schedule" (click)="openAddInhaalAvond()">
-        <mat-icon>replay</mat-icon> Inhaalavond toevoegen
+
+      <button mat-stroked-button *ngIf="schedule" (click)="printSchedule()">
+        <mat-icon>print</mat-icon> Afdrukken
       </button>
       <button mat-icon-button color="warn" *ngIf="schedule" (click)="deleteSchedule()" matTooltip="Seizoen verwijderen">
         <mat-icon>delete</mat-icon>
@@ -518,9 +617,12 @@ export class ScoreDialogComponent {
                   Vrije avond voor uitgestelde wedstrijden
                 </mat-card-subtitle>
               </div>
-              <div style="display:flex;gap:4px">
-                <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel"
-                        *ngIf="!ev.isInhaalAvond">
+              <div style="display:flex;gap:4px;align-items:center">
+                <button mat-stroked-button (click)="openAbsentDialog(ev)" matTooltip="Speler afmelden"
+                        *ngIf="(ev.matches?.length ?? 0) > 0">
+                  <mat-icon>person_off</mat-icon> Afmelden
+                </button>
+                <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel">
                   <mat-icon>file_download</mat-icon>
                 </button>
                 <button mat-icon-button color="warn" (click)="deleteEvening(ev)" matTooltip="Avond verwijderen"
@@ -581,6 +683,63 @@ export class ScoreDialogComponent {
         </mat-card>
       </mat-tab>
     </mat-tab-group>
+
+    <!-- Print-only schedule matrix -->
+    <div class="print-only" *ngIf="schedule && printData">
+      <p class="print-schedule-title">{{ schedule.competitionName }} — {{ schedule.season }}</p>
+
+      <!-- Page 1: first half of evenings -->
+      <table class="print-schedule-table">
+        <thead>
+          <tr>
+            <th class="row-nr">#</th>
+            <th *ngFor="let ev of printData.half1">
+              {{ ev.number }}<br><span style="font-weight:400">{{ ev.date | date:'d MMM' }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of printData.rows1; let i = index">
+            <td class="row-nr">{{ i + 1 }}</td>
+            <ng-container *ngFor="let col of printData.half1; let ci = index">
+              <td *ngIf="col.isCatchUp && i === 0"
+                  [attr.rowspan]="printData.rowCount"
+                  style="writing-mode:vertical-lr;text-align:center;vertical-align:middle;font-weight:600;letter-spacing:3px;color:#7b1fa2;font-size:7pt">
+                INHAALAVOND
+              </td>
+              <td *ngIf="!col.isCatchUp">{{ row[ci] }}</td>
+            </ng-container>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Page 2: second half of evenings -->
+      <div style="page-break-before:always"></div>
+      <p class="print-schedule-title">{{ schedule.competitionName }} — {{ schedule.season }}</p>
+      <table class="print-schedule-table">
+        <thead>
+          <tr>
+            <th class="row-nr">#</th>
+            <th *ngFor="let ev of printData.half2">
+              {{ ev.number }}<br><span style="font-weight:400">{{ ev.date | date:'d MMM' }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of printData.rows2; let i = index">
+            <td class="row-nr">{{ i + 1 }}</td>
+            <ng-container *ngFor="let col of printData.half2; let ci = index">
+              <td *ngIf="col.isCatchUp && i === 0"
+                  [attr.rowspan]="printData.rowCount"
+                  style="writing-mode:vertical-lr;text-align:center;vertical-align:middle;font-weight:600;letter-spacing:3px;color:#7b1fa2;font-size:7pt">
+                INHAALAVOND
+              </td>
+              <td *ngIf="!col.isCatchUp">{{ row[ci] }}</td>
+            </ng-container>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   `,
 })
 export class OverviewComponent implements OnInit {
@@ -612,7 +771,7 @@ export class OverviewComponent implements OnInit {
     this.scheduleService.getById(id).subscribe({
       next: (s) => {
         this.schedule = s;
-        this.activeTab = 0;
+        this.activeTab = this.firstUpcomingTab(s.evenings);
         console.log('[overview] schedule loaded', s.id, `evenings: ${s.evenings.length}`);
         s.evenings.forEach(ev => {
           if (ev.isInhaalAvond) {
@@ -622,6 +781,13 @@ export class OverviewComponent implements OnInit {
       },
       error: () => {},
     });
+  }
+
+  private firstUpcomingTab(evenings: Evening[]): number {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const idx = evenings.findIndex(ev => new Date(ev.date) >= today);
+    return idx >= 0 ? idx : evenings.length - 1;
   }
 
   playerName(id: string): string {
@@ -657,6 +823,8 @@ export class OverviewComponent implements OnInit {
       leg1Winner: string; leg1Turns: number;
       leg2Winner: string; leg2Turns: number;
       leg3Winner: string; leg3Turns: number;
+      playerA180s: number; playerB180s: number;
+      playerAHighestFinish: number; playerBHighestFinish: number;
       reportedBy: string; rescheduleDate: string;
       secretaryNr: string; counterNr: string;
     } | undefined) => {
@@ -665,6 +833,59 @@ export class OverviewComponent implements OnInit {
       this.scoreService.submitResult(match.id, result).subscribe({
         next: () => {
           this.snackBar.open('Resultaat opgeslagen!', 'OK', { duration: 2000 });
+          if (this.schedule) this.loadScheduleById(this.schedule.id);
+        },
+        error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+      });
+    });
+  }
+
+  get printData(): {
+    half1: { number: number; date: string; isCatchUp: boolean }[]; rows1: string[][];
+    half2: { number: number; date: string; isCatchUp: boolean }[]; rows2: string[][];
+    rowCount: number;
+  } | null {
+    if (!this.schedule) return null;
+    const evs = this.schedule.evenings;
+    const mid = Math.ceil(evs.length / 2);
+    const maxRows = Math.max(0, ...evs
+      .filter(e => !e.isInhaalAvond)
+      .map(ev => ev.matches?.length ?? 0));
+    const buildRows = (cols: Evening[]): string[][] =>
+      Array.from({ length: maxRows }, (_, ri) =>
+        cols.map(ev => {
+          if (ev.isInhaalAvond) return '';
+          const m = ev.matches?.[ri];
+          if (!m) return '';
+          const a = this.playerNr(m.playerA);
+          const b = this.playerNr(m.playerB);
+          return a && b ? `${a} - ${b}` : '';
+        })
+      );
+    const toCol = (ev: Evening) => ({ number: ev.number, date: ev.date, isCatchUp: ev.isInhaalAvond });
+    return {
+      half1: evs.slice(0, mid).map(toCol),
+      rows1: buildRows(evs.slice(0, mid)),
+      half2: evs.slice(mid).map(toCol),
+      rows2: buildRows(evs.slice(mid)),
+      rowCount: maxRows,
+    };
+  }
+
+  printSchedule(): void {
+    window.print();
+  }
+
+  openAbsentDialog(ev: Evening): void {
+    const ref = this.dialog.open(AbsentDialogComponent, {
+      data: { evening: ev, players: this.players } as AbsentDialogData,
+      minWidth: '420px',
+    });
+    ref.afterClosed().subscribe((result: { playerId: string; reportedBy: string } | undefined) => {
+      if (!result) return;
+      this.scoreService.reportAbsent(ev.id, result.playerId, result.reportedBy).subscribe({
+        next: () => {
+          this.snackBar.open('Speler afgemeld', 'OK', { duration: 2000 });
           if (this.schedule) this.loadScheduleById(this.schedule.id);
         },
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
@@ -714,22 +935,6 @@ export class OverviewComponent implements OnInit {
     });
   }
 
-  openAddInhaalAvond(): void {
-    if (!this.schedule) return;
-    const scheduleId = this.schedule.id;
-    const ref = this.dialog.open(AddInhaalAvondDialogComponent);
-    ref.afterClosed().subscribe((date: string | undefined) => {
-      if (!date) return;
-      this.scheduleService.addInhaalAvond(scheduleId, date).subscribe({
-        next: (s) => {
-          this.schedule = s;
-          this.activeTab = s.evenings.length - 1;
-          this.snackBar.open('Inhaalavond toegevoegd!', 'OK', { duration: 2000 });
-        },
-        error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
-      });
-    });
-  }
 
   openImportSeason(): void {
     const ref = this.dialog.open(ImportSeasonDialogComponent);

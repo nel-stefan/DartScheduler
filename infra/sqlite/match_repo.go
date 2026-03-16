@@ -22,20 +22,24 @@ func (r *MatchRepo) Save(ctx context.Context, m domain.Match) error {
 			id, evening_id, player_a, player_b, score_a, score_b, played,
 			leg1_winner, leg1_turns, leg2_winner, leg2_turns,
 			leg3_winner, leg3_turns,
-			reported_by, reschedule_date, secretary_nr, counter_nr)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+			reported_by, reschedule_date, secretary_nr, counter_nr,
+			player_a_180s, player_b_180s, player_a_highest_finish, player_b_highest_finish)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			score_a=excluded.score_a, score_b=excluded.score_b, played=excluded.played,
 			leg1_winner=excluded.leg1_winner, leg1_turns=excluded.leg1_turns,
 			leg2_winner=excluded.leg2_winner, leg2_turns=excluded.leg2_turns,
 			leg3_winner=excluded.leg3_winner, leg3_turns=excluded.leg3_turns,
 			reported_by=excluded.reported_by, reschedule_date=excluded.reschedule_date,
-			secretary_nr=excluded.secretary_nr, counter_nr=excluded.counter_nr`,
+			secretary_nr=excluded.secretary_nr, counter_nr=excluded.counter_nr,
+			player_a_180s=excluded.player_a_180s, player_b_180s=excluded.player_b_180s,
+			player_a_highest_finish=excluded.player_a_highest_finish, player_b_highest_finish=excluded.player_b_highest_finish`,
 		m.ID.String(), m.EveningID.String(), m.PlayerA.String(), m.PlayerB.String(),
 		m.ScoreA, m.ScoreB, boolToInt(m.Played),
 		m.Leg1Winner, m.Leg1Turns, m.Leg2Winner, m.Leg2Turns,
 		m.Leg3Winner, m.Leg3Turns,
-		m.ReportedBy, m.RescheduleDate, m.SecretaryNr, m.CounterNr)
+		m.ReportedBy, m.RescheduleDate, m.SecretaryNr, m.CounterNr,
+		m.PlayerA180s, m.PlayerB180s, m.PlayerAHighestFinish, m.PlayerBHighestFinish)
 	return err
 }
 
@@ -51,15 +55,18 @@ func (r *MatchRepo) SaveBatch(ctx context.Context, matches []domain.Match) error
 			id, evening_id, player_a, player_b, score_a, score_b, played,
 			leg1_winner, leg1_turns, leg2_winner, leg2_turns,
 			leg3_winner, leg3_turns,
-			reported_by, reschedule_date, secretary_nr, counter_nr)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+			reported_by, reschedule_date, secretary_nr, counter_nr,
+			player_a_180s, player_b_180s, player_a_highest_finish, player_b_highest_finish)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			score_a=excluded.score_a, score_b=excluded.score_b, played=excluded.played,
 			leg1_winner=excluded.leg1_winner, leg1_turns=excluded.leg1_turns,
 			leg2_winner=excluded.leg2_winner, leg2_turns=excluded.leg2_turns,
 			leg3_winner=excluded.leg3_winner, leg3_turns=excluded.leg3_turns,
 			reported_by=excluded.reported_by, reschedule_date=excluded.reschedule_date,
-			secretary_nr=excluded.secretary_nr, counter_nr=excluded.counter_nr`)
+			secretary_nr=excluded.secretary_nr, counter_nr=excluded.counter_nr,
+			player_a_180s=excluded.player_a_180s, player_b_180s=excluded.player_b_180s,
+			player_a_highest_finish=excluded.player_a_highest_finish, player_b_highest_finish=excluded.player_b_highest_finish`)
 	if err != nil {
 		return err
 	}
@@ -71,7 +78,8 @@ func (r *MatchRepo) SaveBatch(ctx context.Context, matches []domain.Match) error
 			m.ScoreA, m.ScoreB, boolToInt(m.Played),
 			m.Leg1Winner, m.Leg1Turns, m.Leg2Winner, m.Leg2Turns,
 			m.Leg3Winner, m.Leg3Turns,
-			m.ReportedBy, m.RescheduleDate, m.SecretaryNr, m.CounterNr); err != nil {
+			m.ReportedBy, m.RescheduleDate, m.SecretaryNr, m.CounterNr,
+			m.PlayerA180s, m.PlayerB180s, m.PlayerAHighestFinish, m.PlayerBHighestFinish); err != nil {
 			return err
 		}
 	}
@@ -83,7 +91,8 @@ func (r *MatchRepo) FindByID(ctx context.Context, id domain.MatchID) (domain.Mat
 		`SELECT id, evening_id, player_a, player_b, score_a, score_b, played,
 			leg1_winner, leg1_turns, leg2_winner, leg2_turns,
 			leg3_winner, leg3_turns,
-			reported_by, reschedule_date, secretary_nr, counter_nr
+			reported_by, reschedule_date, secretary_nr, counter_nr,
+			player_a_180s, player_b_180s, player_a_highest_finish, player_b_highest_finish
 		FROM matches WHERE id=?`, id.String())
 	return scanMatch(row)
 }
@@ -93,7 +102,8 @@ func (r *MatchRepo) FindByEvening(ctx context.Context, eveningID domain.EveningI
 		`SELECT id, evening_id, player_a, player_b, score_a, score_b, played,
 			leg1_winner, leg1_turns, leg2_winner, leg2_turns,
 			leg3_winner, leg3_turns,
-			reported_by, reschedule_date, secretary_nr, counter_nr
+			reported_by, reschedule_date, secretary_nr, counter_nr,
+			player_a_180s, player_b_180s, player_a_highest_finish, player_b_highest_finish
 		FROM matches WHERE evening_id=?`, eveningID.String())
 	if err != nil {
 		return nil, err
@@ -107,7 +117,8 @@ func (r *MatchRepo) FindByPlayer(ctx context.Context, playerID domain.PlayerID) 
 		`SELECT id, evening_id, player_a, player_b, score_a, score_b, played,
 			leg1_winner, leg1_turns, leg2_winner, leg2_turns,
 			leg3_winner, leg3_turns,
-			reported_by, reschedule_date, secretary_nr, counter_nr
+			reported_by, reschedule_date, secretary_nr, counter_nr,
+			player_a_180s, player_b_180s, player_a_highest_finish, player_b_highest_finish
 		FROM matches WHERE player_a=? OR player_b=?`,
 		playerID.String(), playerID.String())
 	if err != nil {
@@ -122,7 +133,8 @@ func (r *MatchRepo) FindByPlayerAndSchedule(ctx context.Context, playerID domain
 		`SELECT m.id, m.evening_id, m.player_a, m.player_b, m.score_a, m.score_b, m.played,
             m.leg1_winner, m.leg1_turns, m.leg2_winner, m.leg2_turns,
             m.leg3_winner, m.leg3_turns,
-            m.reported_by, m.reschedule_date, m.secretary_nr, m.counter_nr
+            m.reported_by, m.reschedule_date, m.secretary_nr, m.counter_nr,
+            m.player_a_180s, m.player_b_180s, m.player_a_highest_finish, m.player_b_highest_finish
         FROM matches m
         JOIN evenings e ON m.evening_id = e.id
         WHERE (m.player_a=? OR m.player_b=?) AND e.schedule_id=?`,
@@ -139,7 +151,8 @@ func (r *MatchRepo) FindAllPlayed(ctx context.Context) ([]domain.Match, error) {
 		`SELECT id, evening_id, player_a, player_b, score_a, score_b, played,
             leg1_winner, leg1_turns, leg2_winner, leg2_turns,
             leg3_winner, leg3_turns,
-            reported_by, reschedule_date, secretary_nr, counter_nr
+            reported_by, reschedule_date, secretary_nr, counter_nr,
+            player_a_180s, player_b_180s, player_a_highest_finish, player_b_highest_finish
         FROM matches WHERE played=1`)
 	if err != nil {
 		return nil, err
@@ -156,7 +169,9 @@ func (r *MatchRepo) UpdateResult(ctx context.Context, m domain.Match) error {
 			leg2_winner=?, leg2_turns=?,
 			leg3_winner=?, leg3_turns=?,
 			reported_by=?, reschedule_date=?,
-			secretary_nr=?, counter_nr=?
+			secretary_nr=?, counter_nr=?,
+			player_a_180s=?, player_b_180s=?,
+			player_a_highest_finish=?, player_b_highest_finish=?
 		WHERE id=?`,
 		m.ScoreA, m.ScoreB, boolToInt(m.Played),
 		m.Leg1Winner, m.Leg1Turns,
@@ -164,6 +179,8 @@ func (r *MatchRepo) UpdateResult(ctx context.Context, m domain.Match) error {
 		m.Leg3Winner, m.Leg3Turns,
 		m.ReportedBy, m.RescheduleDate,
 		m.SecretaryNr, m.CounterNr,
+		m.PlayerA180s, m.PlayerB180s,
+		m.PlayerAHighestFinish, m.PlayerBHighestFinish,
 		m.ID.String())
 	if err != nil {
 		return err
@@ -179,11 +196,13 @@ func scanMatch(s scanner) (domain.Match, error) {
 	var m domain.Match
 	var idStr, eveningStr, paStr, pbStr string
 	var played int
+	var pA180s, pB180s, pAHighest, pBHighest int
 	if err := s.Scan(
 		&idStr, &eveningStr, &paStr, &pbStr, &m.ScoreA, &m.ScoreB, &played,
 		&m.Leg1Winner, &m.Leg1Turns, &m.Leg2Winner, &m.Leg2Turns,
 		&m.Leg3Winner, &m.Leg3Turns,
 		&m.ReportedBy, &m.RescheduleDate, &m.SecretaryNr, &m.CounterNr,
+		&pA180s, &pB180s, &pAHighest, &pBHighest,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return m, domain.ErrNotFound
@@ -204,6 +223,10 @@ func scanMatch(s scanner) (domain.Match, error) {
 		return m, fmt.Errorf("invalid player_b: %w", err)
 	}
 	m.Played = played != 0
+	m.PlayerA180s = pA180s
+	m.PlayerB180s = pB180s
+	m.PlayerAHighestFinish = pAHighest
+	m.PlayerBHighestFinish = pBHighest
 	return m, nil
 }
 
@@ -243,7 +266,8 @@ func (r *MatchRepo) FindCancelledBySchedule(ctx context.Context, scheduleID doma
 		`SELECT m.id, m.evening_id, m.player_a, m.player_b, m.score_a, m.score_b, m.played,
 			m.leg1_winner, m.leg1_turns, m.leg2_winner, m.leg2_turns,
 			m.leg3_winner, m.leg3_turns,
-			m.reported_by, m.reschedule_date, m.secretary_nr, m.counter_nr
+			m.reported_by, m.reschedule_date, m.secretary_nr, m.counter_nr,
+			m.player_a_180s, m.player_b_180s, m.player_a_highest_finish, m.player_b_highest_finish
 		FROM matches m
 		JOIN evenings e ON m.evening_id = e.id
 		WHERE e.schedule_id = ?

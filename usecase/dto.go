@@ -54,6 +54,10 @@ type SubmitScoreInput struct {
 	RescheduleDate string
 	SecretaryNr    string
 	CounterNr      string
+	PlayerA180s          int
+	PlayerB180s          int
+	PlayerAHighestFinish int
+	PlayerBHighestFinish int
 }
 
 // --- Stats ---
@@ -66,6 +70,11 @@ type PlayerStats struct {
 	Draws         int           `json:"draws"`
 	PointsFor     int           `json:"pointsFor"`
 	PointsAgainst int           `json:"pointsAgainst"`
+	OneEighties     int     `json:"oneEighties"`
+	HighestFinish   int     `json:"highestFinish"`
+	MinTurns        int     `json:"minTurns"`
+	AvgTurns        float64 `json:"avgTurns"`
+	AvgScorePerTurn float64 `json:"avgScorePerTurn"`
 }
 
 // DutyStats tracks how often a player has served as secretary or counter.

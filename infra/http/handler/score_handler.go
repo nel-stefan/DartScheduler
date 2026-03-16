@@ -30,6 +30,39 @@ type submitScoreRequest struct {
 	RescheduleDate string `json:"rescheduleDate"`
 	SecretaryNr    string `json:"secretaryNr"`
 	CounterNr      string `json:"counterNr"`
+	PlayerA180s          int `json:"playerA180s"`
+	PlayerB180s          int `json:"playerB180s"`
+	PlayerAHighestFinish int `json:"playerAHighestFinish"`
+	PlayerBHighestFinish int `json:"playerBHighestFinish"`
+}
+
+type reportAbsentRequest struct {
+	PlayerID   string `json:"playerId"`
+	ReportedBy string `json:"reportedBy"`
+}
+
+func (h *ScoreHandler) ReportAbsent(w http.ResponseWriter, r *http.Request) {
+	eveningIDStr := chi.URLParam(r, "id")
+	eveningID, err := uuid.Parse(eveningIDStr)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	var req reportAbsentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	playerID, err := uuid.Parse(req.PlayerID)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	if err := h.uc.ReportAbsent(r.Context(), domain.EveningID(eveningID), domain.PlayerID(playerID), req.ReportedBy); err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *ScoreHandler) Submit(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +91,10 @@ func (h *ScoreHandler) Submit(w http.ResponseWriter, r *http.Request) {
 		RescheduleDate: req.RescheduleDate,
 		SecretaryNr:    req.SecretaryNr,
 		CounterNr:      req.CounterNr,
+		PlayerA180s:          req.PlayerA180s,
+		PlayerB180s:          req.PlayerB180s,
+		PlayerAHighestFinish: req.PlayerAHighestFinish,
+		PlayerBHighestFinish: req.PlayerBHighestFinish,
 	}); err != nil {
 		httpErrorDomain(w, err)
 		return

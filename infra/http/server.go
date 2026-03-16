@@ -59,6 +59,7 @@ func NewRouter(
 		r.Delete("/schedules/{id}/evenings/{eveningId}", schedH.DeleteEvening)
 
 		r.Put("/matches/{id}/score", scoreH.Submit)
+		r.Post("/evenings/{id}/report-absent", scoreH.ReportAbsent)
 
 		r.Get("/stats", statsH.Get)
 		r.Get("/stats/duties", statsH.GetDuties)

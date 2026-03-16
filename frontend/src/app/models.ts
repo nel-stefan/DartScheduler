@@ -31,6 +31,10 @@ export interface Match {
   rescheduleDate: string;
   secretaryNr: string;
   counterNr: string;
+  playerA180s: number;
+  playerB180s: number;
+  playerAHighestFinish: number;
+  playerBHighestFinish: number;
 }
 
 export interface Evening {
@@ -65,6 +69,11 @@ export interface PlayerStats {
   draws: number;
   pointsFor: number;
   pointsAgainst: number;
+  oneEighties: number;
+  highestFinish: number;
+  minTurns: number;
+  avgTurns: number;
+  avgScorePerTurn: number;
 }
 
 export interface DutyStats {

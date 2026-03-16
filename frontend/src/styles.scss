@@ -30,3 +30,10 @@ html, body {
   background: #e8f5e9 !important;
   color: #2e7d32;
 }
+
+@media print {
+  .app-toolbar,
+  .toolbar-nav { display: none !important; }
+  .app-content { padding: 0 !important; margin: 0 !important; }
+  app-standings > div { padding: 0 !important; }
+}

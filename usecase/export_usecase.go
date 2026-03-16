@@ -86,7 +86,12 @@ func (uc *ExportUseCase) ExportEvening(ctx context.Context, exp EveningExporter,
 	if !found {
 		return domain.ErrNotFound
 	}
-	matches, err := uc.matches.FindByEvening(ctx, targetEvening.ID)
+	var matches []domain.Match
+	if targetEvening.IsCatchUpEvening {
+		matches, err = uc.matches.FindCancelledBySchedule(ctx, sched.ID)
+	} else {
+		matches, err = uc.matches.FindByEvening(ctx, targetEvening.ID)
+	}
 	if err != nil {
 		return err
 	}

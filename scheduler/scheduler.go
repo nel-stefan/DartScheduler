@@ -11,6 +11,7 @@ package scheduler
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -41,6 +42,9 @@ func Generate(in Input) (domain.Schedule, error) {
 		return domain.Schedule{}, fmt.Errorf("%w: numEvenings must be ≥ 1", domain.ErrInvalidInput)
 	}
 
+	log.Printf("[scheduler.Generate] players=%d numEvenings=%d buddyPairs=%d",
+		len(in.Players), in.NumEvenings, len(in.BuddyPairs))
+
 	ids := make([]domain.PlayerID, len(in.Players))
 	for i, p := range in.Players {
 		ids[i] = p.ID
@@ -57,13 +61,17 @@ func Generate(in Input) (domain.Schedule, error) {
 	if len(flatMatches) == 0 {
 		return domain.Schedule{}, fmt.Errorf("%w: no matches generated", domain.ErrInvalidInput)
 	}
+	log.Printf("[scheduler.Generate] round-robin done: rounds=%d totalMatches=%d", len(rounds), len(flatMatches))
 
 	// 2. Greedy initial assignment: distribute matches across evenings evenly.
 	assignment := greedyAssign(flatMatches, in.NumEvenings)
+	log.Printf("[scheduler.Generate] greedy assignment done: matchesPerEvening≈%d", len(flatMatches)/in.NumEvenings)
 
 	// 3. Simulated annealing optimisation.
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	log.Printf("[scheduler.Generate] starting annealing: steps=%d", steps)
 	assignment = anneal(flatMatches, assignment, in.NumEvenings, in.BuddyPairs, rng)
+	log.Printf("[scheduler.Generate] annealing done")
 
 	// 4. Build domain.Schedule from the optimised assignment.
 	schedID := uuid.New()
@@ -98,6 +106,8 @@ func Generate(in Input) (domain.Schedule, error) {
 		schedule.Evenings[ei].Matches = append(schedule.Evenings[ei].Matches, m)
 	}
 
+	log.Printf("[scheduler.Generate] done: scheduleID=%s evenings=%d totalMatches=%d",
+		schedule.ID, len(schedule.Evenings), len(flatMatches))
 	return schedule, nil
 }
 

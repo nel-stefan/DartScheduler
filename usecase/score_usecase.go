@@ -47,6 +47,10 @@ func (uc *ScoreUseCase) Submit(ctx context.Context, in SubmitScoreInput) error {
 	match.RescheduleDate = in.RescheduleDate
 	match.SecretaryNr = in.SecretaryNr
 	match.CounterNr = in.CounterNr
+	match.PlayerA180s = in.PlayerA180s
+	match.PlayerB180s = in.PlayerB180s
+	match.PlayerAHighestFinish = in.PlayerAHighestFinish
+	match.PlayerBHighestFinish = in.PlayerBHighestFinish
 	match.ScoreA = &scoreA
 	match.ScoreB = &scoreB
 	match.Played = scoreA+scoreB > 0
@@ -56,6 +60,28 @@ func (uc *ScoreUseCase) Submit(ctx context.Context, in SubmitScoreInput) error {
 		scoreA, scoreB, match.Played)
 
 	return uc.matches.UpdateResult(ctx, match)
+}
+
+// ReportAbsent marks all unplayed matches for playerID in the given evening as reported absent.
+func (uc *ScoreUseCase) ReportAbsent(ctx context.Context, eveningID domain.EveningID, playerID domain.PlayerID, reportedBy string) error {
+	matches, err := uc.matches.FindByEvening(ctx, eveningID)
+	if err != nil {
+		return err
+	}
+	for _, m := range matches {
+		if m.PlayerA != playerID && m.PlayerB != playerID {
+			continue
+		}
+		if m.Played {
+			continue // leave played matches untouched
+		}
+		m.ReportedBy = reportedBy
+		if err := uc.matches.UpdateResult(ctx, m); err != nil {
+			return err
+		}
+	}
+	log.Printf("[ReportAbsent] eveningID=%s playerID=%s reportedBy=%q", eveningID, playerID, reportedBy)
+	return nil
 }
 
 // GetDutyStats counts secretary+counter appearances per player from played matches.
@@ -120,6 +146,7 @@ func (uc *ScoreUseCase) GetStats(ctx context.Context, players []domain.Player, s
 		if err != nil {
 			return nil, err
 		}
+		var wonLegTurns []int
 		for _, m := range matches {
 			if !m.Played || m.ScoreA == nil || m.ScoreB == nil {
 				continue
@@ -145,6 +172,40 @@ func (uc *ScoreUseCase) GetStats(ctx context.Context, players []domain.Player, s
 			default:
 				st.Draws++
 			}
+			isA := m.PlayerA == p.ID
+			if isA {
+				st.OneEighties += m.PlayerA180s
+				if m.PlayerAHighestFinish > st.HighestFinish {
+					st.HighestFinish = m.PlayerAHighestFinish
+				}
+			} else {
+				st.OneEighties += m.PlayerB180s
+				if m.PlayerBHighestFinish > st.HighestFinish {
+					st.HighestFinish = m.PlayerBHighestFinish
+				}
+			}
+			pid := p.ID.String()
+			for _, leg := range []struct {
+				w string
+				t int
+			}{{m.Leg1Winner, m.Leg1Turns}, {m.Leg2Winner, m.Leg2Turns}, {m.Leg3Winner, m.Leg3Turns}} {
+				if leg.w == pid && leg.t > 0 {
+					wonLegTurns = append(wonLegTurns, leg.t)
+				}
+			}
+		}
+		if st, ok := statsMap[p.ID]; ok && len(wonLegTurns) > 0 {
+			minT := wonLegTurns[0]
+			sum := 0
+			for _, t := range wonLegTurns {
+				sum += t
+				if t < minT {
+					minT = t
+				}
+			}
+			st.MinTurns = minT
+			st.AvgTurns = float64(sum) / float64(len(wonLegTurns))
+			st.AvgScorePerTurn = 501.0 / st.AvgTurns
 		}
 	}
 

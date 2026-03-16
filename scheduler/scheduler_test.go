@@ -1,6 +1,7 @@
 package scheduler_test
 
 import (
+	"errors"
 	"math"
 	"testing"
 	"time"
@@ -17,6 +18,117 @@ func makePlayers(n int) []domain.Player {
 		players[i] = domain.Player{ID: uuid.New(), Name: "P" + string(rune('A'+i))}
 	}
 	return players
+}
+
+// ---------------------------------------------------------------------------
+// Input validation errors
+// ---------------------------------------------------------------------------
+
+func TestGenerateTooFewPlayersError(t *testing.T) {
+	_, err := scheduler.Generate(scheduler.Input{
+		Players:     makePlayers(1),
+		NumEvenings: 1,
+	})
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Errorf("want ErrInvalidInput for 1 player, got %v", err)
+	}
+}
+
+func TestGenerateZeroPlayersError(t *testing.T) {
+	_, err := scheduler.Generate(scheduler.Input{
+		Players:     makePlayers(0),
+		NumEvenings: 1,
+	})
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Errorf("want ErrInvalidInput for 0 players, got %v", err)
+	}
+}
+
+func TestGenerateZeroEveningsError(t *testing.T) {
+	_, err := scheduler.Generate(scheduler.Input{
+		Players:     makePlayers(4),
+		NumEvenings: 0,
+	})
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Errorf("want ErrInvalidInput for 0 evenings, got %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// EveningDates parameter
+// ---------------------------------------------------------------------------
+
+func TestEveningDatesUsed(t *testing.T) {
+	players := makePlayers(4)
+	dates := []time.Time{
+		time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2024, 1, 8, 0, 0, 0, 0, time.UTC),
+		time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
+	}
+	sched, err := scheduler.Generate(scheduler.Input{
+		Players:         players,
+		NumEvenings:     3,
+		CompetitionName: "Test",
+		EveningDates:    dates,
+	})
+	if err != nil {
+		t.Fatalf("Generate error: %v", err)
+	}
+	if len(sched.Evenings) != 3 {
+		t.Fatalf("want 3 evenings, got %d", len(sched.Evenings))
+	}
+	for i, ev := range sched.Evenings {
+		if !ev.Date.Equal(dates[i]) {
+			t.Errorf("evening %d: want date %v, got %v", i, dates[i], ev.Date)
+		}
+	}
+}
+
+func TestEveningNumbersAreSequential(t *testing.T) {
+	players := makePlayers(4)
+	sched, err := scheduler.Generate(scheduler.Input{
+		Players:         players,
+		NumEvenings:     3,
+		CompetitionName: "Test",
+		StartDate:       time.Now(),
+		IntervalDays:    7,
+	})
+	if err != nil {
+		t.Fatalf("Generate error: %v", err)
+	}
+	for i, ev := range sched.Evenings {
+		if ev.Number != i+1 {
+			t.Errorf("evening %d: want Number=%d, got %d", i, i+1, ev.Number)
+		}
+	}
+}
+
+func TestAllMatchesHaveValidEveningID(t *testing.T) {
+	players := makePlayers(6)
+	sched, err := scheduler.Generate(scheduler.Input{
+		Players:         players,
+		NumEvenings:     5,
+		CompetitionName: "Test",
+		StartDate:       time.Now(),
+		IntervalDays:    7,
+	})
+	if err != nil {
+		t.Fatalf("Generate error: %v", err)
+	}
+	eveningIDs := make(map[domain.EveningID]bool, len(sched.Evenings))
+	for _, ev := range sched.Evenings {
+		eveningIDs[ev.ID] = true
+	}
+	for _, ev := range sched.Evenings {
+		for _, m := range ev.Matches {
+			if !eveningIDs[m.EveningID] {
+				t.Errorf("match %s has EveningID %s not in schedule", m.ID, m.EveningID)
+			}
+			if m.EveningID != ev.ID {
+				t.Errorf("match stored in evening %s but EveningID=%s", ev.ID, m.EveningID)
+			}
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------

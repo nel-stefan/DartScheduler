@@ -8,7 +8,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { ScheduleService } from '../../services/schedule.service';
 import { SeasonService } from '../../services/season.service';
-import { PlayerInfoItem, EveningInfoItem, ScheduleInfo, BuddyPairItem } from '../../models';
+import { ScoreService } from '../../services/score.service';
+import { PlayerInfoItem, EveningInfoItem, ScheduleInfo, BuddyPairItem, PlayerStats } from '../../models';
 
 interface PlayerRow {
   player: PlayerInfoItem;
@@ -159,6 +160,61 @@ interface CellData {
           </mat-card-content>
         </mat-card>
 
+        <!-- Turn & special stats -->
+        <mat-card *ngIf="statRows.length > 0" style="margin-bottom:24px">
+          <mat-card-header><mat-card-title>Beurtstatistieken &amp; Records</mat-card-title></mat-card-header>
+          <mat-card-content>
+            <table mat-table [dataSource]="statRows" style="width:100%">
+
+              <ng-container matColumnDef="nr">
+                <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
+                <td mat-cell *matCellDef="let s">{{ s.player.nr }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>Naam</th>
+                <td mat-cell *matCellDef="let s"><strong>{{ s.player.name }}</strong></td>
+              </ng-container>
+
+              <ng-container matColumnDef="minTurns">
+                <th mat-header-cell *matHeaderCellDef style="width:90px;text-align:center" title="Minste beurten in een gewonnen leg">Min. beurten</th>
+                <td mat-cell *matCellDef="let s" style="text-align:center">{{ s.minTurns || '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="avgTurns">
+                <th mat-header-cell *matHeaderCellDef style="width:90px;text-align:center" title="Gemiddeld beurten per gewonnen leg">Gem. beurten</th>
+                <td mat-cell *matCellDef="let s" style="text-align:center">
+                  {{ s.avgTurns ? (s.avgTurns | number:'1.1-1') : '—' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="avgScore">
+                <th mat-header-cell *matHeaderCellDef style="width:100px;text-align:center" title="Gemiddelde score per beurt (≈ 501 / gem. beurten)">Gem. score/beurt</th>
+                <td mat-cell *matCellDef="let s" style="text-align:center">
+                  {{ s.avgScorePerTurn ? (s.avgScorePerTurn | number:'1.1-1') : '—' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="180s">
+                <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center">180's</th>
+                <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600;color:#7b1fa2">
+                  {{ s.oneEighties || '—' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="hf">
+                <th mat-header-cell *matHeaderCellDef style="width:90px;text-align:center">Hoogste finish</th>
+                <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600;color:#0277bd">
+                  {{ s.highestFinish || '—' }}
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="statCols"></tr>
+              <tr mat-row *matRowDef="let row; columns: statCols;"></tr>
+            </table>
+          </mat-card-content>
+        </mat-card>
+
         <!-- Buddy pairs -->
         <mat-card *ngIf="info.buddyPairs.length > 0">
           <mat-card-header><mat-card-title>Koppels & gedeelde avonden</mat-card-title></mat-card-header>
@@ -188,12 +244,15 @@ interface CellData {
 export class InfoComponent implements OnInit {
   private scheduleService = inject(ScheduleService);
   private seasonService   = inject(SeasonService);
+  private scoreService    = inject(ScoreService);
   private destroyRef      = inject(DestroyRef);
 
   info: ScheduleInfo | null = null;
   playerRows: PlayerRow[] = [];
+  statRows:   PlayerStats[] = [];
 
   summaryCols = ['nr', 'name', 'eveningCount', 'totalMatches', 'consecutive'];
+  statCols    = ['nr', 'name', 'minTurns', 'avgTurns', 'avgScore', '180s', 'hf'];
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -209,10 +268,15 @@ export class InfoComponent implements OnInit {
         this.info = info;
         this.playerRows = this.buildPlayerRows(info);
       },
-      error: () => {
-        this.info = null;
-        this.playerRows = [];
+      error: () => { this.info = null; this.playerRows = []; },
+    });
+    this.scoreService.getStats(scheduleId).subscribe({
+      next: (stats) => {
+        this.statRows = stats
+          .filter(s => s.played > 0)
+          .sort((a, b) => parseInt(a.player.nr || '0') - parseInt(b.player.nr || '0'));
       },
+      error: () => { this.statRows = []; },
     });
   }
 

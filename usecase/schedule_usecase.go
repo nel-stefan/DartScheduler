@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sort"
 	"strings"
@@ -40,7 +41,7 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 		in.IntervalDays, in.CatchUpNrs, in.SkipNrs)
 	allPlayers, err := uc.players.FindAll(ctx)
 	if err != nil {
-		return domain.Schedule{}, err
+		return domain.Schedule{}, fmt.Errorf("load players: %w", err)
 	}
 
 	// Sponsors (nr contains "-s") are excluded from the playing schedule.
@@ -55,7 +56,7 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 
 	buddyPairs, err := uc.players.FindAllBuddyPairs(ctx)
 	if err != nil {
-		return domain.Schedule{}, err
+		return domain.Schedule{}, fmt.Errorf("load buddy pairs: %w", err)
 	}
 	log.Printf("[Generate] buddyPairs=%d", len(buddyPairs))
 
@@ -95,7 +96,7 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 		CompetitionName: in.CompetitionName,
 	})
 	if err != nil {
-		return domain.Schedule{}, err
+		return domain.Schedule{}, fmt.Errorf("generate schedule: %w", err)
 	}
 	log.Printf("[Generate] scheduler done: scheduleID=%s evenings=%d", sched.ID, len(sched.Evenings))
 
@@ -106,16 +107,16 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 
 	sched.Season = in.Season
 	if err := uc.schedules.Save(ctx, sched); err != nil {
-		return domain.Schedule{}, err
+		return domain.Schedule{}, fmt.Errorf("save schedule: %w", err)
 	}
 	totalMatches := 0
 	for _, ev := range sched.Evenings {
 		if err := uc.evenings.Save(ctx, ev, sched.ID); err != nil {
-			return domain.Schedule{}, err
+			return domain.Schedule{}, fmt.Errorf("save evening %d: %w", ev.Number, err)
 		}
 		if len(ev.Matches) > 0 {
 			if err := uc.matches.SaveBatch(ctx, ev.Matches); err != nil {
-				return domain.Schedule{}, err
+				return domain.Schedule{}, fmt.Errorf("save matches for evening %d: %w", ev.Number, err)
 			}
 			totalMatches += len(ev.Matches)
 		}
@@ -131,7 +132,7 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 			IsCatchUpEvening: true,
 		}
 		if err := uc.evenings.Save(ctx, ev, sched.ID); err != nil {
-			return domain.Schedule{}, err
+			return domain.Schedule{}, fmt.Errorf("save catch-up evening %d: %w", s.nr, err)
 		}
 	}
 	log.Printf("[Generate] saved %d catch-up evenings", len(catchUpSlots))
@@ -237,6 +238,8 @@ func (uc *ScheduleUseCase) ImportSeason(ctx context.Context, competitionName, se
 			pA, okA := byNr[row.NrA]
 			pB, okB := byNr[row.NrB]
 			if !okA || !okB {
+				log.Printf("[ImportSeason] skipping match nrA=%q nrB=%q: player(s) not found (okA=%v okB=%v)",
+					row.NrA, row.NrB, okA, okB)
 				continue // skip if players not in system
 			}
 			scoreA, scoreB := row.ScoreA, row.ScoreB
@@ -303,13 +306,13 @@ func (uc *ScheduleUseCase) ImportSeason(ctx context.Context, competitionName, se
 func (uc *ScheduleUseCase) DeleteSchedule(ctx context.Context, id domain.ScheduleID) error {
 	log.Printf("[DeleteSchedule] id=%s", id)
 	if err := uc.matches.DeleteBySchedule(ctx, id); err != nil {
-		return err
+		return fmt.Errorf("delete matches: %w", err)
 	}
 	if err := uc.evenings.DeleteBySchedule(ctx, id); err != nil {
-		return err
+		return fmt.Errorf("delete evenings: %w", err)
 	}
 	if err := uc.schedules.Delete(ctx, id); err != nil {
-		return err
+		return fmt.Errorf("delete schedule: %w", err)
 	}
 	log.Printf("[DeleteSchedule] done id=%s", id)
 	return nil
@@ -318,10 +321,10 @@ func (uc *ScheduleUseCase) DeleteSchedule(ctx context.Context, id domain.Schedul
 func (uc *ScheduleUseCase) DeleteEvening(ctx context.Context, id domain.EveningID) error {
 	log.Printf("[DeleteEvening] id=%s", id)
 	if err := uc.matches.DeleteByEvening(ctx, id); err != nil {
-		return err
+		return fmt.Errorf("delete matches for evening: %w", err)
 	}
 	if err := uc.evenings.Delete(ctx, id); err != nil {
-		return err
+		return fmt.Errorf("delete evening: %w", err)
 	}
 	log.Printf("[DeleteEvening] done id=%s", id)
 	return nil
@@ -509,12 +512,15 @@ func (uc *ScheduleUseCase) hydrate(ctx context.Context, sched domain.Schedule) (
 		if ev.IsCatchUpEvening {
 			log.Printf("[hydrate] catch-up evening ev=%s → querying cancelled matches", ev.ID)
 			matches, err = uc.matches.FindCancelledBySchedule(ctx, sched.ID)
+			if err != nil {
+				return sched, fmt.Errorf("load cancelled matches for evening %s: %w", ev.ID, err)
+			}
 			log.Printf("[hydrate] catch-up evening ev=%s → %d cancelled matches found", ev.ID, len(matches))
 		} else {
 			matches, err = uc.matches.FindByEvening(ctx, ev.ID)
-		}
-		if err != nil {
-			return sched, err
+			if err != nil {
+				return sched, fmt.Errorf("load matches for evening %s: %w", ev.ID, err)
+			}
 		}
 		evenings[i].Matches = matches
 	}

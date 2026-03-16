@@ -28,4 +28,9 @@ type Match struct {
 	RescheduleDate string `json:"rescheduleDate"`
 	SecretaryNr    string `json:"secretaryNr"`
 	CounterNr      string `json:"counterNr"`
+	// Statistics (0 = not recorded)
+	PlayerA180s          int `json:"playerA180s"`
+	PlayerB180s          int `json:"playerB180s"`
+	PlayerAHighestFinish int `json:"playerAHighestFinish"`
+	PlayerBHighestFinish int `json:"playerBHighestFinish"`
 }
