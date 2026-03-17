@@ -4,6 +4,7 @@
 
 Wedstrijdplanning voor een dartclub. Importeer de ledenlijst, genereer een competitieschema op basis van round-robin met simulated annealing, voer scores in en exporteer het resultaat naar Excel of PDF.
 
+
 ## Inhoud
 
 - [Overzicht](#overzicht)
