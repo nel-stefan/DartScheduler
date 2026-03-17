@@ -208,7 +208,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	nameColWidth := float64(maxNameLen)*0.9 + 2.0 // approximate character-unit width
 
 	for col, width := range map[string]float64{
-		"A": 2.5, "B": nameColWidth, "C": 1.7109, "D": 2.5, "E": nameColWidth,
+		"A": 4.0, "B": nameColWidth, "C": 1.7109, "D": 4.0, "E": nameColWidth,
 		"F": 14.4258, "G": 8.5, "H": 14.4258, "I": 8.5,
 		"J": 14.4258, "K": 8.5, "L": 13.8555, "M": 5.5703,
 		"N": 12.1406, "O": 7.8555, "P": 6.1406, "Q": 6.1406,
