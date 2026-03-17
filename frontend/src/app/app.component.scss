@@ -67,3 +67,19 @@
   margin: 0 auto;
   padding: 24px 16px;
 }
+
+@media (max-width: 767px) {
+  .toolbar-nav,
+  .toolbar-title,
+  .toolbar-version { display: none; }
+
+  .toolbar-season-select {
+    min-width: 120px;
+    margin-right: 8px;
+  }
+
+  .app-content {
+    padding: 0;
+    max-width: 100%;
+  }
+}

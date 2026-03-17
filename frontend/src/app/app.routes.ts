@@ -31,5 +31,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/info/info.component').then((m) => m.InfoComponent),
   },
+  {
+    path: 'm',
+    loadChildren: () => import('./mobile/mobile.routes').then(m => m.mobileRoutes),
+  },
   { path: '**', redirectTo: '' },
 ];

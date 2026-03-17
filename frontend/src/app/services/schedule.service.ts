@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Schedule, SeasonSummary, GenerateScheduleRequest, ScheduleInfo } from '../models';
+import { Schedule, SeasonSummary, GenerateScheduleRequest, ScheduleInfo, Evening } from '../models';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +35,10 @@ export class ScheduleService {
 
   deleteEvening(scheduleId: string, eveningId: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/schedules/${scheduleId}/evenings/${eveningId}`);
+  }
+
+  getEvening(id: string): Observable<Evening> {
+    return this.http.get<Evening>(`${this.base}/schedule/evening/${id}`);
   }
 
   getInfo(scheduleId: string): Observable<ScheduleInfo> {
