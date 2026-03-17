@@ -43,7 +43,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		if parts := strings.SplitN(p.Name, ", ", 2); len(parts) == 2 {
 			firstName = strings.SplitN(parts[1], " ", 2)[0]
 		}
-		return firstName + "+" + p.Nr
+		return firstName + " - " + p.Nr
 	}
 
 	f := excelize.NewFile()
