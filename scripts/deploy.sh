@@ -47,14 +47,22 @@ ls -t "$BACKUP_DIR"/dartscheduler-*.db 2>/dev/null | tail -n +11 | xargs rm -f
 echo "→ git pull"
 git -C "$REPO_DIR" pull --ff-only origin master
 
-# ── 4. Bouwen en herstarten ──────────────────────────────────────────────────
+# ── 4. Versie injecteren ─────────────────────────────────────────────────────
+BUILD=$(git -C "$REPO_DIR" rev-list --count HEAD)
+SHA=$(git -C "$REPO_DIR" rev-parse --short HEAD)
+VERSION="build #${BUILD} (${SHA})"
+echo "→ Versie: $VERSION"
+sed -i '' "s/version: 'dev'/version: '${VERSION}'/" "$REPO_DIR/frontend/src/environments/environment.ts"
+sed -i '' "s/version: 'dev'/version: '${VERSION}'/" "$REPO_DIR/frontend/src/environments/environment.prod.ts"
+
+# ── 5. Bouwen en herstarten ──────────────────────────────────────────────────
 echo "→ docker compose build"
 $COMPOSE -f "$REPO_DIR/docker-compose.yml" build --pull
 
 echo "→ docker compose up"
 $COMPOSE -f "$REPO_DIR/docker-compose.yml" up -d --remove-orphans
 
-# ── 5. Health check ──────────────────────────────────────────────────────────
+# ── 6. Health check ──────────────────────────────────────────────────────────
 echo "→ Wachten op health check..."
 for i in $(seq 1 24); do
   if curl -sf http://localhost:8080/health > /dev/null 2>&1; then

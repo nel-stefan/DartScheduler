@@ -27,6 +27,15 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Inject version
+        run: |
+          BUILD=$(git rev-list --count HEAD)
+          SHA=$(git rev-parse --short HEAD)
+          VERSION="build #${BUILD} (${SHA})"
+          sed -i "s/version: 'dev'/version: '${VERSION}'/" frontend/src/environments/environment.ts
+          sed -i "s/version: 'dev'/version: '${VERSION}'/" frontend/src/environments/environment.prod.ts
+          echo "Version: $VERSION"
+
       - name: Build
         working-directory: frontend
         run: npm run build

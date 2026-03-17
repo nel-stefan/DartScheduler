@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { SeasonService } from './services/season.service';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -21,6 +22,7 @@ import { SeasonService } from './services/season.service';
 })
 export class AppComponent implements OnInit {
   protected seasonService = inject(SeasonService);
+  protected version = environment.version;
 
   ngOnInit(): void {
     this.seasonService.load();
