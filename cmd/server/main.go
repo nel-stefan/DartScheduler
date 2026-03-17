@@ -54,16 +54,21 @@ func main() {
 
 	srv := &http.Server{Addr: ":" + port, Handler: router}
 
+	serveErr := make(chan error, 1)
 	go func() {
 		log.Printf("listening on :%s", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %v", err)
+			serveErr <- err
 		}
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	select {
+	case err := <-serveErr:
+		log.Fatalf("listen: %v", err)
+	case <-quit:
+	}
 	log.Println("shutting down...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
