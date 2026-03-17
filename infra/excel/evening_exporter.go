@@ -387,11 +387,13 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	}
 
 	// ------------------------------------------------------------------ Page setup
-	// Landscape orientation, A4 paper, fit all content to one page.
+	// Landscape orientation, A4 paper.
+	// FitToWidth=1 scales columns to fit one page wide; FitToHeight=0 allows
+	// the sheet to span multiple pages vertically when there are many matches.
 	orientation := "landscape"
 	pageSize := 9 // A4
 	fitToWidth := 1
-	fitToHeight := 1
+	fitToHeight := 0
 	f.SetPageLayout(ws, &excelize.PageLayoutOptions{
 		Orientation: &orientation,
 		Size:        &pageSize,
@@ -402,6 +404,13 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	// FitToPage is a sheet property separate from the page layout options.
 	fitToPage := true
 	f.SetSheetProps(ws, &excelize.SheetPropsOptions{FitToPage: &fitToPage})
+
+	// Repeat rows 1–6 as print titles on every page.
+	f.SetDefinedName(&excelize.DefinedName{
+		Name:     "_xlnm.Print_Titles",
+		RefersTo: ws + "!$1:$6",
+		Scope:    ws,
+	})
 
 	// Reduced margins (in inches).
 	left, right, top, bottom, header, footer := 0.7, 0.7, 0.75, 0.75, 0.3, 0.3
