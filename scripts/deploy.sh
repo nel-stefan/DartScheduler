@@ -4,6 +4,10 @@
 #   */10 * * * * /pad/naar/DartScheduler/scripts/deploy.sh >> /pad/naar/DartScheduler/scripts/deploy.log 2>&1
 set -euo pipefail
 
+# Cron runs with a minimal PATH — add the locations where Docker, git and
+# curl live on macOS (both Intel /usr/local and Apple Silicon /opt/homebrew).
+export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BACKUP_DIR="$REPO_DIR/backups"
 COMPOSE="docker compose"
