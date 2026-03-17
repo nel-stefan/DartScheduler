@@ -52,8 +52,8 @@ BUILD=$(git -C "$REPO_DIR" rev-list --count HEAD)
 SHA=$(git -C "$REPO_DIR" rev-parse --short HEAD)
 VERSION="build #${BUILD} (${SHA})"
 echo "→ Versie: $VERSION"
-sed -i '' "s/version: 'dev'/version: '${VERSION}'/" "$REPO_DIR/frontend/src/environments/environment.ts"
-sed -i '' "s/version: 'dev'/version: '${VERSION}'/" "$REPO_DIR/frontend/src/environments/environment.prod.ts"
+sed -i '' "s/version: '.*'/version: '${VERSION}'/" "$REPO_DIR/frontend/src/environments/environment.ts"
+sed -i '' "s/version: '.*'/version: '${VERSION}'/" "$REPO_DIR/frontend/src/environments/environment.prod.ts"
 
 # ── 5. Bouwen en herstarten ──────────────────────────────────────────────────
 echo "→ docker compose build"
