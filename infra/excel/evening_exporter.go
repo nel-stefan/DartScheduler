@@ -33,17 +33,36 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	for _, p := range players {
 		playerMap[p.ID.String()] = p
 	}
-	playerLabel := func(id string) string {
-		p, ok := playerMap[id]
-		if !ok || id == "" {
-			return ""
-		}
+	firstNameNr := func(p domain.Player) string {
 		// Names are stored as "Achternaam, Voornaam"; first name is after the comma.
 		firstName := p.Name
 		if parts := strings.SplitN(p.Name, ", ", 2); len(parts) == 2 {
 			firstName = strings.SplitN(parts[1], " ", 2)[0]
 		}
 		return firstName + " - " + p.Nr
+	}
+
+	playerLabel := func(id string) string {
+		p, ok := playerMap[id]
+		if !ok || id == "" {
+			return ""
+		}
+		return firstNameNr(p)
+	}
+
+	// reportedByLabel converts a stored "nr Achternaam, Voornaam" string to
+	// "Voornaam - nr" by looking up the matching player. Falls back to the
+	// raw value for free-text entries.
+	reportedByLabel := func(raw string) string {
+		if raw == "" {
+			return ""
+		}
+		for _, p := range players {
+			if p.Nr+" "+p.Name == raw {
+				return firstNameNr(p)
+			}
+		}
+		return raw
 	}
 
 	f := excelize.NewFile()
@@ -353,7 +372,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 				playerLabel(m.Leg2Winner), leg2Turns,
 				playerLabel(m.Leg3Winner), leg3Turns,
 				totalWinner, eindstand,
-				m.ReportedBy, m.RescheduleDate, m.SecretaryNr, m.CounterNr,
+				reportedByLabel(m.ReportedBy), m.RescheduleDate, m.SecretaryNr, m.CounterNr,
 			}
 		} else {
 			values = emptyValues
