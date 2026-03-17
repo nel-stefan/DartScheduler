@@ -44,6 +44,8 @@ fi
 ls -t "$BACKUP_DIR"/dartscheduler-*.db 2>/dev/null | tail -n +11 | xargs rm -f
 
 # ── 3. Nieuwste code ophalen ─────────────────────────────────────────────────
+echo "→ git restore (reset lokale wijzigingen)"
+git -C "$REPO_DIR" restore .
 echo "→ git pull"
 git -C "$REPO_DIR" pull --ff-only origin master
 
