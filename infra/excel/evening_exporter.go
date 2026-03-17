@@ -145,7 +145,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 
 	// Player A: nr and naam
 	f.SetCellValue(ws, "A4", "nr")
-	f.SetCellStyle(ws, "A4", "A6", hdrStyle(styleThick, styleMedium, styleMedium, styleThin))
+	f.SetCellStyle(ws, "A4", "A6", hdrStyle(styleThick, styleMedium, styleThick, styleThick))
 	f.SetCellValue(ws, "B4", "naam")
 	f.SetCellStyle(ws, "B4", "B6", hdrStyle(0, styleThick, styleThick, styleThin))
 
@@ -159,7 +159,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 
 	// Player B: nr and naam
 	f.SetCellValue(ws, "D4", "nr")
-	f.SetCellStyle(ws, "D4", "D6", hdrStyle(styleThick, 0, styleThick, styleThin))
+	f.SetCellStyle(ws, "D4", "D6", hdrStyle(styleThick, 0, styleThick, styleThick))
 	f.SetCellValue(ws, "E4", "naam")
 	f.SetCellStyle(ws, "E4", "E6", hdrStyle(styleThick, styleThick, styleThick, styleThin))
 
@@ -167,31 +167,31 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	f.SetCellValue(ws, "F4", "Partij 1")
 	f.SetCellStyle(ws, "F4", "G4", hdrStyle(styleThick, styleMedium, styleThick, styleThick))
 	f.SetCellValue(ws, "F5", "voornaam+nr.")
-	f.SetCellStyle(ws, "F5", "F6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "F5", "F6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
 	f.SetCellValue(ws, "G5", "aantal beurten")
-	f.SetCellStyle(ws, "G5", "G6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "G5", "G6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
 
 	// Partij 2: group header (no bottom — sub-headers form the visual separator).
 	f.SetCellValue(ws, "H4", "Partij 2")
 	f.SetCellStyle(ws, "H4", "I4", hdrStyle(styleThick, styleMedium, styleThick, 0))
 	f.SetCellValue(ws, "H5", "voornaam+nr.")
-	f.SetCellStyle(ws, "H5", "H6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "H5", "H6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
 	f.SetCellValue(ws, "I5", "aantal beurten")
-	f.SetCellStyle(ws, "I5", "I6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "I5", "I6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
 
 	// Partij 3: group header (no left, no bottom).
 	f.SetCellValue(ws, "J4", "Partij 3")
 	f.SetCellStyle(ws, "J4", "K4", hdrStyle(0, styleMedium, styleThick, 0))
 	f.SetCellValue(ws, "J5", "voornaam+nr.")
-	f.SetCellStyle(ws, "J5", "J6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "J5", "J6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
 	f.SetCellValue(ws, "K5", "aantal beurten")
-	f.SetCellStyle(ws, "K5", "K6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "K5", "K6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
 
-	// Summary and admin columns (medium bottom separates header row from data rows).
+	// Summary and admin columns.
 	f.SetCellValue(ws, "L4", "totaal\nwinnaar")
-	f.SetCellStyle(ws, "L4", "L6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "L4", "L6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
 	f.SetCellValue(ws, "M4", "eind-\nstand")
-	f.SetCellStyle(ws, "M4", "M6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "M4", "M6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
 	f.SetCellValue(ws, "N4", "afgemeld\ndoor")
 	f.SetCellStyle(ws, "N4", "N6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 	f.SetCellValue(ws, "O4", "vooruit-\ngooi\ndatum")
