@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	excelexport "DartScheduler/infra/excel"
@@ -42,8 +43,14 @@ func (h *ExportHandler) EveningExcel(w http.ResponseWriter, r *http.Request) {
 		httpError(w, err, http.StatusBadRequest)
 		return
 	}
+	date, err := h.uc.EveningDate(r.Context(), id)
+	if err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	filename := fmt.Sprintf("wedstrijdformulier_%s.xlsx", date.Format("2006-01-02"))
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	w.Header().Set("Content-Disposition", `attachment; filename="wedstrijdformulier.xlsx"`)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 	if err := h.uc.ExportEvening(r.Context(), excelexport.EveningExporter{}, id, w); err != nil {
 		httpErrorDomain(w, err)
 	}

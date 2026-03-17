@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"io"
+	"time"
 
 	"DartScheduler/domain"
 )
@@ -62,6 +63,24 @@ func (uc *ExportUseCase) Export(ctx context.Context, exp Exporter, w io.Writer) 
 	}
 
 	return exp.Export(ctx, sched, players, w)
+}
+
+// EveningDate returns the date of the evening with the given ID.
+func (uc *ExportUseCase) EveningDate(ctx context.Context, eveningID domain.EveningID) (time.Time, error) {
+	sched, err := uc.schedules.FindLatest(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+	evenings, err := uc.evenings.FindBySchedule(ctx, sched.ID)
+	if err != nil {
+		return time.Time{}, err
+	}
+	for _, ev := range evenings {
+		if ev.ID == eveningID {
+			return ev.Date, nil
+		}
+	}
+	return time.Time{}, domain.ErrNotFound
 }
 
 // ExportEvening exports a single evening's matches in wedstrijdformulier format.
