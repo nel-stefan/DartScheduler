@@ -198,8 +198,17 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	f.SetCellStyle(ws, "Q4", "Q6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
 
 	// ------------------------------------------------------------------ Column widths
+	// Name columns B and E are sized to fit the longest player name.
+	maxNameLen := 10
+	for _, p := range players {
+		if l := len(p.Name); l > maxNameLen {
+			maxNameLen = l
+		}
+	}
+	nameColWidth := float64(maxNameLen)*0.9 + 2.0 // approximate character-unit width
+
 	for col, width := range map[string]float64{
-		"A": 2.5, "B": 14.0, "C": 1.7109, "D": 2.5, "E": 14.0,
+		"A": 2.5, "B": nameColWidth, "C": 1.7109, "D": 2.5, "E": nameColWidth,
 		"F": 14.4258, "G": 8.5, "H": 14.4258, "I": 8.5,
 		"J": 14.4258, "K": 8.5, "L": 13.8555, "M": 5.5703,
 		"N": 12.1406, "O": 7.8555, "P": 6.1406, "Q": 6.1406,
@@ -222,10 +231,10 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	// no top on A/D/F–M (visually bounded by the header bottom borders above).
 	row7 := []colSpec{
 		{12, "right", false, styleThick, styleThin, 0, styleThin},              // A: nr
-		{11, "", true, styleThin, styleMedium, styleThick, styleThin},           // B: naam
+		{11, "", false, styleThin, styleMedium, styleThick, styleThin},          // B: naam
 		{10, "center", false, styleMedium, styleMedium, styleThick, styleThin},  // C: /
 		{12, "right", false, styleMedium, styleThin, 0, styleThin},              // D: nr
-		{11, "", true, styleThin, styleMedium, styleThick, styleThin},           // E: naam
+		{11, "", false, styleThin, styleMedium, styleThick, styleThin},          // E: naam
 		{11, "", true, styleMedium, styleThin, 0, styleThin},                    // F: leg1 winner
 		{11, "", false, styleThin, styleMedium, 0, styleThin},                   // G: leg1 turns
 		{11, "", true, styleMedium, styleThin, 0, styleThin},                    // H: leg2 winner
@@ -243,10 +252,10 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	// Rows 8+: subsequent data rows — thin top on B/C/E/N–Q; no top on A/D/F–M.
 	rowN := []colSpec{
 		{12, "right", false, styleThick, styleThin, 0, styleThin},              // A
-		{11, "", true, styleThin, styleMedium, styleThin, styleThin},           // B
+		{11, "", false, styleThin, styleMedium, styleThin, styleThin},          // B
 		{10, "center", false, styleMedium, styleMedium, styleThin, styleThin},  // C
 		{12, "right", false, styleMedium, styleThin, 0, styleThin},             // D
-		{11, "", true, styleThin, styleMedium, styleThin, styleThin},           // E
+		{11, "", false, styleThin, styleMedium, styleThin, styleThin},          // E
 		{11, "", true, styleMedium, styleThin, 0, styleThin},                   // F
 		{11, "", false, styleThin, styleMedium, 0, styleThin},                  // G
 		{11, "", true, styleMedium, styleThin, 0, styleThin},                   // H
