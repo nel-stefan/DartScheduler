@@ -502,27 +502,45 @@ func (uc *ScheduleUseCase) GetInfo(ctx context.Context, scheduleID domain.Schedu
 }
 
 // hydrate loads evenings (with matches) into the schedule.
+// It uses two queries total: one for all regular matches, one for cancelled
+// matches used by catch-up evenings.
 func (uc *ScheduleUseCase) hydrate(ctx context.Context, sched domain.Schedule) (domain.Schedule, error) {
 	evenings, err := uc.evenings.FindBySchedule(ctx, sched.ID)
 	if err != nil {
 		return sched, err
 	}
+
+	// Fetch all regular matches for this schedule in a single query.
+	allMatches, err := uc.matches.FindBySchedule(ctx, sched.ID)
+	if err != nil {
+		return sched, fmt.Errorf("load matches for schedule %s: %w", sched.ID, err)
+	}
+
+	// Group matches by evening_id.
+	matchesByEvening := make(map[domain.EveningID][]domain.Match, len(evenings))
+	for _, m := range allMatches {
+		matchesByEvening[m.EveningID] = append(matchesByEvening[m.EveningID], m)
+	}
+
+	// Lazily load cancelled matches only once if there are catch-up evenings.
+	var cancelledMatches []domain.Match
+	cancelledLoaded := false
+
 	for i, ev := range evenings {
-		var matches []domain.Match
 		if ev.IsCatchUpEvening {
-			log.Printf("[hydrate] catch-up evening ev=%s → querying cancelled matches", ev.ID)
-			matches, err = uc.matches.FindCancelledBySchedule(ctx, sched.ID)
-			if err != nil {
-				return sched, fmt.Errorf("load cancelled matches for evening %s: %w", ev.ID, err)
+			if !cancelledLoaded {
+				log.Printf("[hydrate] loading cancelled matches for schedule %s", sched.ID)
+				cancelledMatches, err = uc.matches.FindCancelledBySchedule(ctx, sched.ID)
+				if err != nil {
+					return sched, fmt.Errorf("load cancelled matches for schedule %s: %w", sched.ID, err)
+				}
+				log.Printf("[hydrate] %d cancelled matches found", len(cancelledMatches))
+				cancelledLoaded = true
 			}
-			log.Printf("[hydrate] catch-up evening ev=%s → %d cancelled matches found", ev.ID, len(matches))
+			evenings[i].Matches = cancelledMatches
 		} else {
-			matches, err = uc.matches.FindByEvening(ctx, ev.ID)
-			if err != nil {
-				return sched, fmt.Errorf("load matches for evening %s: %w", ev.ID, err)
-			}
+			evenings[i].Matches = matchesByEvening[ev.ID]
 		}
-		evenings[i].Matches = matches
 	}
 	sched.Evenings = evenings
 	return sched, nil

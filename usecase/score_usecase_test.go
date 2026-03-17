@@ -57,6 +57,9 @@ func (r *stubMatchRepo) FindByPlayerAndSchedule(_ context.Context, _ domain.Play
 	return nil, nil
 }
 func (r *stubMatchRepo) FindAllPlayed(_ context.Context) ([]domain.Match, error) { return nil, nil }
+func (r *stubMatchRepo) FindBySchedule(_ context.Context, _ domain.ScheduleID) ([]domain.Match, error) {
+	return nil, nil
+}
 func (r *stubMatchRepo) FindCancelledBySchedule(_ context.Context, _ domain.ScheduleID) ([]domain.Match, error) {
 	return nil, nil
 }

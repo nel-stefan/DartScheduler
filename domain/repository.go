@@ -37,6 +37,8 @@ type MatchRepository interface {
 	FindByPlayerAndSchedule(ctx context.Context, playerID PlayerID, scheduleID ScheduleID) ([]Match, error)
 	FindAllPlayed(ctx context.Context) ([]Match, error)
 	UpdateResult(ctx context.Context, m Match) error
+	// FindBySchedule returns all matches for a schedule in a single query.
+	FindBySchedule(ctx context.Context, scheduleID ScheduleID) ([]Match, error)
 	// FindCancelledBySchedule returns all matches with a non-empty ReportedBy
 	// from non-inhaal evenings in the given schedule. Used to populate inhaalavonden.
 	FindCancelledBySchedule(ctx context.Context, scheduleID ScheduleID) ([]Match, error)

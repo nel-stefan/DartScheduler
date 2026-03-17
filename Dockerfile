@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 go build -o dartscheduler ./cmd/server/
 
 # Stage 3: Minimal runtime
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata wget
 WORKDIR /app
 COPY --from=go-builder /app/dartscheduler .
 EXPOSE 8080

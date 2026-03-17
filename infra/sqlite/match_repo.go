@@ -261,6 +261,23 @@ func (r *MatchRepo) DeleteByPlayer(ctx context.Context, playerID domain.PlayerID
 	return err
 }
 
+func (r *MatchRepo) FindBySchedule(ctx context.Context, scheduleID domain.ScheduleID) ([]domain.Match, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT m.id, m.evening_id, m.player_a, m.player_b, m.score_a, m.score_b, m.played,
+			m.leg1_winner, m.leg1_turns, m.leg2_winner, m.leg2_turns,
+			m.leg3_winner, m.leg3_turns,
+			m.reported_by, m.reschedule_date, m.secretary_nr, m.counter_nr,
+			m.player_a_180s, m.player_b_180s, m.player_a_highest_finish, m.player_b_highest_finish
+		FROM matches m
+		WHERE m.evening_id IN (SELECT id FROM evenings WHERE schedule_id = ?)`,
+		scheduleID.String())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanMatches(rows)
+}
+
 func (r *MatchRepo) FindCancelledBySchedule(ctx context.Context, scheduleID domain.ScheduleID) ([]domain.Match, error) {
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT m.id, m.evening_id, m.player_a, m.player_b, m.score_a, m.score_b, m.played,

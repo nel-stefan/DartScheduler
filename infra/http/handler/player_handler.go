@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"DartScheduler/domain"
@@ -44,7 +45,9 @@ func (h *PlayerHandler) Import(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]int{"imported": len(players)})
+	if err := json.NewEncoder(w).Encode(map[string]int{"imported": len(players)}); err != nil {
+		log.Printf("encode response: %v", err)
+	}
 }
 
 func (h *PlayerHandler) List(w http.ResponseWriter, r *http.Request) {

@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	apphttp "DartScheduler/infra/http"
 	"DartScheduler/infra/http/handler"
@@ -48,8 +52,24 @@ func main() {
 
 	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH)
 
-	log.Printf("listening on :%s", port)
-	if err := http.ListenAndServe(":"+port, router); err != nil {
-		log.Fatalf("server: %v", err)
+	srv := &http.Server{Addr: ":" + port, Handler: router}
+
+	go func() {
+		log.Printf("listening on :%s", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("shutting down...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("forced shutdown: %v", err)
 	}
+	log.Println("server stopped")
 }

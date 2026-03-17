@@ -39,6 +39,11 @@ func NewRouter(
 	r.Use(mw.Logger)
 	r.Use(mw.CORS)
 
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/import", playerH.Import)
 		r.Get("/players", playerH.List)
