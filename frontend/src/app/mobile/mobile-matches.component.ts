@@ -128,9 +128,10 @@ import { Evening, Match, Player } from '../models';
         </div>
         <div class="match-footer">
           <span class="score" *ngIf="m.played">{{ m.scoreA }} – {{ m.scoreB }}</span>
-          <span class="absent-label" *ngIf="!m.played && m.reportedBy">Afgemeld</span>
-          <span *ngIf="!m.played && !m.reportedBy"></span>
-          <button mat-raised-button color="primary" *ngIf="!m.played && !m.reportedBy"
+          <span class="absent-label" *ngIf="!m.played && m.reportedBy && !evening?.isInhaalAvond">Afgemeld</span>
+          <span *ngIf="!m.played && !m.reportedBy && !evening?.isInhaalAvond"></span>
+          <button mat-raised-button color="primary"
+            *ngIf="!m.played && (!m.reportedBy || evening?.isInhaalAvond)"
             (click)="enterScore(m)">
             Score invoeren
           </button>
