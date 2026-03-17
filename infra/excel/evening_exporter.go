@@ -38,7 +38,11 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		if !ok || id == "" {
 			return ""
 		}
-		firstName := strings.SplitN(p.Name, " ", 2)[0]
+		// Names are stored as "Achternaam, Voornaam"; first name is after the comma.
+		firstName := p.Name
+		if parts := strings.SplitN(p.Name, ", ", 2); len(parts) == 2 {
+			firstName = strings.SplitN(parts[1], " ", 2)[0]
+		}
 		return firstName + "+" + p.Nr
 	}
 
@@ -285,13 +289,21 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		return ids
 	}
 
+	// rowLast is identical to rowN but with a thick bottom border on every column.
+	rowLast := make([]colSpec, len(rowN))
+	copy(rowLast, rowN)
+	for i := range rowLast {
+		rowLast[i].b = styleThick
+	}
+
 	row7Styles := buildStyles(row7)
 	rowNStyles := buildStyles(rowN)
+	rowLastStyles := buildStyles(rowLast)
 
-	// A4 landscape printable height minus the header rows leaves room for 22
-	// data rows at 17.25pt each. Fill up to this minimum so the form always
-	// has blank lines for manual entries.
-	const minDataRows = 22
+	// A4 landscape printable height minus the header rows leaves room for ~22
+	// data rows at natural size; use 33 so there are always ample blank lines
+	// for manual entries (FitToPage scales the sheet to fit on one page).
+	const minDataRows = 33
 	totalRows := len(ev.Matches)
 	if totalRows < minDataRows {
 		totalRows = minDataRows
@@ -304,6 +316,8 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		styleIDs := rowNStyles
 		if i == 0 {
 			styleIDs = row7Styles
+		} else if i == totalRows-1 {
+			styleIDs = rowLastStyles
 		}
 
 		var values []interface{}
