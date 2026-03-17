@@ -288,44 +288,61 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	row7Styles := buildStyles(row7)
 	rowNStyles := buildStyles(rowN)
 
-	for i, m := range ev.Matches {
+	// A4 landscape printable height minus the header rows leaves room for 22
+	// data rows at 17.25pt each. Fill up to this minimum so the form always
+	// has blank lines for manual entries.
+	const minDataRows = 22
+	totalRows := len(ev.Matches)
+	if totalRows < minDataRows {
+		totalRows = minDataRows
+	}
+
+	emptyValues := []interface{}{"", "", "/", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}
+
+	for i := 0; i < totalRows; i++ {
 		row := 7 + i
-		pA := playerMap[m.PlayerA.String()]
-		pB := playerMap[m.PlayerB.String()]
+		styleIDs := rowNStyles
+		if i == 0 {
+			styleIDs = row7Styles
+		}
 
-		totalWinner, eindstand := "", ""
-		if m.Played && m.ScoreA != nil && m.ScoreB != nil {
-			eindstand = fmt.Sprintf("%d-%d", *m.ScoreA, *m.ScoreB)
-			if *m.ScoreA > *m.ScoreB {
-				totalWinner = playerLabel(m.PlayerA.String())
-			} else {
-				totalWinner = playerLabel(m.PlayerB.String())
+		var values []interface{}
+		if i < len(ev.Matches) {
+			m := ev.Matches[i]
+			pA := playerMap[m.PlayerA.String()]
+			pB := playerMap[m.PlayerB.String()]
+
+			totalWinner, eindstand := "", ""
+			if m.Played && m.ScoreA != nil && m.ScoreB != nil {
+				eindstand = fmt.Sprintf("%d-%d", *m.ScoreA, *m.ScoreB)
+				if *m.ScoreA > *m.ScoreB {
+					totalWinner = playerLabel(m.PlayerA.String())
+				} else {
+					totalWinner = playerLabel(m.PlayerB.String())
+				}
 			}
-		}
 
-		leg1Turns, leg2Turns, leg3Turns := "", "", ""
-		if m.Leg1Turns > 0 {
-			leg1Turns = fmt.Sprintf("%d", m.Leg1Turns)
-		}
-		if m.Leg2Turns > 0 {
-			leg2Turns = fmt.Sprintf("%d", m.Leg2Turns)
-		}
-		if m.Leg3Turns > 0 {
-			leg3Turns = fmt.Sprintf("%d", m.Leg3Turns)
-		}
+			leg1Turns, leg2Turns, leg3Turns := "", "", ""
+			if m.Leg1Turns > 0 {
+				leg1Turns = fmt.Sprintf("%d", m.Leg1Turns)
+			}
+			if m.Leg2Turns > 0 {
+				leg2Turns = fmt.Sprintf("%d", m.Leg2Turns)
+			}
+			if m.Leg3Turns > 0 {
+				leg3Turns = fmt.Sprintf("%d", m.Leg3Turns)
+			}
 
-		values := []interface{}{
-			pA.Nr, pA.Name, "/", pB.Nr, pB.Name,
-			playerLabel(m.Leg1Winner), leg1Turns,
-			playerLabel(m.Leg2Winner), leg2Turns,
-			playerLabel(m.Leg3Winner), leg3Turns,
-			totalWinner, eindstand,
-			m.ReportedBy, m.RescheduleDate, m.SecretaryNr, m.CounterNr,
-		}
-
-		styleIDs := row7Styles
-		if i > 0 {
-			styleIDs = rowNStyles
+			values = []interface{}{
+				pA.Nr, pA.Name, "/", pB.Nr, pB.Name,
+				playerLabel(m.Leg1Winner), leg1Turns,
+				playerLabel(m.Leg2Winner), leg2Turns,
+				playerLabel(m.Leg3Winner), leg3Turns,
+				totalWinner, eindstand,
+				m.ReportedBy, m.RescheduleDate, m.SecretaryNr, m.CounterNr,
+			}
+		} else {
+			values = emptyValues
 		}
 
 		for j, col := range cols {
