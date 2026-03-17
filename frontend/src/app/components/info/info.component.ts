@@ -400,6 +400,7 @@ export class InfoComponent implements OnInit {
     const playerMap = new Map(this.info.players.map(p => [p.id, p]));
 
     for (const ev of this.schedule.evenings) {
+      if (ev.isInhaalAvond) continue;
       for (const m of ev.matches) {
         const isA = m.playerA === this.selectedPlayerId;
         const isB = m.playerB === this.selectedPlayerId;
@@ -431,6 +432,7 @@ export class InfoComponent implements OnInit {
     const playerMap = new Map(this.info.players.map(p => [p.id, p]));
     const rows: { eveningNumber: number; eveningDate: string; playerAName: string; playerBName: string }[] = [];
     for (const ev of this.schedule.evenings) {
+      if (ev.isInhaalAvond) continue;
       for (const m of ev.matches) {
         if (m.played || m.reportedBy) continue;
         const pA = playerMap.get(m.playerA);
