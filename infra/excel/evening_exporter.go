@@ -290,7 +290,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	//   header rows 1-4: 21 + 15 + 13.5 + 45 = 94.5pt
 	//   A4 landscape printable height ≈ 444pt
 	//   data rows: floor((444 - 94.5) / 17.25) = 20
-	const rowsPerPage = 27
+	const rowsPerPage = 26
 	matchCount := len(ev.Matches)
 	pages := (matchCount + rowsPerPage - 1) / rowsPerPage
 	if pages < 1 {
