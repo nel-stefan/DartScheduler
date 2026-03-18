@@ -125,13 +125,13 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 			maxNameLen = l
 		}
 	}
-	nameColWidth := float64(maxNameLen)*1.0 + 1.5 // ≈ autofit: 1 unit/char + padding
-	if nameColWidth < 18.0 {
-		nameColWidth = 18.0
+	nameColWidth := float64(maxNameLen)*0.7 + 1.0 // narrower fit for naam columns
+	if nameColWidth < 11.0 {
+		nameColWidth = 11.0
 	}
 
 	for col, width := range map[string]float64{
-		"A": 5.5, "B": nameColWidth, "C": 2.5, "D": 5.5, "E": nameColWidth,
+		"A": 3.5, "B": nameColWidth, "C": 2.0, "D": 3.5, "E": nameColWidth,
 		"F": 11.5, "G": 6.5, "H": 11.5, "I": 6.5,
 		"J": 11.5, "K": 6.5, "L": 11.5, "M": 6.5,
 		"N": 12.5, "O": 7.5, "P": 5.5, "Q": 5.5,
