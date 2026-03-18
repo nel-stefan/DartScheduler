@@ -468,10 +468,10 @@ func (uc *ScheduleUseCase) GetInfo(ctx context.Context, scheduleID domain.Schedu
 		buddyPairItems = append(buddyPairItems, BuddyPairItem{
 			PlayerAID:   pA.ID.String(),
 			PlayerANr:   pA.Nr,
-			PlayerAName: pA.Name,
+			PlayerAName: domain.FormatDisplayName(pA.Name),
 			PlayerBID:   pB.ID.String(),
 			PlayerBNr:   pB.Nr,
-			PlayerBName: pB.Name,
+			PlayerBName: domain.FormatDisplayName(pB.Name),
 			EveningIDs:  ids,
 			EveningNrs:  nrs,
 		})
@@ -479,7 +479,7 @@ func (uc *ScheduleUseCase) GetInfo(ctx context.Context, scheduleID domain.Schedu
 
 	playerItems := make([]PlayerInfoItem, len(allPlayers))
 	for i, p := range allPlayers {
-		playerItems[i] = PlayerInfoItem{ID: p.ID.String(), Nr: p.Nr, Name: p.Name}
+		playerItems[i] = PlayerInfoItem{ID: p.ID.String(), Nr: p.Nr, Name: domain.FormatDisplayName(p.Name)}
 	}
 
 	eveningItems := make([]EveningInfoItem, len(regularEvenings))

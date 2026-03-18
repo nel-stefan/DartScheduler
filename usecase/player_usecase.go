@@ -106,11 +106,18 @@ func (uc *PlayerUseCase) ImportPlayers(ctx context.Context, inputs []PlayerInput
 }
 
 // ListPlayers returns all players regardless of season.
+// Names are converted from the stored "Achternaam, Voornaam" format to "Voornaam Achternaam".
 func (uc *PlayerUseCase) ListPlayers(ctx context.Context) ([]domain.Player, error) {
 	log.Printf("[ListPlayers]")
 	players, err := uc.repo.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for i := range players {
+		players[i].Name = domain.FormatDisplayName(players[i].Name)
+	}
 	log.Printf("[ListPlayers] found %d players", len(players))
-	return players, err
+	return players, nil
 }
 
 // UpdatePlayer updates the mutable fields of an existing player.

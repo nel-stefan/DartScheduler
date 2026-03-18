@@ -3,7 +3,21 @@
 // all other layers may only reference domain inward.
 package domain
 
-import "github.com/google/uuid"
+import (
+	"strings"
+
+	"github.com/google/uuid"
+)
+
+// FormatDisplayName converts a stored "Achternaam, Voornaam" name to "Voornaam Achternaam".
+// Names without a ", " separator are returned unchanged.
+func FormatDisplayName(name string) string {
+	parts := strings.SplitN(name, ", ", 2)
+	if len(parts) != 2 {
+		return name
+	}
+	return strings.TrimSpace(parts[1]) + " " + strings.TrimSpace(parts[0])
+}
 
 // PlayerID uniquely identifies a player.
 type PlayerID = uuid.UUID

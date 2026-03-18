@@ -282,7 +282,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	// Name columns B and E are sized to fit the longest player name.
 	maxNameLen := 10
 	for _, p := range players {
-		if l := len(p.Name); l > maxNameLen {
+		if l := len(domain.FormatDisplayName(p.Name)); l > maxNameLen {
 			maxNameLen = l
 		}
 	}
@@ -425,7 +425,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 			}
 
 			values = []interface{}{
-				pA.Nr, pA.Name, "/", pB.Nr, pB.Name,
+				pA.Nr, domain.FormatDisplayName(pA.Name), "/", pB.Nr, domain.FormatDisplayName(pB.Name),
 				playerLabel(m.Leg1Winner), leg1Turns,
 				playerLabel(m.Leg2Winner), leg2Turns,
 				playerLabel(m.Leg3Winner), leg3Turns,
