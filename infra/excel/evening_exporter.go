@@ -104,17 +104,11 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	}
 
 	// ------------------------------------------------------------------ Row 1
-	f.SetCellValue(ws, "A1", "       ")
-	f.SetCellStyle(ws, "A1", "A1", ns(&excelize.Style{
-		Font:      &excelize.Font{Family: fontCalibri, Size: 16},
-		Alignment: &excelize.Alignment{Horizontal: "right"},
-	}))
-	f.SetCellValue(ws, "B1", "   ")
-	f.SetCellStyle(ws, "B1", "B1", ns(&excelize.Style{Font: &excelize.Font{Family: fontCalibri, Size: 16}}))
-	f.SetCellValue(ws, "C1", "                                       DARTCLUB GROLZICHT")
-	f.SetCellStyle(ws, "C1", "C1", ns(&excelize.Style{
+	f.MergeCell(ws, "A1", "Q1")
+	f.SetCellValue(ws, "A1", "DARTCLUB GROLZICHT")
+	f.SetCellStyle(ws, "A1", "Q1", ns(&excelize.Style{
 		Font:      &excelize.Font{Family: fontCalibri, Size: 16, Bold: true},
-		Alignment: &excelize.Alignment{Horizontal: "left"},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
 	}))
 	f.SetRowHeight(ws, 1, 21)
 
@@ -123,12 +117,13 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	if ev.IsCatchUpEvening {
 		dateLabel = "Inhaal"
 	}
+	f.MergeCell(ws, "A2", "Q2")
 	f.SetCellValue(ws, "A2", fmt.Sprintf(
-		"                                          Wedstrijdformulier        Spelsoort: 501 dubbel uit best of 3       Speeldatum: %s",
+		"Wedstrijdformulier     Spelsoort: 501 dubbel uit best of 3     Speeldatum: %s",
 		dateLabel))
-	f.SetCellStyle(ws, "A2", "A2", ns(&excelize.Style{
+	f.SetCellStyle(ws, "A2", "Q2", ns(&excelize.Style{
 		Font:      &excelize.Font{Family: fontCalibri, Size: 11, Bold: true},
-		Alignment: &excelize.Alignment{Horizontal: "left"},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
 	}))
 	f.SetRowHeight(ws, 2, 15)
 
