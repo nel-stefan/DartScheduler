@@ -115,7 +115,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	// ================================================================ 1. ROW HEIGHTS
 	f.SetRowHeight(ws, 1, 21)
 	f.SetRowHeight(ws, 2, 15)
-	f.SetRowHeight(ws, 3, 18)
+	f.SetRowHeight(ws, 3, 13.5)
 	f.SetRowHeight(ws, 4, 45)
 
 	// ================================================================ 2. COLUMN WIDTHS
@@ -131,11 +131,6 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	// ================================================================ 3. MERGES
 	f.MergeCell(ws, "A1", "Q1")
 	f.MergeCell(ws, "A2", "Q2")
-	// Row 3: two labeled fields — hoogste finish and 180's.
-	f.MergeCell(ws, "A3", "C3") // label "Hoogste finish:"
-	f.MergeCell(ws, "D3", "F3") // blank write-in field
-	f.MergeCell(ws, "G3", "H3") // label "180's:"
-	f.MergeCell(ws, "I3", "K3") // blank write-in field
 	// No header merges in row 4 — single header row, one cell per column.
 
 	// ================================================================ 4. CELL VALUES
@@ -148,10 +143,6 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	f.SetCellValue(ws, "A2", fmt.Sprintf(
 		"Wedstrijdformulier   Spelsoort: 501 dubbel uit best of 3   Speeldatum: %s",
 		dateLabel))
-
-	// Row 3: hoogste finish + 180's fields
-	f.SetCellValue(ws, "A3", "Hoogste finish:")
-	f.SetCellValue(ws, "G3", "180's:")
 
 	// Row 4: single header row labels
 	f.SetCellValue(ws, "A4", "nr.")
@@ -185,20 +176,14 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		Alignment: &excelize.Alignment{Horizontal: "center"},
 	}))
 
-	// Row 3: hoogste finish label + write-in field, 180's label + write-in field
-	labelStyle3 := ns(&excelize.Style{
-		Font:      &excelize.Font{Family: fontCalibri, Size: 10, Bold: true},
-		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center"},
+	// Row 3: thick bottom rule on specific columns only
+	row3Style := ns(&excelize.Style{
+		Font:   &excelize.Font{Family: fontCalibri, Size: 11},
+		Border: brd(0, 0, 0, styleThick),
 	})
-	fieldStyle3 := ns(&excelize.Style{
-		Font:      &excelize.Font{Family: fontCalibri, Size: 11},
-		Alignment: &excelize.Alignment{Vertical: "center"},
-		Border:    brd(styleMedium, styleMedium, 0, styleThick),
-	})
-	f.SetCellStyle(ws, "A3", "C3", labelStyle3)
-	f.SetCellStyle(ws, "D3", "F3", fieldStyle3)
-	f.SetCellStyle(ws, "G3", "H3", labelStyle3)
-	f.SetCellStyle(ws, "I3", "K3", fieldStyle3)
+	for _, cell := range []string{"B3", "D3", "H3", "L3", "M3", "N3"} {
+		f.SetCellStyle(ws, cell, cell, row3Style)
+	}
 
 	// Row 4: single header row — thick top + thick bottom on all columns.
 	// Border spec per column: L, R, T, B
