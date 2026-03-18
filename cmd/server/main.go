@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	apphttp "DartScheduler/infra/http"
 	"DartScheduler/infra/http/handler"
+	"DartScheduler/infra/logbuf"
 	"DartScheduler/infra/sqlite"
 	"DartScheduler/usecase"
 )
@@ -24,6 +26,9 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+
+	logBuf := logbuf.New(200)
+	log.SetOutput(io.MultiWriter(os.Stderr, logBuf))
 
 	db, err := sqlite.Open(dbPath)
 	if err != nil {
@@ -48,9 +53,10 @@ func main() {
 	schedH := handler.NewScheduleHandler(scheduleUC)
 	scoreH := handler.NewScoreHandler(scoreUC)
 	statsH := handler.NewStatsHandler(playerRepo, scoreUC)
-	exportH := handler.NewExportHandler(exportUC)
+	exportH  := handler.NewExportHandler(exportUC)
+	systemH  := handler.NewSystemHandler(logBuf)
 
-	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH)
+	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH)
 
 	srv := &http.Server{Addr: ":" + port, Handler: router}
 

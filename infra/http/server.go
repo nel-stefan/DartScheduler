@@ -33,6 +33,7 @@ func NewRouter(
 	scoreH *handler.ScoreHandler,
 	statsH *handler.StatsHandler,
 	exportH *handler.ExportHandler,
+	systemH *handler.SystemHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 	r.Use(chimw.Recoverer)
@@ -72,6 +73,8 @@ func NewRouter(
 		r.Get("/export/excel", exportH.Excel)
 		r.Get("/export/pdf", exportH.PDF)
 		r.Get("/export/evening/{id}/excel", exportH.EveningExcel)
+
+		r.Get("/system/logs", systemH.GetLogs)
 	})
 
 	// SPA fallback: serve Angular app for all non-API routes.

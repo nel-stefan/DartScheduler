@@ -50,9 +50,7 @@ echo "→ git pull"
 git -C "$REPO_DIR" pull --ff-only origin master
 
 # ── 4. Versie injecteren ─────────────────────────────────────────────────────
-BUILD=$(git -C "$REPO_DIR" rev-list --count HEAD)
-SHA=$(git -C "$REPO_DIR" rev-parse --short HEAD)
-VERSION="build #${BUILD} (${SHA})"
+VERSION=$(date '+%Y-%m-%d %H:%M')
 echo "→ Versie: $VERSION"
 sed -i '' "s/version: '.*'/version: '${VERSION}'/" "$REPO_DIR/frontend/src/environments/environment.ts"
 sed -i '' "s/version: '.*'/version: '${VERSION}'/" "$REPO_DIR/frontend/src/environments/environment.prod.ts"

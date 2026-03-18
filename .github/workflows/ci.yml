@@ -29,11 +29,9 @@ jobs:
 
       - name: Inject version
         run: |
-          BUILD=$(git rev-list --count HEAD)
-          SHA=$(git rev-parse --short HEAD)
-          VERSION="build #${BUILD} (${SHA})"
-          sed -i "s/version: 'dev'/version: '${VERSION}'/" frontend/src/environments/environment.ts
-          sed -i "s/version: 'dev'/version: '${VERSION}'/" frontend/src/environments/environment.prod.ts
+          VERSION=$(date -u '+%Y-%m-%d %H:%M')
+          sed -i "s/version: '.*'/version: '${VERSION}'/" frontend/src/environments/environment.ts
+          sed -i "s/version: '.*'/version: '${VERSION}'/" frontend/src/environments/environment.prod.ts
           echo "Version: $VERSION"
 
       - name: Build

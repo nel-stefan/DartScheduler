@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, filter, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
@@ -12,7 +13,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { ScheduleService } from '../../services/schedule.service';
 import { SeasonService } from '../../services/season.service';
 import { ScoreService } from '../../services/score.service';
+import { SystemService } from '../../services/system.service';
 import { PlayerInfoItem, EveningInfoItem, ScheduleInfo, BuddyPairItem, PlayerStats, Schedule } from '../../models';
+import { environment } from '../../../environments/environment';
 
 interface PlayerRow {
   player: PlayerInfoItem;
@@ -39,7 +42,7 @@ interface MatchRow {
   selector: 'app-info',
   standalone: true,
   imports: [CommonModule, MatCardModule, MatTableModule, MatIconModule, MatChipsModule,
-            MatTabsModule, MatSelectModule, MatFormFieldModule],
+            MatTabsModule, MatSelectModule, MatFormFieldModule, MatButtonModule],
   styles: [`
     .page { padding: 24px; }
     h2 { margin: 0 0 20px 0; }
@@ -72,6 +75,19 @@ interface MatchRow {
     .result-V { color: #c62828; font-weight: 600; }
     .result-G { color: #f57f17; font-weight: 600; }
     .result-af { color: #9e9e9e; font-style: italic; }
+
+    .server-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .version-chip {
+      background: #e8f5e9; color: #2e7d32; border-radius: 12px;
+      padding: 4px 12px; font-size: 13px; font-weight: 500;
+    }
+    .log-box {
+      background: #1e1e1e; color: #d4d4d4; font-family: monospace;
+      font-size: 12px; line-height: 1.5; padding: 12px 16px;
+      border-radius: 6px; max-height: 480px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-all;
+    }
+    .log-empty { color: #9e9e9e; font-style: italic; font-size: 13px; }
   `],
   template: `
     <div class="page">
@@ -360,6 +376,23 @@ interface MatchRow {
           </div>
         </mat-tab>
 
+        <!-- Tab 6: Server logs -->
+        <mat-tab label="Server">
+          <div style="padding-top:16px">
+            <div class="server-meta">
+              <span class="version-chip">{{ version }}</span>
+              <button mat-stroked-button (click)="refreshLogs()">
+                <mat-icon>refresh</mat-icon> Vernieuwen
+              </button>
+            </div>
+            <div *ngIf="logsLoading" style="color:#9e9e9e;font-size:13px">Laden...</div>
+            <div *ngIf="!logsLoading && logs.length === 0" class="log-empty">
+              Nog geen log regels.
+            </div>
+            <div *ngIf="!logsLoading && logs.length > 0" class="log-box">{{ logs.join('\n') }}</div>
+          </div>
+        </mat-tab>
+
       </mat-tab-group>
     </div>
   `,
@@ -368,6 +401,7 @@ export class InfoComponent implements OnInit {
   private scheduleService = inject(ScheduleService);
   private seasonService   = inject(SeasonService);
   private scoreService    = inject(ScoreService);
+  private systemService   = inject(SystemService);
   private destroyRef      = inject(DestroyRef);
 
   info:     ScheduleInfo | null = null;
@@ -375,6 +409,10 @@ export class InfoComponent implements OnInit {
   playerRows: PlayerRow[]       = [];
   statRows:   PlayerStats[]     = [];
   selectedPlayerId              = '';
+
+  version     = environment.version;
+  logs:        string[] = [];
+  logsLoading = false;
 
   summaryCols = ['nr', 'name', 'eveningCount', 'totalMatches', 'consecutive', 'buddy'];
   statCols    = ['nr', 'name', 'minTurns', 'avgTurns', 'avgScore', '180s', 'hf'];
@@ -387,6 +425,15 @@ export class InfoComponent implements OnInit {
       distinctUntilChanged(),
       filter(id => !!id),
     ).subscribe(id => this.load(id));
+    this.refreshLogs();
+  }
+
+  refreshLogs(): void {
+    this.logsLoading = true;
+    this.systemService.getLogs().subscribe({
+      next: ({ logs }) => { this.logs = logs; this.logsLoading = false; },
+      error: ()        => { this.logsLoading = false; },
+    });
   }
 
   get sortedPlayers(): PlayerInfoItem[] {
