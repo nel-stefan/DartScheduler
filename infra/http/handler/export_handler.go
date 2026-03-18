@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	excelexport "DartScheduler/infra/excel"
+	htmlexport "DartScheduler/infra/html"
 	"DartScheduler/infra/pdf"
 	"DartScheduler/usecase"
 
@@ -32,6 +33,19 @@ func (h *ExportHandler) PDF(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", `attachment; filename="schedule.pdf"`)
 	if err := h.uc.Export(r.Context(), pdf.Exporter{}, w); err != nil {
+		httpErrorDomain(w, err)
+	}
+}
+
+func (h *ExportHandler) EveningPrint(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := h.uc.ExportEvening(r.Context(), htmlexport.EveningPrinter{}, id, w); err != nil {
 		httpErrorDomain(w, err)
 	}
 }

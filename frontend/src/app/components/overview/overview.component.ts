@@ -636,6 +636,9 @@ export class AbsentDialogComponent {
                 <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel">
                   <mat-icon>file_download</mat-icon>
                 </button>
+                <button mat-icon-button (click)="printEvening(ev.id)" matTooltip="Afdrukken">
+                  <mat-icon>print</mat-icon>
+                </button>
                 <button mat-icon-button color="warn" (click)="deleteEvening(ev)" matTooltip="Avond verwijderen"
                         *ngIf="ev.isInhaalAvond">
                   <mat-icon>delete</mat-icon>
@@ -928,6 +931,10 @@ export class OverviewComponent implements OnInit {
 
   exportEvening(eveningId: string): void {
     window.open(`${environment.apiBaseUrl}/export/evening/${eveningId}/excel`, '_blank');
+  }
+
+  printEvening(eveningId: string): void {
+    window.open(`${environment.apiBaseUrl}/export/evening/${eveningId}/print`, '_blank');
   }
 
   deleteSchedule(): void {

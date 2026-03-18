@@ -73,6 +73,7 @@ func NewRouter(
 		r.Get("/export/excel", exportH.Excel)
 		r.Get("/export/pdf", exportH.PDF)
 		r.Get("/export/evening/{id}/excel", exportH.EveningExcel)
+		r.Get("/export/evening/{id}/print", exportH.EveningPrint)
 
 		r.Get("/system/logs", systemH.GetLogs)
 	})
