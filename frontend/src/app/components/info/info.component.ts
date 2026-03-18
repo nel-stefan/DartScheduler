@@ -89,6 +89,14 @@ interface MatchRow {
     .duty-table td { padding: 3px 8px; border-bottom: 1px solid #f0f0f0; }
     .duty-table tr:hover td { background: #fafafa; }
     .duty-empty { color: #9e9e9e; font-style: italic; font-size: 12px; padding: 8px 0; }
+    .duty-evening-table { border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+    .duty-evening-table th { background: #f5f5f5; font-weight: 600; text-align: center; padding: 4px 10px;
+                              border-bottom: 2px solid #e0e0e0; border-right: 1px solid #e0e0e0; }
+    .duty-evening-table td { text-align: center; padding: 3px 10px; border-bottom: 1px solid #f0f0f0;
+                              border-right: 1px solid #f0f0f0; }
+    .duty-evening-table .sec-cell { color: #0277bd; font-weight: 600; }
+    .duty-evening-table .cnt-cell { color: #c62828; font-weight: 600; }
+    .duty-evening-table .tot-cell { font-weight: 700; }
     .server-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
     .version-chip {
       background: #e8f5e9; color: #2e7d32; border-radius: 12px;
@@ -409,6 +417,26 @@ interface MatchRow {
                 <span class="cnt">Teller: <strong>{{ d.counterCount }}</strong></span>
               </div>
 
+              <div class="duty-section-title">Per avond</div>
+              <table class="duty-evening-table">
+                <thead>
+                  <tr>
+                    <th>Avond</th>
+                    <th>Schrijver</th>
+                    <th>Teller</th>
+                    <th>Totaal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of dutyByEvening">
+                    <td>{{ row.eveningNr }}</td>
+                    <td class="sec-cell">{{ row.sec || '—' }}</td>
+                    <td class="cnt-cell">{{ row.cnt || '—' }}</td>
+                    <td class="tot-cell">{{ row.total }}</td>
+                  </tr>
+                </tbody>
+              </table>
+
               <div class="duty-section-title">Geschreven wedstrijden</div>
               <p class="duty-empty" *ngIf="d.secretaryMatches.length === 0">Geen.</p>
               <table class="duty-table" *ngIf="d.secretaryMatches.length > 0">
@@ -480,6 +508,27 @@ export class InfoComponent implements OnInit {
 
   get selectedDutyPlayer(): DutyStats | null {
     return this.dutyStats.find(d => d.player.id === this.selectedDutyPlayerId) ?? null;
+  }
+
+  get dutyByEvening(): { eveningNr: number; sec: number; cnt: number; total: number }[] {
+    const d = this.selectedDutyPlayer;
+    if (!d) return [];
+    const map = new Map<number, { sec: number; cnt: number }>();
+    for (const m of d.secretaryMatches) {
+      const nr = m.eveningNr || 0;
+      const e = map.get(nr) ?? { sec: 0, cnt: 0 };
+      e.sec++;
+      map.set(nr, e);
+    }
+    for (const m of d.counterMatches) {
+      const nr = m.eveningNr || 0;
+      const e = map.get(nr) ?? { sec: 0, cnt: 0 };
+      e.cnt++;
+      map.set(nr, e);
+    }
+    return [...map.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([eveningNr, { sec, cnt }]) => ({ eveningNr, sec, cnt, total: sec + cnt }));
   }
 
   version     = environment.version;

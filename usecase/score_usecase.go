@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"log"
+	"sort"
 
 	"DartScheduler/domain"
 )
@@ -169,6 +170,10 @@ func (uc *ScoreUseCase) GetDutyStats(ctx context.Context, players []domain.Playe
 		}
 	}
 
+	sortByEvening := func(ms []DutyMatch) {
+		sort.Slice(ms, func(i, j int) bool { return ms[i].EveningNr < ms[j].EveningNr })
+	}
+
 	out := make([]DutyStats, 0, len(players))
 	for _, p := range players {
 		a := accum[p.Nr]
@@ -176,6 +181,8 @@ func (uc *ScoreUseCase) GetDutyStats(ctx context.Context, players []domain.Playe
 		if a != nil {
 			sec = a.secMatches
 			cnt = a.cntMatches
+			sortByEvening(sec)
+			sortByEvening(cnt)
 		}
 		out = append(out, DutyStats{
 			Player:           p,

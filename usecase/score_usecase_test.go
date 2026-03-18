@@ -103,7 +103,7 @@ func TestReportAbsent_OnlyUnplayedMatchesAreMarked(t *testing.T) {
 	unrelatedMatch := makeMatch(eveningID, unrelated, opponent1, false)
 
 	repo := newStubMatchRepo([]domain.Match{playedMatch, unplayedMatch, unrelatedMatch})
-	uc := usecase.NewScoreUseCase(repo)
+	uc := usecase.NewScoreUseCase(repo, nil)
 
 	if err := uc.ReportAbsent(ctx, domain.EveningID(eveningID), player, "test"); err != nil {
 		t.Fatalf("ReportAbsent error: %v", err)
@@ -139,7 +139,7 @@ func TestReportAbsent_PlayerBAlsoMarked(t *testing.T) {
 
 	m := makeMatch(eveningID, playerA, playerB, false)
 	repo := newStubMatchRepo([]domain.Match{m})
-	uc := usecase.NewScoreUseCase(repo)
+	uc := usecase.NewScoreUseCase(repo, nil)
 
 	if err := uc.ReportAbsent(ctx, eveningID, playerB, "reporter"); err != nil {
 		t.Fatalf("ReportAbsent error: %v", err)
@@ -164,7 +164,7 @@ func TestReportAbsent_DoesNotOverwriteExistingReporter(t *testing.T) {
 	m := makeMatch(eveningID, playerA, playerB, false)
 	m.ReportedBy = "eerste afmelder" // already reported by playerA
 	repo := newStubMatchRepo([]domain.Match{m})
-	uc := usecase.NewScoreUseCase(repo)
+	uc := usecase.NewScoreUseCase(repo, nil)
 
 	// playerB now also reports absent — should not overwrite
 	if err := uc.ReportAbsent(ctx, eveningID, playerB, "tweede afmelder"); err != nil {
@@ -186,7 +186,7 @@ func TestReportAbsent_NoMatchesOnEvening(t *testing.T) {
 	player := domain.PlayerID(uuid.New())
 
 	repo := newStubMatchRepo(nil)
-	uc := usecase.NewScoreUseCase(repo)
+	uc := usecase.NewScoreUseCase(repo, nil)
 
 	if err := uc.ReportAbsent(ctx, eveningID, player, "test"); err != nil {
 		t.Errorf("expected no error for empty evening, got %v", err)
