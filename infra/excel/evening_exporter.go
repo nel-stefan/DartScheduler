@@ -124,13 +124,14 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		"F": 14.0, "G": 6.5, "H": 14.0, "I": 6.5,
 		"J": 14.0, "K": 6.5, "L": 14.0, "M": 6.5,
 		"N": 12.5, "O": 7.5, "P": 5.5, "Q": 5.5,
+		"R": 5.5, "S": 5.5, "T": 6.5, "U": 6.5,
 	} {
 		f.SetColWidth(ws, col, col, width)
 	}
 
 	// ================================================================ 3. MERGES
-	f.MergeCell(ws, "A1", "Q1")
-	f.MergeCell(ws, "A2", "Q2")
+	f.MergeCell(ws, "A1", "U1")
+	f.MergeCell(ws, "A2", "U2")
 	// No header merges in row 4 — single header row, one cell per column.
 
 	// ================================================================ 4. CELL VALUES
@@ -162,16 +163,20 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	f.SetCellValue(ws, "O4", "vooruit-\ngooi\ndatum")
 	f.SetCellValue(ws, "P4", "nr.\nschrij-\nver")
 	f.SetCellValue(ws, "Q4", "nr.\ntel-\nler")
+	f.SetCellValue(ws, "R4", "180\nspeler\nA")
+	f.SetCellValue(ws, "S4", "180\nspeler\nB")
+	f.SetCellValue(ws, "T4", "hoogste\nfinish\nA")
+	f.SetCellValue(ws, "U4", "hoogste\nfinish\nB")
 
 	// ================================================================ 5. CELL STYLES / BORDERS
 	// Row 1
-	f.SetCellStyle(ws, "A1", "Q1", ns(&excelize.Style{
+	f.SetCellStyle(ws, "A1", "U1", ns(&excelize.Style{
 		Font:      &excelize.Font{Family: fontCalibri, Size: 16, Bold: true},
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
 	}))
 
 	// Row 2
-	f.SetCellStyle(ws, "A2", "Q2", ns(&excelize.Style{
+	f.SetCellStyle(ws, "A2", "U2", ns(&excelize.Style{
 		Font:      &excelize.Font{Family: fontCalibri, Size: 11, Bold: true},
 		Alignment: &excelize.Alignment{Horizontal: "center"},
 	}))
@@ -203,7 +208,11 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	f.SetCellStyle(ws, "N4", "N4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
 	f.SetCellStyle(ws, "O4", "O4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
 	f.SetCellStyle(ws, "P4", "P4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
-	f.SetCellStyle(ws, "Q4", "Q4", hdrStyle(styleMedium, styleThick, styleThick, styleThick))
+	f.SetCellStyle(ws, "Q4", "Q4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "R4", "R4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "S4", "S4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "T4", "T4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "U4", "U4", hdrStyle(styleMedium, styleThick, styleThick, styleThick))
 
 	// ================================================================ DATA ROWS
 	// colSpec defines per-column style: font size, horizontal align, shrink-to-fit, and border sides.
@@ -214,7 +223,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		l, r, t, b  int
 	}
 
-	cols := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"}
+	cols := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U"}
 
 	// Row 5 (first data row): thick top on ALL columns.
 	row7 := []colSpec{
@@ -234,7 +243,11 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		{11, "", true, styleMedium, styleMedium, styleThick, styleThin},        // N: afgemeld door
 		{11, "", false, styleMedium, styleMedium, styleThick, styleThin},       // O: vooruitgooi datum
 		{11, "center", false, styleMedium, styleMedium, styleThick, styleThin}, // P: nr. schrijver
-		{11, "center", false, styleMedium, styleThick, styleThick, styleThin},  // Q: nr. teller
+		{11, "center", false, styleMedium, styleMedium, styleThick, styleThin}, // Q: nr. teller
+		{11, "center", false, styleMedium, styleMedium, styleThick, styleThin}, // R: 180 A
+		{11, "center", false, styleMedium, styleMedium, styleThick, styleThin}, // S: 180 B
+		{11, "center", false, styleMedium, styleMedium, styleThick, styleThin}, // T: HF A
+		{11, "center", false, styleMedium, styleThick, styleThick, styleThin},  // U: HF B
 	}
 
 	// Subsequent data rows.
@@ -255,7 +268,11 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		{11, "", true, styleMedium, styleMedium, styleThin, styleThin},        // N
 		{11, "", false, styleMedium, styleMedium, styleThin, styleThin},       // O
 		{11, "center", false, styleMedium, styleMedium, styleThin, styleThin}, // P
-		{11, "center", false, styleMedium, styleThick, styleThin, styleThin},  // Q
+		{11, "center", false, styleMedium, styleMedium, styleThin, styleThin}, // Q
+		{11, "center", false, styleMedium, styleMedium, styleThin, styleThin}, // R: 180 A
+		{11, "center", false, styleMedium, styleMedium, styleThin, styleThin}, // S: 180 B
+		{11, "center", false, styleMedium, styleMedium, styleThin, styleThin}, // T: HF A
+		{11, "center", false, styleMedium, styleThick, styleThin, styleThin},  // U: HF B
 	}
 
 	buildStyles := func(specs []colSpec) []int {
@@ -298,7 +315,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	}
 	totalRows := pages * rowsPerPage
 
-	emptyValues := []interface{}{"", "", "/", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}
+	emptyValues := []interface{}{"", "", "/", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}
 
 	// Pass A: row heights + cell values (no styles yet — styles come after in pass B).
 	for i := 0; i < totalRows; i++ {
@@ -332,6 +349,20 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 				leg3Turns = fmt.Sprintf("%d", m.Leg3Turns)
 			}
 
+			a180s, b180s, aHF, bHF := "", "", "", ""
+			if m.PlayerA180s > 0 {
+				a180s = fmt.Sprintf("%d", m.PlayerA180s)
+			}
+			if m.PlayerB180s > 0 {
+				b180s = fmt.Sprintf("%d", m.PlayerB180s)
+			}
+			if m.PlayerAHighestFinish > 0 {
+				aHF = fmt.Sprintf("%d", m.PlayerAHighestFinish)
+			}
+			if m.PlayerBHighestFinish > 0 {
+				bHF = fmt.Sprintf("%d", m.PlayerBHighestFinish)
+			}
+
 			values = []interface{}{
 				pA.Nr, domain.FormatDisplayName(pA.Name), "/", pB.Nr, domain.FormatDisplayName(pB.Name),
 				playerLabel(m.Leg1Winner), leg1Turns,
@@ -339,6 +370,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 				playerLabel(m.Leg3Winner), leg3Turns,
 				totalWinner, eindstand,
 				reportedByLabel(m.ReportedBy), m.RescheduleDate, m.SecretaryNr, m.CounterNr,
+				a180s, b180s, aHF, bHF,
 			}
 		} else {
 			values = emptyValues
