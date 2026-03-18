@@ -57,15 +57,17 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		return firstNameNr(p)
 	}
 
-	// reportedByLabel converts a stored "nr Achternaam, Voornaam" string to
-	// "Voornaam - nr" by looking up the matching player. Falls back to the
-	// raw value for free-text entries.
+	// reportedByLabel converts a stored "nr ..." string to "Voornaam - nr"
+	// by matching on player number. Falls back to the raw value for free-text entries.
 	reportedByLabel := func(raw string) string {
 		if raw == "" {
 			return ""
 		}
 		for _, p := range players {
-			if p.Nr+" "+p.Name == raw {
+			if p.Nr == "" {
+				continue
+			}
+			if strings.HasPrefix(raw, p.Nr+" ") || strings.HasPrefix(raw, p.Nr+"\t") {
 				return firstNameNr(p)
 			}
 		}
