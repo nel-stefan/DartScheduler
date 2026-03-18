@@ -148,7 +148,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	// texts (e.g. "nr.\nschrij-\nver") in the now-shorter 2-row merge area,
 	// rows 4 and 5 are slightly taller and row 6 is a thin "border strip".
 	f.SetRowHeight(ws, 4, 19)
-	f.SetRowHeight(ws, 5, 18)
+	f.SetRowHeight(ws, 5, 22) // needs ≥ 2 lines of 9pt text for "aantal beurten"
 	f.SetRowHeight(ws, 6, 5)
 
 	// Phase 1: merge all header regions before applying any styles.
