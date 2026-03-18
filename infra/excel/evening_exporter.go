@@ -119,21 +119,10 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	f.SetRowHeight(ws, 4, 45)
 
 	// ================================================================ 2. COLUMN WIDTHS
-	maxNameLen := 10
-	for _, p := range players {
-		if l := len(domain.FormatDisplayName(p.Name)); l > maxNameLen {
-			maxNameLen = l
-		}
-	}
-	nameColWidth := float64(maxNameLen)*0.7 + 1.0 // narrower fit for naam columns
-	if nameColWidth < 11.0 {
-		nameColWidth = 11.0
-	}
-
 	for col, width := range map[string]float64{
-		"A": 3.5, "B": nameColWidth, "C": 2.0, "D": 3.5, "E": nameColWidth,
-		"F": 11.5, "G": 6.5, "H": 11.5, "I": 6.5,
-		"J": 11.5, "K": 6.5, "L": 11.5, "M": 6.5,
+		"A": 3.5, "B": 18.0, "C": 2.0, "D": 3.5, "E": 18.0,
+		"F": 14.0, "G": 6.5, "H": 14.0, "I": 6.5,
+		"J": 14.0, "K": 6.5, "L": 14.0, "M": 6.5,
 		"N": 12.5, "O": 7.5, "P": 5.5, "Q": 5.5,
 	} {
 		f.SetColWidth(ws, col, col, width)
@@ -301,7 +290,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	//   header rows 1-4: 21 + 15 + 13.5 + 45 = 94.5pt
 	//   A4 landscape printable height ≈ 444pt
 	//   data rows: floor((444 - 94.5) / 17.25) = 20
-	const rowsPerPage = 20
+	const rowsPerPage = 27
 	matchCount := len(ev.Matches)
 	pages := (matchCount + rowsPerPage - 1) / rowsPerPage
 	if pages < 1 {
