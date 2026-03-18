@@ -27,6 +27,27 @@ import { PlayerStats, DutyStats } from '../../models';
     .pts-col  { font-weight: 600; color: #2e7d32; }
 
 
+    .records-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .record-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+      min-width: 220px;
+    }
+    .record-icon { font-size: 28px; width: 28px; height: 28px; }
+    .record-label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #757575; }
+    .record-name  { font-size: 14px; font-weight: 500; color: #212121; }
+    .record-value { font-size: 20px; font-weight: 700; }
+
     .print-only { display: none; }
 
     .print-table {
@@ -58,6 +79,26 @@ import { PlayerStats, DutyStats } from '../../models';
         <button mat-stroked-button (click)="print()" class="screen-only">
           <mat-icon>print</mat-icon> Afdrukken
         </button>
+      </div>
+
+      <!-- Records: minste beurten + hoogste finish (overkoepelend) -->
+      <div class="records-row screen-only" *ngIf="minTurnsRecord || highestFinishRecord">
+        <div class="record-card" *ngIf="minTurnsRecord">
+          <mat-icon class="record-icon" style="color:#0277bd">speed</mat-icon>
+          <div class="record-body">
+            <div class="record-label">Minste beurten</div>
+            <div class="record-name">{{ minTurnsRecord.player.name }}</div>
+            <div class="record-value" style="color:#0277bd">{{ minTurnsRecord.minTurns }}</div>
+          </div>
+        </div>
+        <div class="record-card" *ngIf="highestFinishRecord">
+          <mat-icon class="record-icon" style="color:#e65100">star</mat-icon>
+          <div class="record-body">
+            <div class="record-label">Hoogste finish</div>
+            <div class="record-name">{{ highestFinishRecord.player.name }}</div>
+            <div class="record-value" style="color:#e65100">{{ highestFinishRecord.highestFinish }}</div>
+          </div>
+        </div>
       </div>
 
       <!-- Screen: tabs -->
@@ -122,13 +163,6 @@ import { PlayerStats, DutyStats } from '../../models';
                   </td>
                 </ng-container>
 
-                <ng-container matColumnDef="hf">
-                  <th mat-header-cell *matHeaderCellDef style="width:64px;text-align:center" title="Hoogste finish">H.Finish</th>
-                  <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600;color:#0277bd">
-                    {{ s.highestFinish || '—' }}
-                  </td>
-                </ng-container>
-
                 <tr mat-header-row *matHeaderRowDef="matchCols"></tr>
                 <tr mat-row *matRowDef="let row; columns: matchCols;"></tr>
               </table>
@@ -185,6 +219,20 @@ import { PlayerStats, DutyStats } from '../../models';
 
       <!-- Print: flat sections -->
       <div class="print-only">
+        <!-- Records -->
+        <div *ngIf="minTurnsRecord || highestFinishRecord" style="display:flex;gap:24px;margin-bottom:12px">
+          <div *ngIf="minTurnsRecord">
+            <span style="font-size:9pt;color:#757575">Minste beurten: </span>
+            <strong>{{ minTurnsRecord.player.name }}</strong>
+            <span style="font-size:9pt"> ({{ minTurnsRecord.minTurns }})</span>
+          </div>
+          <div *ngIf="highestFinishRecord">
+            <span style="font-size:9pt;color:#757575">Hoogste finish: </span>
+            <strong>{{ highestFinishRecord.player.name }}</strong>
+            <span style="font-size:9pt"> ({{ highestFinishRecord.highestFinish }})</span>
+          </div>
+        </div>
+
         <!-- Page 1: all class standings -->
         <div *ngFor="let cls of classes">
           <h3 class="print-section-title">{{ cls.label }}</h3>
@@ -200,7 +248,6 @@ import { PlayerStats, DutyStats } from '../../models';
                 <th class="center" style="width:60px">Legs voor</th>
                 <th class="center" style="width:60px">Legs tegen</th>
                 <th class="center" style="width:44px">180</th>
-                <th class="center" style="width:56px">H.Finish</th>
               </tr>
             </thead>
             <tbody>
@@ -214,7 +261,6 @@ import { PlayerStats, DutyStats } from '../../models';
                 <td class="center">{{ s.pointsFor }}</td>
                 <td class="center">{{ s.pointsAgainst }}</td>
                 <td class="center" style="font-weight:600">{{ s.oneEighties || '—' }}</td>
-                <td class="center" style="font-weight:600">{{ s.highestFinish || '—' }}</td>
               </tr>
             </tbody>
           </table>
@@ -256,9 +302,20 @@ export class StandingsComponent implements OnInit {
 
   classes:   { label: string; stats: PlayerStats[] }[] = [];
   dutyStats: DutyStats[] = [];
+  allStats:  PlayerStats[] = [];
 
-  matchCols = ['rank', 'nr', 'name', 'played', 'wins', 'losses', 'pf', 'pa', '180s', 'hf'];
+  matchCols = ['rank', 'nr', 'name', 'played', 'wins', 'losses', 'pf', 'pa', '180s'];
   dutyCols  = ['rank', 'nr', 'name', 'count'];
+
+  get minTurnsRecord(): PlayerStats | null {
+    const c = this.allStats.filter(s => s.minTurns > 0);
+    return c.length ? c.reduce((b, s) => s.minTurns < b.minTurns ? s : b) : null;
+  }
+
+  get highestFinishRecord(): PlayerStats | null {
+    const c = this.allStats.filter(s => s.highestFinish > 0);
+    return c.length ? c.reduce((b, s) => s.highestFinish > b.highestFinish ? s : b) : null;
+  }
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -270,6 +327,7 @@ export class StandingsComponent implements OnInit {
   private loadStats(): void {
     const sid = this.seasonService.selectedId$.value || undefined;
     this.scoreService.getStats(sid).subscribe((s) => {
+      this.allStats = s;
       this.classes = this.buildClasses(s);
     });
     this.scoreService.getDutyStats(sid).subscribe((d) => {
