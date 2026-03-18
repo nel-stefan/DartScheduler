@@ -286,7 +286,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 			maxNameLen = l
 		}
 	}
-	nameColWidth := float64(maxNameLen)*0.9 + 2.0 // approximate character-unit width
+	nameColWidth := float64(maxNameLen)*1.0 + 1.5 // ≈ autofit: 1 unit/char + padding
 
 	for col, width := range map[string]float64{
 		"A": 4.0, "B": nameColWidth, "C": 1.7109, "D": 4.0, "E": nameColWidth,
@@ -308,22 +308,24 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		l, r, t, b  int
 	}
 
-	// Row 7: first data row — thick top on B/C/E/N–Q to mark the start of data;
-	// no top on A/D/F–M (visually bounded by the header bottom borders above).
+	// Row 7: first data row — thick top on ALL columns.
+	// This ensures a visible thick separator below the header on every page,
+	// including print-title repeated pages where header row-6 bottom borders
+	// are unreliable due to Excel's merged-cell / print-title rendering quirks.
 	row7 := []colSpec{
-		{12, "right", false, styleThick, styleThin, 0, styleThin},              // A: nr
+		{12, "right", false, styleThick, styleThin, styleThick, styleThin},      // A: nr
 		{11, "", false, styleThin, styleMedium, styleThick, styleThin},          // B: naam
 		{10, "center", false, styleMedium, styleMedium, styleThick, styleThin},  // C: /
-		{12, "right", false, styleMedium, styleThin, 0, styleThin},              // D: nr
+		{12, "right", false, styleMedium, styleThin, styleThick, styleThin},     // D: nr
 		{11, "", false, styleThin, styleMedium, styleThick, styleThin},          // E: naam
-		{11, "", true, styleMedium, styleThin, 0, styleThin},                    // F: leg1 winner
-		{11, "", false, styleThin, styleMedium, 0, styleThin},                   // G: leg1 turns
-		{11, "", true, styleMedium, styleThin, 0, styleThin},                    // H: leg2 winner
-		{11, "", false, styleThin, styleMedium, 0, styleThin},                   // I: leg2 turns
-		{11, "", true, styleMedium, styleThin, 0, styleThin},                    // J: leg3 winner
-		{11, "", false, styleThin, styleMedium, 0, styleThin},                   // K: leg3 turns
-		{11, "", true, styleMedium, styleThin, 0, styleThin},                    // L: totaal winnaar
-		{11, "center", false, styleThin, styleMedium, 0, styleThin},             // M: eindstand
+		{11, "", true, styleMedium, styleThin, styleThick, styleThin},           // F: leg1 winner
+		{11, "", false, styleThin, styleMedium, styleThick, styleThin},          // G: leg1 turns
+		{11, "", true, styleMedium, styleThin, styleThick, styleThin},           // H: leg2 winner
+		{11, "", false, styleThin, styleMedium, styleThick, styleThin},          // I: leg2 turns
+		{11, "", true, styleMedium, styleThin, styleThick, styleThin},           // J: leg3 winner
+		{11, "", false, styleThin, styleMedium, styleThick, styleThin},          // K: leg3 turns
+		{11, "", true, styleMedium, styleThin, styleThick, styleThin},           // L: totaal winnaar
+		{11, "center", false, styleThin, styleMedium, styleThick, styleThin},    // M: eindstand
 		{11, "", true, styleMedium, styleMedium, styleThick, styleThin},         // N: afgemeld door
 		{11, "", false, styleMedium, styleMedium, styleThick, styleThin},        // O: vooruitgooi datum
 		{11, "center", false, styleMedium, styleMedium, styleThick, styleThin},  // P: nr. schrijver
