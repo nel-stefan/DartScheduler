@@ -54,7 +54,8 @@ func main() {
 	scoreH := handler.NewScoreHandler(scoreUC)
 	statsH := handler.NewStatsHandler(playerRepo, scoreUC)
 	exportH  := handler.NewExportHandler(exportUC)
-	systemH  := handler.NewSystemHandler(logBuf)
+	deployScript := os.Getenv("DEPLOY_SCRIPT")
+	systemH  := handler.NewSystemHandler(logBuf, deployScript)
 
 	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH)
 
