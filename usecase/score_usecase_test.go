@@ -192,3 +192,145 @@ func TestReportAbsent_NoMatchesOnEvening(t *testing.T) {
 		t.Errorf("expected no error for empty evening, got %v", err)
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Submit tests
+// ---------------------------------------------------------------------------
+
+// TestSubmit_TwoLegWin verifies that a 2-0 win is recorded correctly.
+func TestSubmit_TwoLegWin(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.PlayerID(uuid.New())
+	pB := domain.PlayerID(uuid.New())
+	m := domain.Match{
+		ID:      domain.MatchID(uuid.New()),
+		PlayerA: pA,
+		PlayerB: pB,
+	}
+	repo := newStubMatchRepo([]domain.Match{m})
+	uc := usecase.NewScoreUseCase(repo, nil)
+
+	err := uc.Submit(ctx, usecase.SubmitScoreInput{
+		MatchID:    m.ID,
+		Leg1Winner: pA.String(),
+		Leg1Turns:  15,
+		Leg2Winner: pA.String(),
+		Leg2Turns:  18,
+	})
+	if err != nil {
+		t.Fatalf("Submit error: %v", err)
+	}
+
+	got := repo.matches[m.ID]
+	if got.ScoreA == nil || *got.ScoreA != 2 {
+		t.Errorf("ScoreA: got %v, want 2", got.ScoreA)
+	}
+	if got.ScoreB == nil || *got.ScoreB != 0 {
+		t.Errorf("ScoreB: got %v, want 0", got.ScoreB)
+	}
+	if !got.Played {
+		t.Error("Played should be true")
+	}
+}
+
+// TestSubmit_ThreeLegSplit verifies a 2-1 result with three legs.
+func TestSubmit_ThreeLegSplit(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.PlayerID(uuid.New())
+	pB := domain.PlayerID(uuid.New())
+	m := domain.Match{
+		ID:      domain.MatchID(uuid.New()),
+		PlayerA: pA,
+		PlayerB: pB,
+	}
+	repo := newStubMatchRepo([]domain.Match{m})
+	uc := usecase.NewScoreUseCase(repo, nil)
+
+	err := uc.Submit(ctx, usecase.SubmitScoreInput{
+		MatchID:    m.ID,
+		Leg1Winner: pA.String(),
+		Leg1Turns:  14,
+		Leg2Winner: pB.String(),
+		Leg2Turns:  16,
+		Leg3Winner: pA.String(),
+		Leg3Turns:  20,
+	})
+	if err != nil {
+		t.Fatalf("Submit error: %v", err)
+	}
+
+	got := repo.matches[m.ID]
+	if *got.ScoreA != 2 {
+		t.Errorf("ScoreA: got %d, want 2", *got.ScoreA)
+	}
+	if *got.ScoreB != 1 {
+		t.Errorf("ScoreB: got %d, want 1", *got.ScoreB)
+	}
+}
+
+// TestSubmit_AdminFieldsPersisted verifies secretary, counter and 180s fields are saved.
+func TestSubmit_AdminFieldsPersisted(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.PlayerID(uuid.New())
+	pB := domain.PlayerID(uuid.New())
+	m := domain.Match{
+		ID:      domain.MatchID(uuid.New()),
+		PlayerA: pA,
+		PlayerB: pB,
+	}
+	repo := newStubMatchRepo([]domain.Match{m})
+	uc := usecase.NewScoreUseCase(repo, nil)
+
+	err := uc.Submit(ctx, usecase.SubmitScoreInput{
+		MatchID:              m.ID,
+		Leg1Winner:           pA.String(),
+		Leg1Turns:            17,
+		Leg2Winner:           pA.String(),
+		Leg2Turns:            19,
+		SecretaryNr:          "5",
+		CounterNr:            "7",
+		PlayerA180s:          2,
+		PlayerB180s:          1,
+		PlayerAHighestFinish: 120,
+		PlayerBHighestFinish: 60,
+		ReportedBy:           "5 Jan",
+	})
+	if err != nil {
+		t.Fatalf("Submit error: %v", err)
+	}
+
+	got := repo.matches[m.ID]
+	if got.SecretaryNr != "5" {
+		t.Errorf("SecretaryNr: got %q, want %q", got.SecretaryNr, "5")
+	}
+	if got.CounterNr != "7" {
+		t.Errorf("CounterNr: got %q, want %q", got.CounterNr, "7")
+	}
+	if got.PlayerA180s != 2 {
+		t.Errorf("PlayerA180s: got %d, want 2", got.PlayerA180s)
+	}
+	if got.PlayerAHighestFinish != 120 {
+		t.Errorf("PlayerAHighestFinish: got %d, want 120", got.PlayerAHighestFinish)
+	}
+	if got.ReportedBy != "5 Jan" {
+		t.Errorf("ReportedBy: got %q, want %q", got.ReportedBy, "5 Jan")
+	}
+}
+
+// TestSubmit_NotFoundError verifies an error is returned for an unknown match ID.
+func TestSubmit_NotFoundError(t *testing.T) {
+	ctx := context.Background()
+
+	repo := newStubMatchRepo(nil)
+	uc := usecase.NewScoreUseCase(repo, nil)
+
+	err := uc.Submit(ctx, usecase.SubmitScoreInput{
+		MatchID: domain.MatchID(uuid.New()),
+	})
+	if err == nil {
+		t.Error("expected error for unknown match, got nil")
+	}
+}

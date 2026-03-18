@@ -27,9 +27,12 @@ DartScheduler bestaat uit een Go-backend en een Angular-frontend die samen als �
 |---|---|
 | Spelers importeren | Upload een Excel-ledenlijst (NL of EN formaat) |
 | Schema genereren | Round-robin schema met simulated annealing optimalisatie |
-| Scores invoeren | Per wedstrijd scores registreren via dialoogvenster |
-| Stand bijhouden | Automatisch berekende ranglijst (gewonnen/gelijkspel/verloren) |
-| Exporteren | Download schema als Excel of PDF |
+| Scores invoeren | Per wedstrijd leg-winnaar, beurten, 180's en highest finish registreren |
+| Stand bijhouden | Automatisch berekende ranglijst (gewonnen/gelijkspel/verloren) per klasse |
+| Statistieken | Beurten-records, 180's, highest finish, schrijver/teller-overzicht per speler |
+| Exporteren | Schema als Excel of PDF; avondformulier als Excel én HTML (afdruk) |
+| Mobiele UI | Aparte mobiele interface op `/m/*` voor score-invoer onderweg |
+| Naam­opmaak | Namen altijd weergegeven als "Voornaam Achternaam" (opgeslagen als "Achternaam, Voornaam") |
 
 ---
 
@@ -45,12 +48,12 @@ Het project volgt een gelaagde Clean Architecture:
                      │ HTTP / REST
 ┌────────────────────▼────────────────────┐
 │           infra/http (handlers)          │
-│  POST /api/import   GET /api/players     │
+│  POST /api/import      GET /api/players  │
 │  POST /api/schedule/generate             │
-│  GET  /api/schedule                      │
+│  GET  /api/schedules   GET /api/schedule │
 │  PUT  /api/matches/{id}/score            │
-│  GET  /api/stats                         │
-│  GET  /api/export/excel|pdf              │
+│  GET  /api/stats       /api/stats/duties │
+│  GET  /api/export/excel|pdf|evening/…    │
 └────────────────────┬────────────────────┘
                      │
 ┌────────────────────▼────────────────────┐
@@ -186,125 +189,130 @@ Importeer spelers vanuit een Excel-bestand.
 
 - **Content-Type:** `multipart/form-data`
 - **Veld:** `file` — `.xlsx` of `.xls` bestand
-- **Response:** `200 OK`
-  ```json
-  { "imported": 24 }
-  ```
+- **Response:** `200 OK` — `{ "imported": 24 }`
 
 #### `GET /api/players`
 Haal alle spelers op, gesorteerd op naam.
 
-- **Response:** `200 OK`
-  ```json
-  [
-    {
-      "ID": "uuid",
-      "Nr": "1",
-      "Name": "Jan de Vries",
-      "Email": "jan@example.com",
-      "Sponsor": "Cafe De Kroeg",
-      "Address": "Hoofdstraat 1",
-      "PostalCode": "1234AB",
-      "City": "Amsterdam",
-      "Phone": "020-1234567",
-      "Mobile": "06-12345678",
-      "MemberSince": "2020"
-    }
-  ]
-  ```
+#### `PUT /api/players/{id}`
+Werk een speler bij.
+
+#### `DELETE /api/players/{id}`
+Verwijder een speler en al zijn gekoppelde wedstrijden.
+
+#### `GET /api/players/{id}/buddies`
+Haal de buddyvoorkeur op voor een speler.
+
+#### `PUT /api/players/{id}/buddies`
+Stel de buddyvoorkeur in voor een speler.
 
 ### Schema
 
 #### `POST /api/schedule/generate`
-Genereer een nieuw competitieschema. Overschrijft het bestaande schema.
+Genereer een nieuw competitieschema.
 
 - **Body:**
   ```json
   {
     "competitionName": "Liga 2026",
+    "season": "2025-2026",
     "numEvenings": 20,
     "startDate": "2026-04-01",
-    "intervalDays": 7
+    "intervalDays": 7,
+    "inhaalNrs": [5],
+    "vrijeNrs": [10]
   }
   ```
-- **Response:** `200 OK` — volledig `Schedule`-object met alle avonden en wedstrijden.
+- **Response:** `200 OK` — volledig `Schedule`-object.
+
+#### `GET /api/schedules`
+Overzicht van alle schema's (zonder wedstrijden).
+
+#### `GET /api/schedules/{id}`
+Haal één schema op met alle avonden en wedstrijden.
+
+#### `GET /api/schedules/{id}/info`
+Haal schema-info op: spelermatrix, buddy-paren (voor de Info-pagina).
 
 #### `GET /api/schedule`
-Haal het meest recente schema op, inclusief alle avonden en wedstrijden.
-
-- **Response:** `200 OK`
-  ```json
-  {
-    "ID": "uuid",
-    "CompetitionName": "Liga 2026",
-    "CreatedAt": "2026-03-14T10:00:00Z",
-    "Evenings": [
-      {
-        "ID": "uuid",
-        "Number": 1,
-        "Date": "2026-04-01T00:00:00Z",
-        "Matches": [
-          {
-            "ID": "uuid",
-            "EveningID": "uuid",
-            "PlayerA": "uuid",
-            "PlayerB": "uuid",
-            "ScoreA": null,
-            "ScoreB": null,
-            "Played": false
-          }
-        ]
-      }
-    ]
-  }
-  ```
+Haal het meest recente schema op (shortcut voor de frontend).
 
 #### `GET /api/schedule/evening/{id}`
 Haal één avond op met bijbehorende wedstrijden.
 
+#### `DELETE /api/schedules/{id}`
+Verwijder een schema inclusief alle avonden en wedstrijden.
+
+#### `POST /api/schedules/{id}/inhaal-avond`
+Voeg een inhaalavond toe aan een bestaand schema.
+
+#### `DELETE /api/schedules/{id}/evenings/{eveningId}`
+Verwijder één avond uit een schema.
+
+#### `POST /api/schedules/import-season`
+Importeer historische seizoensdata vanuit een Excel-bestand.
+
 ### Wedstrijden
 
 #### `PUT /api/matches/{id}/score`
-Sla de score op voor een wedstrijd. Een wedstrijd kan slechts één keer worden ingevoerd.
+Sla de score op voor een wedstrijd.
 
 - **Body:**
   ```json
-  { "scoreA": 3, "scoreB": 1 }
+  {
+    "leg1Winner": "uuid-speler-a",
+    "leg1Turns": 15,
+    "leg2Winner": "uuid-speler-a",
+    "leg2Turns": 18,
+    "leg3Winner": "",
+    "leg3Turns": 0,
+    "reportedBy": "5 Jan",
+    "rescheduleDate": "",
+    "secretaryNr": "5",
+    "counterNr": "7",
+    "playerA180s": 1,
+    "playerB180s": 0,
+    "playerAHighestFinish": 120,
+    "playerBHighestFinish": 60
+  }
   ```
 - **Response:** `204 No Content`
-- **Fout:** `409 Conflict` als de wedstrijd al gespeeld is.
+
+#### `POST /api/evenings/{id}/report-absent`
+Markeer alle openstaande wedstrijden voor een speler op een avond als afgemeld.
+
+- **Body:** `{ "playerId": "uuid", "reportedBy": "5 Jan" }`
+- **Response:** `204 No Content`
 
 ### Statistieken
 
-#### `GET /api/stats`
-Haal de ranglijst op voor alle spelers.
+#### `GET /api/stats?scheduleId={id}`
+Haal de ranglijst op per speler (gewonnen/verloren/gelijkspel, legs, 180's, highest finish).
 
-- **Response:** `200 OK`
-  ```json
-  [
-    {
-      "Player": { ... },
-      "Played": 10,
-      "Wins": 7,
-      "Losses": 2,
-      "Draws": 1,
-      "PointsFor": 35,
-      "PointsAgainst": 18
-    }
-  ]
-  ```
+#### `GET /api/stats/duties?scheduleId={id}`
+Haal schrijver/teller-statistieken op per speler, inclusief per-wedstrijd detail.
 
 ### Export
 
-#### `GET /api/export/excel`
+#### `GET /api/export/excel?scheduleId={id}`
 Download het volledige schema als `.xlsx`-bestand.
 
-- **Response:** `200 OK`, `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
-
-#### `GET /api/export/pdf`
+#### `GET /api/export/pdf?scheduleId={id}`
 Download het volledige schema als `.pdf`-bestand.
 
-- **Response:** `200 OK`, `Content-Type: application/pdf`
+#### `GET /api/export/evening/{id}/excel`
+Download het wedstrijdformulier voor één avond als `.xlsx` (26 rijen per pagina, afdrukbaar).
+
+#### `GET /api/export/evening/{id}/print`
+Open een HTML-afdrukpagina voor één avond (zelfde layout als het Excel-formulier).
+
+### Systeem
+
+#### `GET /api/system/logs`
+Haal de laatste 200 serverlogregels op.
+
+#### `GET /health`
+Eenvoudige health-check: retourneert `200 ok`.
 
 ---
 
