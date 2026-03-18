@@ -113,22 +113,22 @@ func PrintEvening(_ context.Context, _ domain.Schedule, ev domain.Evening, playe
 		}
 
 		rows[i] = printRow{
-			NrA:             pA.Nr,
-			NameA:           domain.FormatDisplayName(pA.Name),
-			NrB:             pB.Nr,
-			NameB:           domain.FormatDisplayName(pB.Name),
-			Leg1Winner:      playerLabel(m.Leg1Winner),
-			Leg1Turns:       turns(m.Leg1Turns),
-			Leg2Winner:      playerLabel(m.Leg2Winner),
-			Leg2Turns:       turns(m.Leg2Turns),
-			Leg3Winner:      playerLabel(m.Leg3Winner),
-			Leg3Turns:       turns(m.Leg3Turns),
-			TotalWinner:     totalWinner,
-			Eindstand:       eindstand,
-			ReportedBy:      reportedByLabel(m.ReportedBy),
-			RescheduleDate:  m.RescheduleDate,
-			SecretaryNr:     m.SecretaryNr,
-			CounterNr:       m.CounterNr,
+			NrA:            pA.Nr,
+			NameA:          domain.FormatDisplayName(pA.Name),
+			NrB:            pB.Nr,
+			NameB:          domain.FormatDisplayName(pB.Name),
+			Leg1Winner:     playerLabel(m.Leg1Winner),
+			Leg1Turns:      turns(m.Leg1Turns),
+			Leg2Winner:     playerLabel(m.Leg2Winner),
+			Leg2Turns:      turns(m.Leg2Turns),
+			Leg3Winner:     playerLabel(m.Leg3Winner),
+			Leg3Turns:      turns(m.Leg3Turns),
+			TotalWinner:    totalWinner,
+			Eindstand:      eindstand,
+			ReportedBy:     reportedByLabel(m.ReportedBy),
+			RescheduleDate: m.RescheduleDate,
+			SecretaryNr:    m.SecretaryNr,
+			CounterNr:      m.CounterNr,
 		}
 	}
 
@@ -183,27 +183,28 @@ th {
   white-space: normal;
   word-break: break-word;
   line-height: 1.15;
+  min-height: 40pt;
 }
 tbody tr { height: 17.25pt; }
 
 /* Column widths */
-col.ca { width: 2.8%; }
-col.cb { width: 10%;  }
-col.cc { width: 1.3%; }
-col.cd { width: 2.8%; }
-col.ce { width: 10%;  }
-col.cf { width: 9.5%; }
-col.cg { width: 4.5%; }
-col.ch { width: 9.5%; }
-col.ci { width: 4.5%; }
-col.cj { width: 9.5%; }
-col.ck { width: 4.5%; }
-col.cl { width: 9.5%; }
-col.cm { width: 3.8%; }
-col.cn { width: 8.3%; }
-col.co { width: 5.2%; }
-col.cp { width: 4.2%; }
-col.cq { width: 4.2%; }
+col.ca { width: 3.7%;  }
+col.cb { width: 13.5%; }
+col.cc { width: 1.6%;  }
+col.cd { width: 3.7%;  }
+col.ce { width: 13.5%; }
+col.cf { width: 7.2%;  }
+col.cg { width: 4.7%;  }
+col.ch { width: 7.2%;  }
+col.ci { width: 4.7%;  }
+col.cj { width: 7.2%;  }
+col.ck { width: 4.7%;  }
+col.cl { width: 7.2%;  }
+col.cm { width: 4.6%;  }
+col.cn { width: 8.1%;  }
+col.co { width: 5.1%;  }
+col.cp { width: 4.1%;  }
+col.cq { width: 4.1%;  }
 
 /* Group separator borders */
 .sep  { border-right: 1pt   solid #000; }
@@ -231,28 +232,23 @@ col.cq { width: 4.2%; }
 </colgroup>
 <thead>
   <tr>
-    <th rowspan="3">nr</th>
-    <th rowspan="3" class="sep">naam</th>
-    <th rowspan="3" class="sep">/</th>
-    <th rowspan="3">nr</th>
-    <th rowspan="3" class="sep">naam</th>
-    <th colspan="2" class="sep">Leg 1</th>
-    <th colspan="2" class="sep">Leg 2</th>
-    <th colspan="2" class="sep">Leg 3</th>
-    <th rowspan="3" class="sep">totaal<br>winnaar</th>
-    <th rowspan="3" class="sep">eind-<br>stand</th>
-    <th rowspan="3" class="sep">afgemeld<br>door</th>
-    <th rowspan="3" class="sep">vooruit-<br>gooi<br>datum</th>
-    <th rowspan="3" class="sep">nr.<br>schrijver</th>
-    <th rowspan="3">nr.<br>teller</th>
-  </tr>
-  <tr>
-    <th rowspan="2">voornaam<br>+nr.</th>
-    <th rowspan="2" class="sep">aantal<br>beurten</th>
-    <th rowspan="2">voornaam<br>+nr.</th>
-    <th rowspan="2" class="sep">aantal<br>beurten</th>
-    <th rowspan="2">voornaam<br>+nr.</th>
-    <th rowspan="2" class="sep">aantal<br>beurten</th>
+    <th>nr.</th>
+    <th class="sep">naam</th>
+    <th class="sep">/</th>
+    <th>nr.</th>
+    <th class="sep">naam</th>
+    <th>winnaar<br>(naam + nr.)<br>leg 1</th>
+    <th class="sep">aantal<br>beurten</th>
+    <th>winnaar<br>(naam + nr.)<br>leg 2</th>
+    <th class="sep">aantal<br>beurten</th>
+    <th>winnaar<br>(naam + nr.)<br>leg 3</th>
+    <th class="sep">aantal<br>beurten</th>
+    <th>winnaar<br>(naam + nr.)</th>
+    <th class="sep">Eind-<br>stand</th>
+    <th class="sep">afgemeld<br>door<br>(naam + nr.)</th>
+    <th class="sep">vooruit-<br>gooi<br>datum</th>
+    <th class="sep">nr.<br>schrij-<br>ver</th>
+    <th>nr.<br>tel-<br>ler</th>
   </tr>
 </thead>
 <tbody>
@@ -268,7 +264,7 @@ col.cq { width: 4.2%; }
   <td class="ac sep">{{.Leg2Turns}}</td>
   <td>{{.Leg3Winner}}</td>
   <td class="ac sep">{{.Leg3Turns}}</td>
-  <td class="sep">{{.TotalWinner}}</td>
+  <td>{{.TotalWinner}}</td>
   <td class="ac sep">{{.Eindstand}}</td>
   <td class="sep">{{.ReportedBy}}</td>
   <td class="sep">{{.RescheduleDate}}</td>

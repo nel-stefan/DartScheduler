@@ -116,9 +116,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	f.SetRowHeight(ws, 1, 21)
 	f.SetRowHeight(ws, 2, 15)
 	f.SetRowHeight(ws, 3, 13.5)
-	f.SetRowHeight(ws, 4, 15)
-	f.SetRowHeight(ws, 5, 13.5)
-	f.SetRowHeight(ws, 6, 13.5)
+	f.SetRowHeight(ws, 4, 45)
 
 	// ================================================================ 2. COLUMN WIDTHS
 	maxNameLen := 10
@@ -128,12 +126,15 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		}
 	}
 	nameColWidth := float64(maxNameLen)*1.0 + 1.5 // ≈ autofit: 1 unit/char + padding
+	if nameColWidth < 18.0 {
+		nameColWidth = 18.0
+	}
 
 	for col, width := range map[string]float64{
-		"A": 4.0, "B": nameColWidth, "C": 1.7109, "D": 4.0, "E": nameColWidth,
-		"F": 14.4258, "G": 6.5, "H": 14.4258, "I": 6.5,
-		"J": 14.4258, "K": 6.5, "L": 13.8555, "M": 5.5703,
-		"N": 12.1406, "O": 7.8555, "P": 6.1406, "Q": 6.1406,
+		"A": 5.5, "B": nameColWidth, "C": 2.5, "D": 5.5, "E": nameColWidth,
+		"F": 11.5, "G": 6.5, "H": 11.5, "I": 6.5,
+		"J": 11.5, "K": 6.5, "L": 11.5, "M": 6.5,
+		"N": 12.5, "O": 7.5, "P": 5.5, "Q": 5.5,
 	} {
 		f.SetColWidth(ws, col, col, width)
 	}
@@ -141,16 +142,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	// ================================================================ 3. MERGES
 	f.MergeCell(ws, "A1", "Q1")
 	f.MergeCell(ws, "A2", "Q2")
-
-	for _, m := range [][2]string{
-		{"A4", "A6"}, {"B4", "B6"}, {"C4", "C6"}, {"D4", "D6"}, {"E4", "E6"},
-		{"F4", "G4"}, {"F5", "F6"}, {"G5", "G6"},
-		{"H4", "I4"}, {"H5", "H6"}, {"I5", "I6"},
-		{"J4", "K4"}, {"J5", "J6"}, {"K5", "K6"},
-		{"L4", "L6"}, {"M4", "M6"}, {"N4", "N6"}, {"O4", "O6"}, {"P4", "P6"}, {"Q4", "Q6"},
-	} {
-		f.MergeCell(ws, m[0], m[1])
-	}
+	// No header merges in row 4 — single header row, one cell per column.
 
 	// ================================================================ 4. CELL VALUES
 	f.SetCellValue(ws, "A1", "DARTCLUB GROLZICHT")
@@ -160,27 +152,24 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		dateLabel = "Inhaal"
 	}
 	f.SetCellValue(ws, "A2", fmt.Sprintf(
-		"Wedstrijdformulier     Spelsoort: 501 dubbel uit best of 3     Speeldatum: %s",
+		"Wedstrijdformulier   Spelsoort: 501 dubbel uit best of 3   Speeldatum: %s",
 		dateLabel))
 
-	// Rows 4-6: header labels
-	f.SetCellValue(ws, "A4", "nr")
+	// Row 4: single header row labels
+	f.SetCellValue(ws, "A4", "nr.")
 	f.SetCellValue(ws, "B4", "naam")
 	f.SetCellValue(ws, "C4", "/")
-	f.SetCellValue(ws, "D4", "nr")
+	f.SetCellValue(ws, "D4", "nr.")
 	f.SetCellValue(ws, "E4", "naam")
-	f.SetCellValue(ws, "F4", "Leg 1")
-	f.SetCellValue(ws, "F5", "voornaam+nr.")
-	f.SetCellValue(ws, "G5", "aantal beurten")
-	f.SetCellValue(ws, "H4", "Leg 2")
-	f.SetCellValue(ws, "H5", "voornaam+nr.")
-	f.SetCellValue(ws, "I5", "aantal beurten")
-	f.SetCellValue(ws, "J4", "Leg 3")
-	f.SetCellValue(ws, "J5", "voornaam+nr.")
-	f.SetCellValue(ws, "K5", "aantal beurten")
-	f.SetCellValue(ws, "L4", "totaal\nwinnaar")
-	f.SetCellValue(ws, "M4", "eind-\nstand")
-	f.SetCellValue(ws, "N4", "afgemeld\ndoor")
+	f.SetCellValue(ws, "F4", "winnaar\n(naam + nr.)\nleg 1")
+	f.SetCellValue(ws, "G4", "aantal\nbeurten")
+	f.SetCellValue(ws, "H4", "winnaar\n(naam + nr.)\nleg 2")
+	f.SetCellValue(ws, "I4", "aantal\nbeurten")
+	f.SetCellValue(ws, "J4", "winnaar\n(naam + nr.)\nleg 3")
+	f.SetCellValue(ws, "K4", "aantal\nbeurten")
+	f.SetCellValue(ws, "L4", "winnaar\n(naam + nr.)")
+	f.SetCellValue(ws, "M4", "Eind-\nstand")
+	f.SetCellValue(ws, "N4", "afgemeld\ndoor\n(naam + nr.)")
 	f.SetCellValue(ws, "O4", "vooruit-\ngooi\ndatum")
 	f.SetCellValue(ws, "P4", "nr.\nschrij-\nver")
 	f.SetCellValue(ws, "Q4", "nr.\ntel-\nler")
@@ -207,31 +196,25 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		f.SetCellStyle(ws, cell, cell, row3Style)
 	}
 
-	// Rows 4-6: column headers
-	f.SetCellStyle(ws, "A4", "A6", hdrStyle(styleThick, styleMedium, styleThick, styleThick))
-	f.SetCellStyle(ws, "B4", "B6", hdrStyle(0, styleThick, styleThick, styleThin))
-	f.SetCellStyle(ws, "C4", "C6", ns(&excelize.Style{
-		Font:      &excelize.Font{Family: fontCalibri, Size: 10},
-		Alignment: hdrCenter,
-		Border:    brd(styleThick, styleThick, styleThick, styleThin),
-	}))
-	f.SetCellStyle(ws, "D4", "D6", hdrStyle(styleThick, 0, styleThick, styleThick))
-	f.SetCellStyle(ws, "E4", "E6", hdrStyle(styleThick, styleThick, styleThick, styleThin))
-	f.SetCellStyle(ws, "F4", "G4", hdrStyle(styleThick, styleMedium, styleThick, styleThick))
-	f.SetCellStyle(ws, "F5", "F6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
-	f.SetCellStyle(ws, "G5", "G6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
-	f.SetCellStyle(ws, "H4", "I4", hdrStyle(styleThick, styleMedium, styleThick, 0))
-	f.SetCellStyle(ws, "H5", "H6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
-	f.SetCellStyle(ws, "I5", "I6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
-	f.SetCellStyle(ws, "J4", "K4", hdrStyle(0, styleMedium, styleThick, 0))
-	f.SetCellStyle(ws, "J5", "J6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
-	f.SetCellStyle(ws, "K5", "K6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
-	f.SetCellStyle(ws, "L4", "L6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
-	f.SetCellStyle(ws, "M4", "M6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
-	f.SetCellStyle(ws, "N4", "N6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
-	f.SetCellStyle(ws, "O4", "O6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
-	f.SetCellStyle(ws, "P4", "P6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
-	f.SetCellStyle(ws, "Q4", "Q6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	// Row 4: single header row — thick top + thick bottom on all columns.
+	// Border spec per column: L, R, T, B
+	f.SetCellStyle(ws, "A4", "A4", hdrStyle(styleThick, styleThin, styleThick, styleThick))
+	f.SetCellStyle(ws, "B4", "B4", hdrStyle(styleThin, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "C4", "C4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "D4", "D4", hdrStyle(styleMedium, styleThin, styleThick, styleThick))
+	f.SetCellStyle(ws, "E4", "E4", hdrStyle(styleThin, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "F4", "F4", hdrStyle(styleMedium, styleThin, styleThick, styleThick))
+	f.SetCellStyle(ws, "G4", "G4", hdrStyle(styleThin, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "H4", "H4", hdrStyle(styleMedium, styleThin, styleThick, styleThick))
+	f.SetCellStyle(ws, "I4", "I4", hdrStyle(styleThin, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "J4", "J4", hdrStyle(styleMedium, styleThin, styleThick, styleThick))
+	f.SetCellStyle(ws, "K4", "K4", hdrStyle(styleThin, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "L4", "L4", hdrStyle(styleMedium, styleThin, styleThick, styleThick))
+	f.SetCellStyle(ws, "M4", "M4", hdrStyle(styleThin, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "N4", "N4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "O4", "O4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "P4", "P4", hdrStyle(styleMedium, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "Q4", "Q4", hdrStyle(styleMedium, styleThick, styleThick, styleThick))
 
 	// ================================================================ DATA ROWS
 	// colSpec defines per-column style: font size, horizontal align, shrink-to-fit, and border sides.
@@ -244,7 +227,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 
 	cols := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"}
 
-	// Row 7: first data row — thick top on ALL columns.
+	// Row 5 (first data row): thick top on ALL columns.
 	row7 := []colSpec{
 		{12, "right", false, styleThick, styleThin, styleThick, styleThin},     // A: nr
 		{11, "", false, styleThin, styleMedium, styleThick, styleThin},         // B: naam
@@ -265,7 +248,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		{11, "center", false, styleMedium, styleThick, styleThick, styleThin},  // Q: nr. teller
 	}
 
-	// Rows 8+: subsequent data rows.
+	// Subsequent data rows.
 	rowN := []colSpec{
 		{12, "right", false, styleThick, styleThin, 0, styleThin},             // A
 		{11, "", false, styleThin, styleMedium, styleThin, styleThin},         // B
@@ -314,9 +297,10 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 
 	// Fill to the bottom of the last page so blank rows are always available
 	// for manual entries. Approximate page capacity for A4 landscape with
-	// narrow margins (0.75") and data rows at 17.25pt each:
-	//   page 1: 6-row header (91.5pt) leaves ~20 data rows
-	//   page 2+: header repeated via print titles → same ~20 rows per page
+	// narrow margins and data rows at 17.25pt each:
+	//   header rows 1-4: 21 + 15 + 13.5 + 45 = 94.5pt
+	//   A4 landscape printable height ≈ 444pt
+	//   data rows: floor((444 - 94.5) / 17.25) = 20
 	const rowsPerPage = 20
 	matchCount := len(ev.Matches)
 	pages := (matchCount + rowsPerPage - 1) / rowsPerPage
@@ -329,7 +313,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 
 	// Pass A: row heights + cell values (no styles yet — styles come after in pass B).
 	for i := 0; i < totalRows; i++ {
-		row := 7 + i
+		row := 5 + i
 		f.SetRowHeight(ws, row, 17.25)
 
 		var values []interface{}
@@ -378,7 +362,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 
 	// Pass B: cell styles / borders (after all heights and values are set).
 	for i := 0; i < totalRows; i++ {
-		row := 7 + i
+		row := 5 + i
 		isFirst := i == 0
 		isLast := i == totalRows-1
 
@@ -423,21 +407,21 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	fitToPage := true
 	f.SetSheetProps(ws, &excelize.SheetPropsOptions{FitToPage: &fitToPage})
 
-	// Repeat rows 1–6 as print titles (afdruk titels) on every printed page.
+	// Repeat rows 1–4 as print titles (afdruk titels) on every printed page.
 	f.SetDefinedName(&excelize.DefinedName{
 		Name:     "_xlnm.Print_Titles",
-		RefersTo: ws + "!$1:$6",
+		RefersTo: ws + "!$1:$4",
 		Scope:    ws,
 	})
 
-	// Freeze rows 1-6 so the header stays visible when scrolling in Excel.
+	// Freeze rows 1-4 so the header stays visible when scrolling in Excel.
 	f.SetPanes(ws, &excelize.Panes{
 		Freeze:      true,
-		YSplit:      6,
-		TopLeftCell: "A7",
+		YSplit:      4,
+		TopLeftCell: "A5",
 		ActivePane:  "bottomLeft",
 		Selection: []excelize.Selection{
-			{SQRef: "A7", ActiveCell: "A7", Pane: "bottomLeft"},
+			{SQRef: "A5", ActiveCell: "A5", Pane: "bottomLeft"},
 		},
 	})
 
