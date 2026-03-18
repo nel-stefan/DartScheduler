@@ -75,7 +75,6 @@ func NewRouter(
 		r.Get("/export/evening/{id}/excel", exportH.EveningExcel)
 
 		r.Get("/system/logs", systemH.GetLogs)
-		r.Post("/system/deploy", systemH.TriggerDeploy)
 	})
 
 	// SPA fallback: serve Angular app for all non-API routes.

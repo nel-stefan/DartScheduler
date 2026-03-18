@@ -384,10 +384,7 @@ interface MatchRow {
               <button mat-stroked-button (click)="refreshLogs()">
                 <mat-icon>refresh</mat-icon> Vernieuwen
               </button>
-              <button mat-flat-button color="warn" (click)="deploy()" [disabled]="deploying">
-                <mat-icon>rocket_launch</mat-icon>
-                {{ deploying ? 'Bezig...' : 'Update triggeren' }}
-              </button>
+
             </div>
             <div *ngIf="logsLoading" style="color:#9e9e9e;font-size:13px">Laden...</div>
             <div *ngIf="!logsLoading && logs.length === 0" class="log-empty">
@@ -417,7 +414,6 @@ export class InfoComponent implements OnInit {
   version     = environment.version;
   logs:        string[] = [];
   logsLoading = false;
-  deploying   = false;
 
   summaryCols = ['nr', 'name', 'eveningCount', 'totalMatches', 'consecutive', 'buddy'];
   statCols    = ['nr', 'name', 'minTurns', 'avgTurns', 'avgScore', '180s', 'hf'];
@@ -438,14 +434,6 @@ export class InfoComponent implements OnInit {
     this.systemService.getLogs().subscribe({
       next: ({ logs }) => { this.logs = logs; this.logsLoading = false; },
       error: ()        => { this.logsLoading = false; },
-    });
-  }
-
-  deploy(): void {
-    this.deploying = true;
-    this.systemService.triggerDeploy().subscribe({
-      next:  () => { this.deploying = false; setTimeout(() => this.refreshLogs(), 3000); },
-      error: () => { this.deploying = false; },
     });
   }
 

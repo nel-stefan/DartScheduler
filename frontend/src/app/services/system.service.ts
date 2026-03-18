@@ -11,8 +11,4 @@ export class SystemService {
   getLogs(): Observable<{ logs: string[] }> {
     return this.http.get<{ logs: string[] }>(`${this.base}/system/logs`);
   }
-
-  triggerDeploy(): Observable<void> {
-    return this.http.post<void>(`${this.base}/system/deploy`, null);
-  }
 }
