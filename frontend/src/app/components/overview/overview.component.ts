@@ -509,7 +509,7 @@ export class AbsentDialogComponent {
     MatButtonModule, MatCardModule, MatTableModule, MatTabsModule,
     MatSnackBarModule, MatDialogModule, MatChipsModule, MatIconModule,
     MatTooltipModule, MatSelectModule, MatFormFieldModule, MatInputModule,
-    ReactiveFormsModule,
+    FormsModule, ReactiveFormsModule,
     AbsentDialogComponent,
   ],
   styles: [`
@@ -648,7 +648,16 @@ export class AbsentDialogComponent {
                style="color:#757575;text-align:center;padding:24px 0;margin:0">
               Geen uitgestelde wedstrijden gevonden voor deze inhaalavond.
             </p>
-            <table mat-table [dataSource]="ev.matches" *ngIf="ev.matches.length > 0">
+            <mat-form-field *ngIf="ev.isInhaalAvond && ev.matches.length > 0"
+                            style="width:100%;margin-bottom:8px" subscriptSizing="dynamic">
+              <mat-label>Zoek op nr (bijv. 12 of 12 34)</mat-label>
+              <input matInput [(ngModel)]="catchUpSearch" placeholder="nr A   nr B">
+              <button matSuffix mat-icon-button *ngIf="catchUpSearch" (click)="catchUpSearch=''">
+                <mat-icon>close</mat-icon>
+              </button>
+              <mat-icon matPrefix style="margin-right:4px">search</mat-icon>
+            </mat-form-field>
+            <table mat-table [dataSource]="ev.isInhaalAvond ? filteredMatches(ev) : ev.matches" *ngIf="ev.matches.length > 0">
               <ng-container matColumnDef="playerA">
                 <th mat-header-cell *matHeaderCellDef>Speler A</th>
                 <td mat-cell *matCellDef="let m">{{ playerName(m.playerA) }}</td>
@@ -766,6 +775,7 @@ export class OverviewComponent implements OnInit {
   players:  Player[] = [];
   activeTab = 0;
   matchCols = ['playerA', 'vs', 'playerB', 'score', 'actions'];
+  catchUpSearch = '';
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -809,6 +819,17 @@ export class OverviewComponent implements OnInit {
 
   playerNr(id: string): string {
     return this.players.find((p) => p.id === id)?.nr ?? '';
+  }
+
+  filteredMatches(ev: Evening): Match[] {
+    const q = this.catchUpSearch.trim().toLowerCase();
+    if (!q) return ev.matches;
+    const tokens = q.split(/\s+/);
+    return ev.matches.filter(m => {
+      const nrA = this.playerNr(m.playerA).toLowerCase();
+      const nrB = this.playerNr(m.playerB).toLowerCase();
+      return tokens.every(t => nrA.includes(t) || nrB.includes(t));
+    });
   }
 
   playedCount(ev: Evening): number {
