@@ -9,6 +9,13 @@ import (
 	"github.com/google/uuid"
 )
 
+func formatPlayerNames(players []domain.Player) []domain.Player {
+	for i := range players {
+		players[i].Name = domain.FormatDisplayName(players[i].Name)
+	}
+	return players
+}
+
 type StatsHandler struct {
 	players domain.PlayerRepository
 	uc      *usecase.ScoreUseCase
@@ -34,7 +41,7 @@ func (h *StatsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		sid := domain.ScheduleID(uid)
 		schedID = &sid
 	}
-	stats, err := h.uc.GetStats(r.Context(), players, schedID)
+	stats, err := h.uc.GetStats(r.Context(), formatPlayerNames(players), schedID)
 	if err != nil {
 		httpError(w, err, http.StatusInternalServerError)
 		return
@@ -58,7 +65,7 @@ func (h *StatsHandler) GetDuties(w http.ResponseWriter, r *http.Request) {
 		sid := domain.ScheduleID(uid)
 		schedID = &sid
 	}
-	stats, err := h.uc.GetDutyStats(r.Context(), players, schedID)
+	stats, err := h.uc.GetDutyStats(r.Context(), formatPlayerNames(players), schedID)
 	if err != nil {
 		httpError(w, err, http.StatusInternalServerError)
 		return
