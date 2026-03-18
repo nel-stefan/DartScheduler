@@ -138,105 +138,112 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	}
 
 	// ------------------------------------------------------------------ Rows 4-6: column headers
-	f.SetRowHeight(ws, 4, 15)
-	f.SetRowHeight(ws, 5, 13.5)
-	f.SetRowHeight(ws, 6, 13.5)
+	//
+	// Row 6 is intentionally NOT included in any merged range.  Keeping row 6
+	// cells standalone guarantees that their explicit bottom=thick style is
+	// written as a real cell record and is respected when Excel renders rows
+	// 1-6 as repeated print-title rows on page 2+.
+	//
+	// To keep the same total height (42 pt) and accommodate 3-line header
+	// texts (e.g. "nr.\nschrij-\nver") in the now-shorter 2-row merge area,
+	// rows 4 and 5 are slightly taller and row 6 is a thin "border strip".
+	f.SetRowHeight(ws, 4, 19)
+	f.SetRowHeight(ws, 5, 18)
+	f.SetRowHeight(ws, 6, 5)
 
 	// Phase 1: merge all header regions before applying any styles.
 	// (excelize clears cell styles when merging, so merges must come first.)
 	for _, m := range [][2]string{
-		{"A4", "A6"}, {"B4", "B6"}, {"C4", "C6"}, {"D4", "D6"}, {"E4", "E6"},
-		{"F4", "G4"}, {"F5", "F6"}, {"G5", "G6"},
-		{"H4", "I4"}, {"H5", "H6"}, {"I5", "I6"},
-		{"J4", "K4"}, {"J5", "J6"}, {"K5", "K6"},
-		{"L4", "L6"}, {"M4", "M6"}, {"N4", "N6"}, {"O4", "O6"}, {"P4", "P6"}, {"Q4", "Q6"},
+		{"A4", "A5"}, {"B4", "B5"}, {"C4", "C5"}, {"D4", "D5"}, {"E4", "E5"},
+		{"F4", "G4"},
+		{"H4", "I4"},
+		{"J4", "K4"},
+		{"L4", "L5"}, {"M4", "M5"}, {"N4", "N5"}, {"O4", "O5"}, {"P4", "P5"}, {"Q4", "Q5"},
 	} {
 		f.MergeCell(ws, m[0], m[1])
 	}
 
-	// Phase 2: set values, then apply styles to the full merged range so that
-	// borders appear correctly on every edge cell of the merged region.
+	// Phase 2: set values, then apply styles.  For 2-row merges the bottom
+	// border is 0 — the thick rule comes from the standalone row 6 cells below.
 
 	// Player A: nr and naam
 	f.SetCellValue(ws, "A4", "nr")
-	f.SetCellStyle(ws, "A4", "A6", hdrStyle(styleThick, styleMedium, styleThick, styleThick))
+	f.SetCellStyle(ws, "A4", "A5", hdrStyle(styleThick, styleMedium, styleThick, 0))
 	f.SetCellValue(ws, "B4", "naam")
-	f.SetCellStyle(ws, "B4", "B6", hdrStyle(0, styleThick, styleThick, styleThin))
+	f.SetCellStyle(ws, "B4", "B5", hdrStyle(0, styleThick, styleThick, 0))
 
 	// Separator /
 	f.SetCellValue(ws, "C4", "/")
-	f.SetCellStyle(ws, "C4", "C6", ns(&excelize.Style{
+	f.SetCellStyle(ws, "C4", "C5", ns(&excelize.Style{
 		Font:      &excelize.Font{Family: fontCalibri, Size: 10},
 		Alignment: hdrCenter,
-		Border:    brd(styleThick, styleThick, styleThick, styleThin),
+		Border:    brd(styleThick, styleThick, styleThick, 0),
 	}))
 
 	// Player B: nr and naam
 	f.SetCellValue(ws, "D4", "nr")
-	f.SetCellStyle(ws, "D4", "D6", hdrStyle(styleThick, 0, styleThick, styleThick))
+	f.SetCellStyle(ws, "D4", "D5", hdrStyle(styleThick, 0, styleThick, 0))
 	f.SetCellValue(ws, "E4", "naam")
-	f.SetCellStyle(ws, "E4", "E6", hdrStyle(styleThick, styleThick, styleThick, styleThin))
+	f.SetCellStyle(ws, "E4", "E5", hdrStyle(styleThick, styleThick, styleThick, 0))
 
-	// Partij 1: group header (thick bottom), sub-headers for winner name and turns.
+	// Leg 1: group header (thick bottom), sub-headers for winner name and turns.
 	f.SetCellValue(ws, "F4", "Leg 1")
 	f.SetCellStyle(ws, "F4", "G4", hdrStyle(styleThick, styleMedium, styleThick, styleThick))
 	f.SetCellValue(ws, "F5", "voornaam+nr.")
-	f.SetCellStyle(ws, "F5", "F6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
+	f.SetCellStyle(ws, "F5", "F5", hdrStyle(styleThick, styleThick, styleThick, 0))
 	f.SetCellValue(ws, "G5", "aantal beurten")
-	f.SetCellStyle(ws, "G5", "G6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
+	f.SetCellStyle(ws, "G5", "G5", hdrStyle(styleThick, styleThick, styleThick, 0))
 
 	// Leg 2: group header (no bottom — sub-headers form the visual separator).
 	f.SetCellValue(ws, "H4", "Leg 2")
 	f.SetCellStyle(ws, "H4", "I4", hdrStyle(styleThick, styleMedium, styleThick, 0))
 	f.SetCellValue(ws, "H5", "voornaam+nr.")
-	f.SetCellStyle(ws, "H5", "H6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
+	f.SetCellStyle(ws, "H5", "H5", hdrStyle(styleThick, styleThick, styleThick, 0))
 	f.SetCellValue(ws, "I5", "aantal beurten")
-	f.SetCellStyle(ws, "I5", "I6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
+	f.SetCellStyle(ws, "I5", "I5", hdrStyle(styleThick, styleThick, styleThick, 0))
 
 	// Leg 3: group header (no left, no bottom).
 	f.SetCellValue(ws, "J4", "Leg 3")
 	f.SetCellStyle(ws, "J4", "K4", hdrStyle(0, styleMedium, styleThick, 0))
 	f.SetCellValue(ws, "J5", "voornaam+nr.")
-	f.SetCellStyle(ws, "J5", "J6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
+	f.SetCellStyle(ws, "J5", "J5", hdrStyle(styleThick, styleThick, styleThick, 0))
 	f.SetCellValue(ws, "K5", "aantal beurten")
-	f.SetCellStyle(ws, "K5", "K6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
+	f.SetCellStyle(ws, "K5", "K5", hdrStyle(styleThick, styleThick, styleThick, 0))
 
 	// Summary and admin columns.
 	f.SetCellValue(ws, "L4", "totaal\nwinnaar")
-	f.SetCellStyle(ws, "L4", "L6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
+	f.SetCellStyle(ws, "L4", "L5", hdrStyle(styleThick, styleThick, styleThick, 0))
 	f.SetCellValue(ws, "M4", "eind-\nstand")
-	f.SetCellStyle(ws, "M4", "M6", hdrStyle(styleThick, styleThick, styleThick, styleThick))
+	f.SetCellStyle(ws, "M4", "M5", hdrStyle(styleThick, styleThick, styleThick, 0))
 	f.SetCellValue(ws, "N4", "afgemeld\ndoor")
-	f.SetCellStyle(ws, "N4", "N6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "N4", "N5", hdrStyle(styleThick, styleThick, styleThick, 0))
 	f.SetCellValue(ws, "O4", "vooruit-\ngooi\ndatum")
-	f.SetCellStyle(ws, "O4", "O6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "O4", "O5", hdrStyle(styleThick, styleThick, styleThick, 0))
 	f.SetCellValue(ws, "P4", "nr.\nschrij-\nver")
-	f.SetCellStyle(ws, "P4", "P6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "P4", "P5", hdrStyle(styleThick, styleThick, styleThick, 0))
 	f.SetCellValue(ws, "Q4", "nr.\ntel-\nler")
-	f.SetCellStyle(ws, "Q4", "Q6", hdrStyle(styleThick, styleThick, styleThick, styleMedium))
+	f.SetCellStyle(ws, "Q4", "Q5", hdrStyle(styleThick, styleThick, styleThick, 0))
 
 	// ------------------------------------------------------------------ Print-title border fix
-	// excelize only stores merged-range styles on the top-left cell.  When
-	// rows 1-6 are repeated as print titles Excel renders each cell
-	// individually, so interior cells (e.g. A5, A6, F6 …) show no borders.
-	// Stamp an explicit style on every cell in rows 4-6 so that borders are
-	// correct on both the original page and every repeated header page.
+	// Row 6 cells are all standalone (no merged ranges include row 6), so
+	// every SetCellStyle call below produces a real cell record.  Excel will
+	// honour these borders both on the first page and when repeating rows
+	// 1-6 as print titles on subsequent pages.
+	//
+	// Row 5 entries for the 2-row-merge interior cells (A5-E5, L5-Q5) are
+	// kept as a belt-and-suspenders measure: if Excel ever un-merges cells
+	// when rendering print titles, the left/right borders still appear.
+	// F5-K5 are standalone cells already styled above; no override needed.
 	type hdrCellSpec struct{ l, r, t, b int }
 	hdrCellSpecs := map[string]hdrCellSpec{
-		// Row 4 — only single-row merges (F4:G4, H4:I4, J4:K4).
-		// Multi-row merge top-left cells (A4-E4, L4-Q4) are intentionally omitted:
-		// they already have the correct bottom=thick style from the SetCellStyle range
-		// calls above.  Overriding them here would set bottom=0, which Excel uses when
-		// rendering the repeated print-title rows — hiding the thick border on page 2+.
-		"F4": {styleThick, 0, styleThick, styleThick},  // F4:G4 left cell — bottom thick
-		"G4": {0, styleMedium, styleThick, styleThick},  // F4:G4 right cell
-		"H4": {styleThick, 0, styleThick, 0},            // H4:I4 left cell — no bottom
-		"I4": {0, styleMedium, styleThick, 0},           // H4:I4 right cell
-		"J4": {0, 0, styleThick, 0},                     // J4:K4 left cell
-		"K4": {0, styleMedium, styleThick, 0},           // J4:K4 right cell
-		// Row 5 — interior rows of tall merges (A-E, L-Q).
-		// F5-K5 are top-left cells of F5:F6 … K5:K6 merges — omitted for the same
-		// reason as above (their original bottom=thick must not be overridden).
+		// Row 4 — single-row merges: split left/right borders across the pair.
+		"F4": {styleThick, 0, styleThick, styleThick},  // F4:G4 left
+		"G4": {0, styleMedium, styleThick, styleThick},  // F4:G4 right
+		"H4": {styleThick, 0, styleThick, 0},            // H4:I4 left
+		"I4": {0, styleMedium, styleThick, 0},           // H4:I4 right
+		"J4": {0, 0, styleThick, 0},                     // J4:K4 left
+		"K4": {0, styleMedium, styleThick, 0},           // J4:K4 right
+		// Row 5 — interior of 2-row merges (A4:A5 … E4:E5, L4:L5 … Q4:Q5).
 		"A5": {styleThick, styleMedium, 0, 0},
 		"B5": {0, styleThick, 0, 0},
 		"C5": {styleThick, styleThick, 0, 0},
@@ -248,7 +255,7 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 		"O5": {styleThick, styleThick, 0, 0},
 		"P5": {styleThick, styleThick, 0, 0},
 		"Q5": {styleThick, styleThick, 0, 0},
-		// Row 6 — bottom edge of every merge (carries the thick-bottom borders)
+		// Row 6 — standalone border-strip cells; thick bottom is guaranteed.
 		"A6": {styleThick, styleMedium, 0, styleThick},
 		"B6": {0, styleThick, 0, styleThin},
 		"C6": {styleThick, styleThick, 0, styleThin},
