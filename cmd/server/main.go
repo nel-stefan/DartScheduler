@@ -45,7 +45,7 @@ func main() {
 	// Use cases
 	playerUC := usecase.NewPlayerUseCase(playerRepo, matchRepo)
 	scheduleUC := usecase.NewScheduleUseCase(playerRepo, scheduleRepo, eveningRepo, matchRepo)
-	scoreUC := usecase.NewScoreUseCase(matchRepo)
+	scoreUC := usecase.NewScoreUseCase(matchRepo, eveningRepo)
 	exportUC := usecase.NewExportUseCase(scheduleRepo, eveningRepo, matchRepo, playerRepo)
 
 	// Handlers

@@ -76,9 +76,21 @@ export interface PlayerStats {
   avgScorePerTurn: number;
 }
 
+export interface DutyMatch {
+  eveningNr: number;
+  playerANr: string;
+  playerAName: string;
+  playerBNr: string;
+  playerBName: string;
+}
+
 export interface DutyStats {
   player: Player;
   count: number;
+  secretaryCount: number;
+  counterCount: number;
+  secretaryMatches: DutyMatch[];
+  counterMatches: DutyMatch[];
 }
 
 export interface ScheduleInfo {

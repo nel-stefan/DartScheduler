@@ -14,7 +14,7 @@ import { ScheduleService } from '../../services/schedule.service';
 import { SeasonService } from '../../services/season.service';
 import { ScoreService } from '../../services/score.service';
 import { SystemService } from '../../services/system.service';
-import { PlayerInfoItem, EveningInfoItem, ScheduleInfo, BuddyPairItem, PlayerStats, Schedule } from '../../models';
+import { PlayerInfoItem, EveningInfoItem, ScheduleInfo, BuddyPairItem, PlayerStats, Schedule, DutyStats } from '../../models';
 import { environment } from '../../../environments/environment';
 
 interface PlayerRow {
@@ -76,6 +76,19 @@ interface MatchRow {
     .result-G { color: #f57f17; font-weight: 600; }
     .result-af { color: #9e9e9e; font-style: italic; }
 
+    .duty-select { min-width: 280px; margin-bottom: 16px; }
+    .duty-totals { display: flex; gap: 24px; margin-bottom: 12px; font-size: 13px; }
+    .duty-totals span { background: #f5f5f5; border-radius: 6px; padding: 4px 12px; }
+    .duty-totals .sec { background: #e3f2fd; color: #0277bd; }
+    .duty-totals .cnt { background: #fce4ec; color: #c62828; }
+    .duty-section-title { font-size: 12px; font-weight: 600; color: #616161; text-transform: uppercase;
+                          letter-spacing: .4px; margin: 12px 0 4px; }
+    .duty-table { border-collapse: collapse; width: 100%; font-size: 12px; }
+    .duty-table th { background: #f5f5f5; font-weight: 600; text-align: left; padding: 4px 8px;
+                     border-bottom: 2px solid #e0e0e0; }
+    .duty-table td { padding: 3px 8px; border-bottom: 1px solid #f0f0f0; }
+    .duty-table tr:hover td { background: #fafafa; }
+    .duty-empty { color: #9e9e9e; font-style: italic; font-size: 12px; padding: 8px 0; }
     .server-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
     .version-chip {
       background: #e8f5e9; color: #2e7d32; border-radius: 12px;
@@ -376,7 +389,58 @@ interface MatchRow {
           </div>
         </mat-tab>
 
-        <!-- Tab 6: Server logs -->
+        <!-- Tab 6: Schrijver / Teller -->
+        <mat-tab label="Schrijver/Teller">
+          <div style="padding-top:16px">
+            <mat-form-field class="duty-select" subscriptSizing="dynamic">
+              <mat-label>Speler</mat-label>
+              <mat-select [(value)]="selectedDutyPlayerId">
+                <mat-option value="">— Kies een speler —</mat-option>
+                <mat-option *ngFor="let d of dutyStats" [value]="d.player.id">
+                  {{ d.player.nr }} – {{ d.player.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <ng-container *ngIf="selectedDutyPlayer as d">
+              <div class="duty-totals">
+                <span>Totaal: <strong>{{ d.count }}</strong></span>
+                <span class="sec">Schrijver: <strong>{{ d.secretaryCount }}</strong></span>
+                <span class="cnt">Teller: <strong>{{ d.counterCount }}</strong></span>
+              </div>
+
+              <div class="duty-section-title">Geschreven wedstrijden</div>
+              <p class="duty-empty" *ngIf="d.secretaryMatches.length === 0">Geen.</p>
+              <table class="duty-table" *ngIf="d.secretaryMatches.length > 0">
+                <thead><tr><th>Avond</th><th>Speler A</th><th></th><th>Speler B</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let m of d.secretaryMatches">
+                    <td>{{ m.eveningNr || '—' }}</td>
+                    <td>{{ m.playerANr }} {{ m.playerAName }}</td>
+                    <td style="color:#999;text-align:center">vs</td>
+                    <td>{{ m.playerBNr }} {{ m.playerBName }}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="duty-section-title" style="margin-top:16px">Getelde wedstrijden</div>
+              <p class="duty-empty" *ngIf="d.counterMatches.length === 0">Geen.</p>
+              <table class="duty-table" *ngIf="d.counterMatches.length > 0">
+                <thead><tr><th>Avond</th><th>Speler A</th><th></th><th>Speler B</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let m of d.counterMatches">
+                    <td>{{ m.eveningNr || '—' }}</td>
+                    <td>{{ m.playerANr }} {{ m.playerAName }}</td>
+                    <td style="color:#999;text-align:center">vs</td>
+                    <td>{{ m.playerBNr }} {{ m.playerBName }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </ng-container>
+          </div>
+        </mat-tab>
+
+        <!-- Tab 7: Server logs -->
         <mat-tab label="Server">
           <div style="padding-top:16px">
             <div class="server-meta">
@@ -410,6 +474,13 @@ export class InfoComponent implements OnInit {
   playerRows: PlayerRow[]       = [];
   statRows:   PlayerStats[]     = [];
   selectedPlayerId              = '';
+
+  dutyStats:          DutyStats[] = [];
+  selectedDutyPlayerId = '';
+
+  get selectedDutyPlayer(): DutyStats | null {
+    return this.dutyStats.find(d => d.player.id === this.selectedDutyPlayerId) ?? null;
+  }
 
   version     = environment.version;
   logs:        string[] = [];
@@ -501,16 +572,20 @@ export class InfoComponent implements OnInit {
       info:     this.scheduleService.getInfo(scheduleId),
       schedule: this.scheduleService.getById(scheduleId),
       stats:    this.scoreService.getStats(scheduleId),
+      duties:   this.scoreService.getDutyStats(scheduleId),
     }).subscribe({
-      next: ({ info, schedule, stats }) => {
+      next: ({ info, schedule, stats, duties }) => {
         this.info     = info;
         this.schedule = schedule;
         this.playerRows = this.buildPlayerRows(info);
         this.statRows = stats
           .filter(s => s.played > 0)
           .sort((a, b) => (parseInt(a.player.nr || '0')) - (parseInt(b.player.nr || '0')));
+        this.dutyStats = duties
+          .filter(d => d.count > 0)
+          .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999));
       },
-      error: () => { this.info = null; this.schedule = null; this.playerRows = []; this.statRows = []; },
+      error: () => { this.info = null; this.schedule = null; this.playerRows = []; this.statRows = []; this.dutyStats = []; },
     });
   }
 

@@ -77,10 +77,23 @@ type PlayerStats struct {
 	AvgScorePerTurn float64 `json:"avgScorePerTurn"`
 }
 
+// DutyMatch holds the evening number and match players for a single duty entry.
+type DutyMatch struct {
+	EveningNr  int    `json:"eveningNr"`
+	PlayerANr  string `json:"playerANr"`
+	PlayerAName string `json:"playerAName"`
+	PlayerBNr  string `json:"playerBNr"`
+	PlayerBName string `json:"playerBName"`
+}
+
 // DutyStats tracks how often a player has served as secretary or counter.
 type DutyStats struct {
-	Player domain.Player `json:"player"`
-	Count  int           `json:"count"`
+	Player         domain.Player `json:"player"`
+	Count          int           `json:"count"`
+	SecretaryCount int           `json:"secretaryCount"`
+	CounterCount   int           `json:"counterCount"`
+	SecretaryMatches []DutyMatch `json:"secretaryMatches"`
+	CounterMatches   []DutyMatch `json:"counterMatches"`
 }
 
 // SeasonSummary is a lightweight schedule list item.

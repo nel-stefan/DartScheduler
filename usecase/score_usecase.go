@@ -8,11 +8,12 @@ import (
 )
 
 type ScoreUseCase struct {
-	matches domain.MatchRepository
+	matches  domain.MatchRepository
+	evenings domain.EveningRepository
 }
 
-func NewScoreUseCase(matches domain.MatchRepository) *ScoreUseCase {
-	return &ScoreUseCase{matches: matches}
+func NewScoreUseCase(matches domain.MatchRepository, evenings domain.EveningRepository) *ScoreUseCase {
+	return &ScoreUseCase{matches: matches, evenings: evenings}
 }
 
 // Submit records the result for a match.
@@ -87,12 +88,12 @@ func (uc *ScoreUseCase) ReportAbsent(ctx context.Context, eveningID domain.Eveni
 	return nil
 }
 
-// GetDutyStats counts secretary+counter appearances per player from played matches.
+// GetDutyStats counts secretary+counter appearances per player from played matches,
+// and returns per-match detail including the evening number and opponent names.
 func (uc *ScoreUseCase) GetDutyStats(ctx context.Context, players []domain.Player, scheduleID *domain.ScheduleID) ([]DutyStats, error) {
 	var matchList []domain.Match
 	var err error
 	if scheduleID != nil {
-		// collect all played matches for this schedule via all players (dedup by match ID)
 		seen := make(map[domain.MatchID]struct{})
 		for _, p := range players {
 			pm, e := uc.matches.FindByPlayerAndSchedule(ctx, p.ID, *scheduleID)
@@ -114,18 +115,76 @@ func (uc *ScoreUseCase) GetDutyStats(ctx context.Context, players []domain.Playe
 			return nil, err
 		}
 	}
-	counts := make(map[string]int, len(players))
-	for _, m := range matchList {
-		if m.SecretaryNr != "" {
-			counts[m.SecretaryNr]++
-		}
-		if m.CounterNr != "" {
-			counts[m.CounterNr]++
+
+	// Build lookup maps.
+	playerByID := make(map[domain.PlayerID]domain.Player, len(players))
+	for _, p := range players {
+		playerByID[p.ID] = p
+	}
+
+	// Collect evening numbers from the evenings repo if scheduleID is set.
+	eveningNr := make(map[domain.EveningID]int)
+	if scheduleID != nil {
+		evenings, e := uc.evenings.FindBySchedule(ctx, *scheduleID)
+		if e == nil {
+			for _, ev := range evenings {
+				eveningNr[ev.ID] = ev.Number
+			}
 		}
 	}
+
+	toDutyMatch := func(m domain.Match) DutyMatch {
+		pA := playerByID[m.PlayerA]
+		pB := playerByID[m.PlayerB]
+		return DutyMatch{
+			EveningNr:   eveningNr[m.EveningID],
+			PlayerANr:   pA.Nr,
+			PlayerAName: pA.Name,
+			PlayerBNr:   pB.Nr,
+			PlayerBName: pB.Name,
+		}
+	}
+
+	type dutyAccum struct {
+		secMatches []DutyMatch
+		cntMatches []DutyMatch
+	}
+	accum := make(map[string]*dutyAccum)
+	for _, m := range matchList {
+		if m.SecretaryNr != "" {
+			a := accum[m.SecretaryNr]
+			if a == nil {
+				a = &dutyAccum{}
+				accum[m.SecretaryNr] = a
+			}
+			a.secMatches = append(a.secMatches, toDutyMatch(m))
+		}
+		if m.CounterNr != "" {
+			a := accum[m.CounterNr]
+			if a == nil {
+				a = &dutyAccum{}
+				accum[m.CounterNr] = a
+			}
+			a.cntMatches = append(a.cntMatches, toDutyMatch(m))
+		}
+	}
+
 	out := make([]DutyStats, 0, len(players))
 	for _, p := range players {
-		out = append(out, DutyStats{Player: p, Count: counts[p.Nr]})
+		a := accum[p.Nr]
+		var sec, cnt []DutyMatch
+		if a != nil {
+			sec = a.secMatches
+			cnt = a.cntMatches
+		}
+		out = append(out, DutyStats{
+			Player:           p,
+			SecretaryCount:   len(sec),
+			CounterCount:     len(cnt),
+			Count:            len(sec) + len(cnt),
+			SecretaryMatches: sec,
+			CounterMatches:   cnt,
+		})
 	}
 	return out, nil
 }
