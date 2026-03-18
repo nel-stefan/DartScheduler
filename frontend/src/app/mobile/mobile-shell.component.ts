@@ -26,7 +26,7 @@ import { MatIconModule } from '@angular/material/icon';
       flex-shrink: 0;
       height: calc(56px + env(safe-area-inset-bottom));
       padding-bottom: env(safe-area-inset-bottom);
-      background: #1b5e20;
+      background: #4e342e;
       border-top: 1px solid rgba(0,0,0,.2);
 
       a {

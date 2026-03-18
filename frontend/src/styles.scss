@@ -2,7 +2,7 @@
 
 @include mat.core();
 
-$dart-primary: mat.define-palette(mat.$green-palette, 800, 600, 900);
+$dart-primary: mat.define-palette(mat.$brown-palette, 800, 600, 900);
 $dart-accent:  mat.define-palette(mat.$amber-palette, A400);
 $dart-warn:    mat.define-palette(mat.$red-palette);
 
