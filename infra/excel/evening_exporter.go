@@ -223,36 +223,25 @@ func ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening
 	// correct on both the original page and every repeated header page.
 	type hdrCellSpec struct{ l, r, t, b int }
 	hdrCellSpecs := map[string]hdrCellSpec{
-		// Row 4 — top edge of each merge
-		"A4": {styleThick, styleMedium, styleThick, 0},
-		"B4": {0, styleThick, styleThick, 0},
-		"C4": {styleThick, styleThick, styleThick, 0},
-		"D4": {styleThick, 0, styleThick, 0},
-		"E4": {styleThick, styleThick, styleThick, 0},
-		"F4": {styleThick, 0, styleThick, styleThick}, // F4:G4 left cell — bottom thick
-		"G4": {0, styleMedium, styleThick, styleThick}, // F4:G4 right cell
-		"H4": {styleThick, 0, styleThick, 0}, // H4:I4 left cell — no bottom
-		"I4": {0, styleMedium, styleThick, 0}, // H4:I4 right cell
-		"J4": {0, 0, styleThick, 0}, // J4:K4 left cell
-		"K4": {0, styleMedium, styleThick, 0}, // J4:K4 right cell
-		"L4": {styleThick, styleThick, styleThick, 0},
-		"M4": {styleThick, styleThick, styleThick, 0},
-		"N4": {styleThick, styleThick, styleThick, 0},
-		"O4": {styleThick, styleThick, styleThick, 0},
-		"P4": {styleThick, styleThick, styleThick, 0},
-		"Q4": {styleThick, styleThick, styleThick, 0},
-		// Row 5 — interior rows of tall merges; top rows of sub-merges (F-K)
+		// Row 4 — only single-row merges (F4:G4, H4:I4, J4:K4).
+		// Multi-row merge top-left cells (A4-E4, L4-Q4) are intentionally omitted:
+		// they already have the correct bottom=thick style from the SetCellStyle range
+		// calls above.  Overriding them here would set bottom=0, which Excel uses when
+		// rendering the repeated print-title rows — hiding the thick border on page 2+.
+		"F4": {styleThick, 0, styleThick, styleThick},  // F4:G4 left cell — bottom thick
+		"G4": {0, styleMedium, styleThick, styleThick},  // F4:G4 right cell
+		"H4": {styleThick, 0, styleThick, 0},            // H4:I4 left cell — no bottom
+		"I4": {0, styleMedium, styleThick, 0},           // H4:I4 right cell
+		"J4": {0, 0, styleThick, 0},                     // J4:K4 left cell
+		"K4": {0, styleMedium, styleThick, 0},           // J4:K4 right cell
+		// Row 5 — interior rows of tall merges (A-E, L-Q).
+		// F5-K5 are top-left cells of F5:F6 … K5:K6 merges — omitted for the same
+		// reason as above (their original bottom=thick must not be overridden).
 		"A5": {styleThick, styleMedium, 0, 0},
 		"B5": {0, styleThick, 0, 0},
 		"C5": {styleThick, styleThick, 0, 0},
 		"D5": {styleThick, 0, 0, 0},
 		"E5": {styleThick, styleThick, 0, 0},
-		"F5": {styleThick, styleThick, styleThick, 0}, // F5:F6 top
-		"G5": {styleThick, styleThick, styleThick, 0}, // G5:G6 top
-		"H5": {styleThick, styleThick, styleThick, 0},
-		"I5": {styleThick, styleThick, styleThick, 0},
-		"J5": {styleThick, styleThick, styleThick, 0},
-		"K5": {styleThick, styleThick, styleThick, 0},
 		"L5": {styleThick, styleThick, 0, 0},
 		"M5": {styleThick, styleThick, 0, 0},
 		"N5": {styleThick, styleThick, 0, 0},
