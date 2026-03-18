@@ -362,18 +362,18 @@ export class ScoreDialogComponent {
   turnsOptions = Array.from({ length: 18 }, (_, i) => i + 3); // 3..20
 
   form = this.fb.group({
-    leg1Winner: ['', Validators.required],
-    leg1Turns:  [this.data.match.leg1Turns || 10 as number | null],
-    leg2Winner: ['', Validators.required],
-    leg2Turns:  [this.data.match.leg2Turns || 10 as number | null],
-    leg3Winner: [''],
-    leg3Turns:  [this.data.match.leg3Turns || 10 as number | null],
-    playerA180s:          [this.data.match.playerA180s || 0],
-    playerB180s:          [this.data.match.playerB180s || 0],
-    playerAHighestFinish: [this.data.match.playerAHighestFinish || 0],
-    playerBHighestFinish: [this.data.match.playerBHighestFinish || 0],
-    secretaryNr: [''],
-    counterNr:   [''],
+    leg1Winner: [this.data.match.leg1Winner || '', Validators.required],
+    leg1Turns:  [this.data.match.leg1Turns  || null as number | null],
+    leg2Winner: [this.data.match.leg2Winner || '', Validators.required],
+    leg2Turns:  [this.data.match.leg2Turns  || null as number | null],
+    leg3Winner: [this.data.match.leg3Winner || ''],
+    leg3Turns:  [this.data.match.leg3Turns  || null as number | null],
+    playerA180s:          [this.data.match.playerA180s          ?? 0],
+    playerB180s:          [this.data.match.playerB180s          ?? 0],
+    playerAHighestFinish: [this.data.match.playerAHighestFinish ?? 0],
+    playerBHighestFinish: [this.data.match.playerBHighestFinish ?? 0],
+    secretaryNr: [this.data.match.secretaryNr || ''],
+    counterNr:   [this.data.match.counterNr   || ''],
   });
 
   isValid(): boolean {
