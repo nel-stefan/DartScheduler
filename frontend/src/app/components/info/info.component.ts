@@ -303,6 +303,11 @@ interface MatchRow {
             </p>
             <mat-card *ngIf="openMatchRows.length > 0">
               <mat-card-content>
+                <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+                  <button mat-stroked-button (click)="printOpenMatches()">
+                    <mat-icon>print</mat-icon> Afdrukken
+                  </button>
+                </div>
                 <table mat-table [dataSource]="openMatchRows" style="width:100%">
 
                   <ng-container matColumnDef="evening">
@@ -660,6 +665,36 @@ export class InfoComponent implements OnInit {
       return { player, cells, totalMatches, eveningCount };
     }).filter(row => row.totalMatches > 0)
       .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999));
+  }
+
+  printOpenMatches(): void {
+    const rows = this.openMatchRows;
+    const name = this.schedule?.competitionName ?? '';
+    const rowsHtml = rows.map(r => `
+      <tr>
+        <td>${r.eveningNumber}</td>
+        <td>${new Date(r.eveningDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
+        <td><strong>${r.playerAName}</strong></td>
+        <td style="color:#999;text-align:center">vs</td>
+        <td><strong>${r.playerBName}</strong></td>
+      </tr>`).join('');
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Openstaande wedstrijden</title>
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; padding: 16px; }
+        h2 { font-size: 15px; margin-bottom: 12px; }
+        table { border-collapse: collapse; width: 100%; }
+        th { background: #f5f5f5; font-weight: 600; text-align: left; padding: 5px 8px; border-bottom: 2px solid #ccc; }
+        td { padding: 4px 8px; border-bottom: 1px solid #eee; }
+        @media print { @page { size: A4 portrait; margin: 15mm; } }
+      </style></head><body>
+      <h2>Openstaande wedstrijden${name ? ' — ' + name : ''}</h2>
+      <table><thead><tr><th>Avond</th><th>Datum</th><th>Speler A</th><th></th><th>Speler B</th></tr></thead>
+      <tbody>${rowsHtml}</tbody></table>
+      <script>window.onload = () => { window.print(); }<\/script>
+      </body></html>`;
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(html); w.document.close(); }
   }
 
   getBuddy(playerId: string): { partnerNr: string; partnerName: string; eveningNrs: number[] } | null {
