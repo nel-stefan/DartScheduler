@@ -351,6 +351,12 @@ interface MatchRow {
               </mat-select>
             </mat-form-field>
 
+            <div *ngIf="selectedPlayerId" style="display:flex;justify-content:flex-end;margin-bottom:8px">
+              <button mat-stroked-button (click)="exportCalendar()">
+                <mat-icon>event</mat-icon> Agenda exporteren (.ics)
+              </button>
+            </div>
+
             <mat-card *ngIf="selectedPlayerId">
               <mat-card-content>
                 <table mat-table [dataSource]="playerMatchRows" style="width:100%">
@@ -665,6 +671,48 @@ export class InfoComponent implements OnInit {
       return { player, cells, totalMatches, eveningCount };
     }).filter(row => row.totalMatches > 0)
       .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999));
+  }
+
+  exportCalendar(): void {
+    const player = this.sortedPlayers.find(p => p.id === this.selectedPlayerId);
+    if (!player) return;
+    const compName = this.schedule?.competitionName ?? 'Dartclub';
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const toIcsDate = (iso: string) => {
+      const d = new Date(iso);
+      return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+    };
+    // Simple UID generator
+    const uid = (i: number) => `dart-${this.selectedPlayerId.slice(0, 8)}-${i}@grolzicht`;
+
+    const events = this.playerMatchRows.map((r, i) => [
+      'BEGIN:VEVENT',
+      `UID:${uid(i)}`,
+      `DTSTART;VALUE=DATE:${toIcsDate(r.eveningDate)}`,
+      `DTEND;VALUE=DATE:${toIcsDate(r.eveningDate)}`,
+      `SUMMARY:Avond ${r.eveningNumber} – vs ${r.opponentName}`,
+      `DESCRIPTION:${compName}\\nAvond ${r.eveningNumber} – ${player.nr} ${player.name} vs ${r.opponentName}`,
+      'END:VEVENT',
+    ].join('\r\n')).join('\r\n');
+
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//DartScheduler//NL',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      events,
+      'END:VCALENDAR',
+    ].join('\r\n');
+
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dart-${player.nr}-${player.name.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   printOpenMatches(): void {
