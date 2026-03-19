@@ -115,6 +115,24 @@ func (uc *ExportUseCase) ExportEvening(ctx context.Context, exp EveningExporter,
 		return err
 	}
 	targetEvening.Matches = matches
+
+	// For a regular evening, also populate any catch-up evenings so the
+	// exporter can render them as an extra tab.
+	if !targetEvening.IsCatchUpEvening {
+		cancelled, err := uc.matches.FindCancelledBySchedule(ctx, sched.ID)
+		if err != nil {
+			return err
+		}
+		var inhaalEvenings []domain.Evening
+		for _, ev := range evenings {
+			if ev.IsCatchUpEvening {
+				ev.Matches = cancelled
+				inhaalEvenings = append(inhaalEvenings, ev)
+			}
+		}
+		sched.Evenings = inhaalEvenings
+	}
+
 	players, err := uc.players.FindAll(ctx)
 	if err != nil {
 		return err
