@@ -125,12 +125,7 @@ import { PlayerStats, DutyStats } from '../../models';
                   <td mat-cell *matCellDef="let s"><strong>{{ s.player.name }}</strong></td>
                 </ng-container>
 
-                <ng-container matColumnDef="played">
-                  <th mat-header-cell *matHeaderCellDef style="width:70px;text-align:center">Gespeeld</th>
-                  <td mat-cell *matCellDef="let s" style="text-align:center">{{ s.played }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="wins">
+<ng-container matColumnDef="wins">
                   <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center">
                     <mat-icon style="color:#2e7d32;vertical-align:middle;font-size:18px">emoji_events</mat-icon>
                   </th>
@@ -242,7 +237,6 @@ import { PlayerStats, DutyStats } from '../../models';
                 <th style="width:32px">#</th>
                 <th style="width:40px">Nr</th>
                 <th>Naam</th>
-                <th class="center" style="width:72px">Gespeeld</th>
                 <th class="center" style="width:64px">Gewonnen</th>
                 <th class="center" style="width:64px">Verloren</th>
                 <th class="center" style="width:60px">+ punten</th>
@@ -255,7 +249,6 @@ import { PlayerStats, DutyStats } from '../../models';
                 <td>{{ i + 1 }}</td>
                 <td>{{ s.player.nr }}</td>
                 <td><strong>{{ s.player.name }}</strong></td>
-                <td class="center">{{ s.played }}</td>
                 <td class="center" style="font-weight:600">{{ s.wins }}</td>
                 <td class="center">{{ s.losses }}</td>
                 <td class="center">{{ s.pointsFor }}</td>
@@ -304,7 +297,7 @@ export class StandingsComponent implements OnInit {
   dutyStats: DutyStats[] = [];
   allStats:  PlayerStats[] = [];
 
-  matchCols = ['rank', 'nr', 'name', 'played', 'wins', 'losses', 'pf', 'pa', '180s'];
+  matchCols = ['rank', 'nr', 'name', 'wins', 'losses', 'pf', 'pa', '180s'];
   dutyCols  = ['rank', 'nr', 'name', 'count'];
 
   get minTurnsRecord(): PlayerStats | null {
