@@ -81,12 +81,12 @@ func ExportEvening(_ context.Context, sched domain.Schedule, ev domain.Evening, 
 		return err
 	}
 
-	// Extra tab for each catch-up evening supplied via sched.Evenings.
+	// Extra tab for the synthetic "Afgemeld" evening (if any cancelled matches exist).
 	for _, inhaalEv := range sched.Evenings {
-		if !inhaalEv.IsCatchUpEvening {
+		if !inhaalEv.IsCatchUpEvening || len(inhaalEv.Matches) == 0 {
 			continue
 		}
-		wsTab := fmt.Sprintf("Inhaal %s", inhaalEv.Date.Format("2-1-2006"))
+		wsTab := "Afgemeld"
 		f.NewSheet(wsTab)
 		if err := writeEveningSheet(f, wsTab, inhaalEv, players, playerMap, firstNameNr, playerLabel, reportedByLabel); err != nil {
 			return err
