@@ -119,9 +119,17 @@ func (uc *ExportUseCase) ExportEvening(ctx context.Context, exp EveningExporter,
 	// For a regular evening, add one synthetic evening holding all cancelled
 	// matches so the exporter can render them as an "Afgemeld" extra tab.
 	if !targetEvening.IsCatchUpEvening {
-		cancelled, err := uc.matches.FindCancelledBySchedule(ctx, sched.ID)
+		all, err := uc.matches.FindCancelledBySchedule(ctx, sched.ID)
 		if err != nil {
 			return err
+		}
+		// Exclude matches that were planned for this evening — those belong on
+		// the main sheet and should not appear on the Afgemeld tab.
+		var cancelled []domain.Match
+		for _, m := range all {
+			if m.EveningID != targetEvening.ID {
+				cancelled = append(cancelled, m)
+			}
 		}
 		if len(cancelled) > 0 {
 			sched.Evenings = []domain.Evening{{IsCatchUpEvening: true, Matches: cancelled}}
