@@ -351,7 +351,10 @@ interface MatchRow {
               </mat-select>
             </mat-form-field>
 
-            <div *ngIf="selectedPlayerId" style="display:flex;justify-content:flex-end;margin-bottom:8px">
+            <div *ngIf="selectedPlayerId" style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:8px">
+              <button mat-stroked-button (click)="printPendingMatches()">
+                <mat-icon>print</mat-icon> Nog te spelen
+              </button>
               <button mat-stroked-button (click)="exportCalendar()">
                 <mat-icon>event</mat-icon> Agenda exporteren (.ics)
               </button>
@@ -671,6 +674,38 @@ export class InfoComponent implements OnInit {
       return { player, cells, totalMatches, eveningCount };
     }).filter(row => row.totalMatches > 0)
       .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999));
+  }
+
+  printPendingMatches(): void {
+    const player = this.sortedPlayers.find(p => p.id === this.selectedPlayerId);
+    if (!player) return;
+    const pending = this.playerMatchRows.filter(r => r.result === '—');
+    const compName = this.schedule?.competitionName ?? '';
+    const rowsHtml = pending.map(r => `
+      <tr>
+        <td>${r.eveningNumber}</td>
+        <td>${new Date(r.eveningDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
+        <td><strong>${r.opponentName}</strong></td>
+      </tr>`).join('');
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Nog te spelen – ${player.nr} ${player.name}</title>
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; padding: 16px; }
+        h2 { font-size: 15px; margin-bottom: 4px; }
+        p  { margin: 0 0 12px; color: #555; font-size: 11px; }
+        table { border-collapse: collapse; width: 100%; }
+        th { background: #f5f5f5; font-weight: 600; text-align: left; padding: 5px 8px; border-bottom: 2px solid #ccc; }
+        td { padding: 4px 8px; border-bottom: 1px solid #eee; }
+        @media print { @page { size: A4 portrait; margin: 15mm; } }
+      </style></head><body>
+      <h2>Nog te spelen wedstrijden – ${player.nr} ${player.name}</h2>
+      <p>${compName}</p>
+      <table><thead><tr><th>Avond</th><th>Datum</th><th>Tegenstander</th></tr></thead>
+      <tbody>${pending.length ? rowsHtml : '<tr><td colspan="3" style="color:#999;padding:12px 8px">Geen openstaande wedstrijden.</td></tr>'}</tbody></table>
+      <script>window.onload = () => { window.print(); }<\/script>
+      </body></html>`;
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(html); w.document.close(); }
   }
 
   exportCalendar(): void {
