@@ -144,6 +144,15 @@ import { PlayerStats, DutyStats } from '../../models';
                   <td mat-cell *matCellDef="let s" style="text-align:center;color:#c62828">{{ s.losses }}</td>
                 </ng-container>
 
+                <ng-container matColumnDef="pts">
+                  <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center"
+                      title="Legs voor − Legs tegen">Punten</th>
+                  <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:700"
+                      [style.color]="s.pointsFor - s.pointsAgainst >= 0 ? '#2e7d32' : '#c62828'">
+                    {{ s.pointsFor - s.pointsAgainst }}
+                  </td>
+                </ng-container>
+
                 <ng-container matColumnDef="pf">
                   <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center"
                       title="Gewonnen legs">Legs voor</th>
@@ -245,6 +254,7 @@ import { PlayerStats, DutyStats } from '../../models';
                 <th class="center" style="width:72px">Gespeeld</th>
                 <th class="center" style="width:64px">Gewonnen</th>
                 <th class="center" style="width:64px">Verloren</th>
+                <th class="center" style="width:60px">Punten</th>
                 <th class="center" style="width:60px">Legs voor</th>
                 <th class="center" style="width:60px">Legs tegen</th>
                 <th class="center" style="width:44px">180</th>
@@ -258,6 +268,7 @@ import { PlayerStats, DutyStats } from '../../models';
                 <td class="center">{{ s.played }}</td>
                 <td class="center" style="font-weight:600">{{ s.wins }}</td>
                 <td class="center">{{ s.losses }}</td>
+                <td class="center" style="font-weight:700">{{ s.pointsFor - s.pointsAgainst }}</td>
                 <td class="center">{{ s.pointsFor }}</td>
                 <td class="center">{{ s.pointsAgainst }}</td>
                 <td class="center" style="font-weight:600">{{ s.oneEighties || '—' }}</td>
@@ -304,7 +315,7 @@ export class StandingsComponent implements OnInit {
   dutyStats: DutyStats[] = [];
   allStats:  PlayerStats[] = [];
 
-  matchCols = ['rank', 'nr', 'name', 'played', 'wins', 'losses', 'pf', 'pa', '180s'];
+  matchCols = ['rank', 'nr', 'name', 'played', 'wins', 'losses', 'pts', 'pf', 'pa', '180s'];
   dutyCols  = ['rank', 'nr', 'name', 'count'];
 
   get minTurnsRecord(): PlayerStats | null {
@@ -355,7 +366,9 @@ export class StandingsComponent implements OnInit {
 
   private sortedStats(stats: PlayerStats[]): PlayerStats[] {
     return [...stats].sort((a, b) => {
-      if (b.pointsFor !== a.pointsFor) return b.pointsFor - a.pointsFor;
+      const ptsA = a.pointsFor - a.pointsAgainst;
+      const ptsB = b.pointsFor - b.pointsAgainst;
+      if (ptsB !== ptsA) return ptsB - ptsA;
       return b.wins - a.wins;
     });
   }
