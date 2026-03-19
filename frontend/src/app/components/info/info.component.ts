@@ -679,13 +679,14 @@ export class InfoComponent implements OnInit {
   printPendingMatches(): void {
     const player = this.sortedPlayers.find(p => p.id === this.selectedPlayerId);
     if (!player) return;
-    const pending = this.playerMatchRows.filter(r => r.result === '—');
+    const pending = this.playerMatchRows.filter(r => r.result === '—' || r.result === 'Afgemeld');
     const compName = this.schedule?.competitionName ?? '';
     const rowsHtml = pending.map(r => `
       <tr>
         <td>${r.eveningNumber}</td>
         <td>${new Date(r.eveningDate).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
         <td><strong>${r.opponentName}</strong></td>
+        <td style="color:${r.result === 'Afgemeld' ? '#c62828' : '#555'}">${r.result === 'Afgemeld' ? 'Afgemeld' : ''}</td>
       </tr>`).join('');
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
       <title>Nog te spelen – ${player.nr} ${player.name}</title>
@@ -700,7 +701,7 @@ export class InfoComponent implements OnInit {
       </style></head><body>
       <h2>Nog te spelen wedstrijden – ${player.nr} ${player.name}</h2>
       <p>${compName}</p>
-      <table><thead><tr><th>Avond</th><th>Datum</th><th>Tegenstander</th></tr></thead>
+      <table><thead><tr><th>Avond</th><th>Datum</th><th>Tegenstander</th><th>Status</th></tr></thead>
       <tbody>${pending.length ? rowsHtml : '<tr><td colspan="3" style="color:#999;padding:12px 8px">Geen openstaande wedstrijden.</td></tr>'}</tbody></table>
       <script>window.onload = () => { window.print(); }<\/script>
       </body></html>`;
