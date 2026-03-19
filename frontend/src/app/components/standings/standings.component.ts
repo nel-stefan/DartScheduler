@@ -355,10 +355,8 @@ export class StandingsComponent implements OnInit {
 
   private sortedStats(stats: PlayerStats[]): PlayerStats[] {
     return [...stats].sort((a, b) => {
-      if (b.wins !== a.wins) return b.wins - a.wins;
-      const diffA = a.pointsFor - a.pointsAgainst;
-      const diffB = b.pointsFor - b.pointsAgainst;
-      return diffB - diffA;
+      if (b.pointsFor !== a.pointsFor) return b.pointsFor - a.pointsFor;
+      return b.wins - a.wins;
     });
   }
 
