@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl } from '@
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Match, Player, Evening } from '../models';
 import { ScoreService } from '../services/score.service';
+import { MobileStateService } from './mobile-state.service';
 
 function displayName(name: string): string {
   const idx = name.indexOf(', ');
@@ -230,6 +231,7 @@ export class MobileScoreComponent implements OnInit {
   private scoreService = inject(ScoreService);
   private snackBar     = inject(MatSnackBar);
   private fb           = inject(FormBuilder);
+  private mobileState  = inject(MobileStateService);
 
   match:          Match   | null = null;
   players:        Player[]       = [];
@@ -261,7 +263,7 @@ export class MobileScoreComponent implements OnInit {
   get nameB(): string { return this.match ? this.playerName(this.match.playerB) : ''; }
 
   ngOnInit(): void {
-    const state = history.state as { match?: Match; eveningId?: string; players?: Player[]; isInhaalAvond?: boolean; evenings?: Evening[] };
+    const state = history.state as { match?: Match; eveningId?: string; players?: Player[]; isInhaalAvond?: boolean; evenings?: Evening[]; lastCatchUpPlayedDate?: string };
     if (!state?.match) { this.router.navigate(['/m/avond']); return; }
 
     this.match         = state.match;
@@ -270,19 +272,18 @@ export class MobileScoreComponent implements OnInit {
     this.isInhaalAvond = state.isInhaalAvond ?? false;
     this.evenings      = state.evenings      ?? [];
 
-    if (this.match.played) {
-      this.form.patchValue({
-        leg1Winner:  this.match.leg1Winner,
-        leg1Turns:   this.match.leg1Turns,
-        leg2Winner:  this.match.leg2Winner,
-        leg2Turns:   this.match.leg2Turns,
-        leg3Winner:  this.match.leg3Winner,
-        leg3Turns:   this.match.leg3Turns,
-        secretaryNr: this.match.secretaryNr,
-        counterNr:   this.match.counterNr,
-        playedDate:  this.match.playedDate,
-      });
-    }
+    const defaultPlayedDate = this.match.playedDate || state.lastCatchUpPlayedDate || '';
+    this.form.patchValue({
+      leg1Winner:  this.match.leg1Winner,
+      leg1Turns:   this.match.leg1Turns  || null,
+      leg2Winner:  this.match.leg2Winner,
+      leg2Turns:   this.match.leg2Turns  || null,
+      leg3Winner:  this.match.leg3Winner,
+      leg3Turns:   this.match.leg3Turns  || null,
+      secretaryNr: this.match.secretaryNr,
+      counterNr:   this.match.counterNr,
+      playedDate:  defaultPlayedDate,
+    });
   }
 
   setWinner(ctrl: string, playerId: string): void {
@@ -328,6 +329,9 @@ export class MobileScoreComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.submitting = false;
+        if (this.isInhaalAvond && v.playedDate) {
+          this.mobileState.lastCatchUpPlayedDate = v.playedDate;
+        }
         this.snackBar.open('Score opgeslagen', '', { duration: 2000 });
         this.router.navigate(['/m/avond']);
       },

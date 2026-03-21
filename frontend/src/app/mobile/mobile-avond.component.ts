@@ -171,7 +171,7 @@ export class MobileAvondComponent implements OnInit {
   enterScore(m: Match): void {
     const isInhaalAvond = this.selectedEvening?.isInhaalAvond ?? false;
     this.router.navigate(['/m/score', m.id], {
-      state: { match: m, eveningId: this.selectedEveningId, players: this.players, isInhaalAvond, evenings: this.evenings },
+      state: { match: m, eveningId: this.selectedEveningId, players: this.players, isInhaalAvond, evenings: this.evenings, lastCatchUpPlayedDate: this.mobileState.lastCatchUpPlayedDate },
     });
   }
 }

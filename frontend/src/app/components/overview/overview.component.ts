@@ -37,6 +37,7 @@ export interface ScoreDialogData {
   players: Player[];
   isInhaalAvond: boolean;
   evenings: Evening[];
+  defaultPlayedDate: string;
 }
 
 @Component({
@@ -170,7 +171,7 @@ export class ScoreDialogComponent {
     leg3Turns:  [this.data.match.leg3Turns  || null as number | null],
     secretaryNr: [this.data.match.secretaryNr || ''],
     counterNr:   [this.data.match.counterNr   || ''],
-    playedDate:  [this.data.match.playedDate  || ''],
+    playedDate:  [this.data.match.playedDate || this.data.defaultPlayedDate || ''],
   });
 
   isValid(): boolean {
@@ -574,6 +575,7 @@ export class OverviewComponent implements OnInit {
   activeTab = 0;
   matchCols = ['playerA', 'vs', 'playerB', 'score', 'actions'];
   catchUpSearch = '';
+  lastCatchUpPlayedDate = '';
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -662,6 +664,7 @@ export class OverviewComponent implements OnInit {
         players: this.players,
         isInhaalAvond,
         evenings: this.schedule?.evenings ?? [],
+        defaultPlayedDate: this.lastCatchUpPlayedDate,
       } as ScoreDialogData,
     });
     ref.afterClosed().subscribe((result: {
@@ -678,6 +681,7 @@ export class OverviewComponent implements OnInit {
       console.log('[openScore] submitting result', match.id, result);
       this.scoreService.submitResult(match.id, { ...result, playedDate: result.playedDate ?? '' }).subscribe({
         next: () => {
+          if (isInhaalAvond && result.playedDate) this.lastCatchUpPlayedDate = result.playedDate;
           this.snackBar.open('Resultaat opgeslagen!', 'OK', { duration: 2000 });
           if (this.schedule) this.loadScheduleById(this.schedule.id, true);
         },
