@@ -69,16 +69,21 @@ function displayName(name: string): string {
       font-size: 14px; background: #faf7f5; outline: none;
     }
     .field-input:focus { border-color: #4e342e; }
+    .field-select {
+      flex: 1; padding: 8px 10px; border: 1.5px solid #d7ccc8; border-radius: 8px;
+      font-size: 14px; background: #faf7f5; outline: none; cursor: pointer;
+    }
+    .field-select:focus { border-color: #4e342e; }
 
     .duty-grid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     }
     .duty-field label { font-size: 11px; color: #757575; display: block; margin-bottom: 4px; }
-    .duty-field input {
+    .duty-select {
       width: 100%; padding: 8px 10px; border: 1.5px solid #d7ccc8; border-radius: 8px;
-      font-size: 14px; background: #faf7f5; outline: none; box-sizing: border-box;
+      font-size: 13px; background: #faf7f5; outline: none; box-sizing: border-box; cursor: pointer;
     }
-    .duty-field input:focus { border-color: #4e342e; }
+    .duty-select:focus { border-color: #4e342e; }
 
     .submit-btn {
       width: 100%; padding: 14px; border: none; border-radius: 10px;
@@ -120,8 +125,10 @@ function displayName(name: string): string {
         </div>
         <div class="field-row">
           <span class="field-label">Beurten</span>
-          <input class="field-input" type="number" min="1" max="50"
-            formControlName="leg1Turns" placeholder="bijv. 15">
+          <select class="field-select" formControlName="leg1Turns">
+            <option [ngValue]="null">—</option>
+            <option *ngFor="let n of turnsOptions" [ngValue]="n">{{ n }}</option>
+          </select>
         </div>
       </div>
 
@@ -142,8 +149,10 @@ function displayName(name: string): string {
         </div>
         <div class="field-row">
           <span class="field-label">Beurten</span>
-          <input class="field-input" type="number" min="1" max="50"
-            formControlName="leg2Turns" placeholder="bijv. 15">
+          <select class="field-select" formControlName="leg2Turns">
+            <option [ngValue]="null">—</option>
+            <option *ngFor="let n of turnsOptions" [ngValue]="n">{{ n }}</option>
+          </select>
         </div>
       </div>
 
@@ -164,8 +173,10 @@ function displayName(name: string): string {
         </div>
         <div class="field-row">
           <span class="field-label">Beurten</span>
-          <input class="field-input" type="number" min="1" max="50"
-            formControlName="leg3Turns" placeholder="bijv. 15">
+          <select class="field-select" formControlName="leg3Turns">
+            <option [ngValue]="null">—</option>
+            <option *ngFor="let n of turnsOptions" [ngValue]="n">{{ n }}</option>
+          </select>
         </div>
       </div>
 
@@ -174,12 +185,18 @@ function displayName(name: string): string {
         <p class="card-title">Dienst</p>
         <div class="duty-grid">
           <div class="duty-field">
-            <label>Schrijver nr.</label>
-            <input type="text" formControlName="secretaryNr" placeholder="bijv. 12">
+            <label>Schrijver</label>
+            <select class="duty-select" formControlName="secretaryNr">
+              <option value="">—</option>
+              <option *ngFor="let p of sortedPlayers" [value]="p.nr">{{ p.nr }} – {{ playerName(p.id) }}</option>
+            </select>
           </div>
           <div class="duty-field">
-            <label>Teller nr.</label>
-            <input type="text" formControlName="counterNr" placeholder="bijv. 7">
+            <label>Teller</label>
+            <select class="duty-select" formControlName="counterNr">
+              <option value="">—</option>
+              <option *ngFor="let p of sortedPlayers" [value]="p.nr">{{ p.nr }} – {{ playerName(p.id) }}</option>
+            </select>
           </div>
         </div>
       </div>
@@ -215,6 +232,12 @@ export class MobileScoreComponent implements OnInit {
   isInhaalAvond   = false;
   submitting      = false;
   errorMsg        = '';
+
+  turnsOptions = Array.from({ length: 18 }, (_, i) => i + 3); // 3..20
+
+  get sortedPlayers(): Player[] {
+    return [...this.players].sort((a, b) => (parseInt(a.nr) || 9999) - (parseInt(b.nr) || 9999));
+  }
 
   form = this.fb.group({
     leg1Winner: ['', Validators.required],
