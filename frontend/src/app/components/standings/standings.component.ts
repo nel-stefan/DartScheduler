@@ -7,15 +7,19 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ScoreService } from '../../services/score.service';
 import { SeasonService } from '../../services/season.service';
-import { PlayerStats, DutyStats } from '../../models';
+import { ScheduleService } from '../../services/schedule.service';
+import { PlayerStats, DutyStats, Evening } from '../../models';
+import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-stat-dialog.component';
 
 @Component({
   selector: 'app-standings',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatCardModule,
-            MatTableModule, MatTabsModule, MatIconModule],
+  imports: [CommonModule, MatButtonModule, MatCardModule, MatDialogModule,
+            MatTableModule, MatTabsModule, MatIconModule, MatTooltipModule, EveningStatDialogComponent],
   styles: [`
     .section-title {
       font-size: 18px;
@@ -158,6 +162,16 @@ import { PlayerStats, DutyStats } from '../../models';
                   </td>
                 </ng-container>
 
+                <ng-container matColumnDef="edit">
+                  <th mat-header-cell *matHeaderCellDef style="width:40px"></th>
+                  <td mat-cell *matCellDef="let s">
+                    <button mat-icon-button (click)="openStatDialog(s)" matTooltip="180s / HF aanpassen"
+                            style="width:32px;height:32px;font-size:18px" class="screen-only">
+                      <mat-icon style="font-size:18px;width:18px;height:18px">edit</mat-icon>
+                    </button>
+                  </td>
+                </ng-container>
+
                 <tr mat-header-row *matHeaderRowDef="matchCols"></tr>
                 <tr mat-row *matRowDef="let row; columns: matchCols;"></tr>
               </table>
@@ -289,15 +303,18 @@ import { PlayerStats, DutyStats } from '../../models';
   `,
 })
 export class StandingsComponent implements OnInit {
-  private scoreService  = inject(ScoreService);
-  private seasonService = inject(SeasonService);
-  private destroyRef    = inject(DestroyRef);
+  private scoreService   = inject(ScoreService);
+  private seasonService  = inject(SeasonService);
+  private scheduleService = inject(ScheduleService);
+  private dialog         = inject(MatDialog);
+  private destroyRef     = inject(DestroyRef);
 
   classes:   { label: string; stats: PlayerStats[] }[] = [];
   dutyStats: DutyStats[] = [];
   allStats:  PlayerStats[] = [];
+  evenings:  Evening[]    = [];
 
-  matchCols = ['rank', 'nr', 'name', 'wins', 'losses', 'pf', 'pa', '180s'];
+  matchCols = ['rank', 'nr', 'name', 'wins', 'losses', 'pf', 'pa', '180s', 'edit'];
   dutyCols  = ['rank', 'nr', 'name', 'count'];
 
   get minTurnsRecord(): PlayerStats | null {
@@ -325,6 +342,23 @@ export class StandingsComponent implements OnInit {
     });
     this.scoreService.getDutyStats(sid).subscribe((d) => {
       this.dutyStats = d.sort((a, b) => b.count - a.count);
+    });
+    if (sid) {
+      this.scheduleService.getById(sid).subscribe(schedule => {
+        this.evenings = schedule.evenings;
+      });
+    }
+  }
+
+  openStatDialog(stat: PlayerStats): void {
+    this.dialog.open(EveningStatDialogComponent, {
+      data: {
+        evenings: this.evenings.map(e => ({ id: e.id, number: e.number, isInhaalAvond: e.isInhaalAvond })),
+        players: [],
+        preselectedPlayerId: stat.player.id,
+      } as EveningStatDialogData,
+    }).afterClosed().subscribe(saved => {
+      if (saved) this.loadStats();
     });
   }
 

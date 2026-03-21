@@ -21,8 +21,10 @@ import { ScheduleService } from '../../services/schedule.service';
 import { PlayerService } from '../../services/player.service';
 import { ScoreService } from '../../services/score.service';
 import { SeasonService } from '../../services/season.service';
+import { EveningStatService } from '../../services/evening-stat.service';
 import { Schedule, Player, Match, Evening, GenerateScheduleRequest } from '../../models';
 import { environment } from '../../../environments/environment';
+import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-stat-dialog.component';
 
 // ---------------------------------------------------------------------------
 // Generate-dialog
@@ -486,7 +488,7 @@ export class AbsentDialogComponent {
     MatSnackBarModule, MatDialogModule, MatChipsModule, MatIconModule,
     MatTooltipModule, MatSelectModule, MatFormFieldModule, MatInputModule,
     FormsModule, ReactiveFormsModule,
-    AbsentDialogComponent,
+    AbsentDialogComponent, EveningStatDialogComponent,
   ],
   styles: [`
     .schedule-header {
@@ -608,6 +610,10 @@ export class AbsentDialogComponent {
                 <button mat-stroked-button (click)="openAbsentDialog(ev)" matTooltip="Speler afmelden"
                         *ngIf="ev.matches.length > 0">
                   <mat-icon>person_off</mat-icon> Afmelden
+                </button>
+                <button mat-stroked-button (click)="openStatDialog(ev)" matTooltip="180s / Hoge Finish invoeren"
+                        *ngIf="ev.matches.length > 0">
+                  <mat-icon>emoji_events</mat-icon> 180 / HF
                 </button>
                 <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel">
                   <mat-icon>file_download</mat-icon>
@@ -742,13 +748,14 @@ export class AbsentDialogComponent {
   `,
 })
 export class OverviewComponent implements OnInit {
-  private scheduleService = inject(ScheduleService);
-  private playerService   = inject(PlayerService);
-  private scoreService    = inject(ScoreService);
-  private seasonService   = inject(SeasonService);
-  private snackBar        = inject(MatSnackBar);
-  private dialog          = inject(MatDialog);
-  private destroyRef      = inject(DestroyRef);
+  private scheduleService  = inject(ScheduleService);
+  private playerService    = inject(PlayerService);
+  private scoreService     = inject(ScoreService);
+  private seasonService    = inject(SeasonService);
+  private eveningStatSvc   = inject(EveningStatService);
+  private snackBar         = inject(MatSnackBar);
+  private dialog           = inject(MatDialog);
+  private destroyRef       = inject(DestroyRef);
 
   schedule: Schedule | null = null;
   players:  Player[] = [];
@@ -902,6 +909,22 @@ export class OverviewComponent implements OnInit {
         },
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
       });
+    });
+  }
+
+  openStatDialog(ev: Evening): void {
+    const playerIdsOnEvening = new Set(ev.matches.flatMap(m => [m.playerA, m.playerB]));
+    const players = this.players
+      .filter(p => playerIdsOnEvening.has(p.id))
+      .map(p => ({ id: p.id, name: p.name }));
+    this.dialog.open(EveningStatDialogComponent, {
+      data: {
+        evenings: [],
+        players,
+        preselectedEveningId: ev.id,
+      } as EveningStatDialogData,
+    }).afterClosed().subscribe(saved => {
+      if (saved) this.snackBar.open('Opgeslagen', '', { duration: 2000 });
     });
   }
 
