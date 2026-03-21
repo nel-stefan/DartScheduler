@@ -36,6 +36,7 @@ export interface ScoreDialogData {
   nrB: string;
   players: Player[];
   isInhaalAvond: boolean;
+  evenings: Evening[];
 }
 
 @Component({
@@ -136,7 +137,12 @@ export interface ScoreDialogData {
         <div *ngIf="data.isInhaalAvond" style="margin-top:8px">
           <mat-form-field style="width:100%" subscriptSizing="dynamic">
             <mat-label>Datum gespeeld</mat-label>
-            <input matInput type="date" formControlName="playedDate">
+            <mat-select formControlName="playedDate">
+              <mat-option value="">— kies avond —</mat-option>
+              <mat-option *ngFor="let ev of data.evenings" [value]="ev.date">
+                Avond {{ ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
+              </mat-option>
+            </mat-select>
           </mat-form-field>
         </div>
       </form>
@@ -655,6 +661,7 @@ export class OverviewComponent implements OnInit {
         nrB:   this.playerNr(match.playerB),
         players: this.players,
         isInhaalAvond,
+        evenings: (this.schedule?.evenings ?? []).filter(e => !e.isInhaalAvond),
       } as ScoreDialogData,
     });
     ref.afterClosed().subscribe((result: {

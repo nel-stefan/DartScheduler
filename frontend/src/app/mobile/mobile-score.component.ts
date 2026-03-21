@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Match, Player } from '../models';
+import { Match, Player, Evening } from '../models';
 import { ScoreService } from '../services/score.service';
 
 function displayName(name: string): string {
@@ -206,7 +206,12 @@ function displayName(name: string): string {
         <p class="card-title">Inhaalwedstrijd</p>
         <div class="field-row">
           <span class="field-label">Datum</span>
-          <input class="field-input" type="date" formControlName="playedDate">
+          <select class="field-select" formControlName="playedDate">
+            <option value="">— kies avond —</option>
+            <option *ngFor="let ev of evenings" [value]="ev.date">
+              Avond {{ ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
+            </option>
+          </select>
         </div>
       </div>
 
@@ -226,8 +231,9 @@ export class MobileScoreComponent implements OnInit {
   private snackBar     = inject(MatSnackBar);
   private fb           = inject(FormBuilder);
 
-  match:          Match  | null = null;
-  players:        Player[]      = [];
+  match:          Match   | null = null;
+  players:        Player[]       = [];
+  evenings:       Evening[]      = [];
   eveningId       = '';
   isInhaalAvond   = false;
   submitting      = false;
@@ -255,13 +261,14 @@ export class MobileScoreComponent implements OnInit {
   get nameB(): string { return this.match ? this.playerName(this.match.playerB) : ''; }
 
   ngOnInit(): void {
-    const state = history.state as { match?: Match; eveningId?: string; players?: Player[]; isInhaalAvond?: boolean };
+    const state = history.state as { match?: Match; eveningId?: string; players?: Player[]; isInhaalAvond?: boolean; evenings?: Evening[] };
     if (!state?.match) { this.router.navigate(['/m/avond']); return; }
 
     this.match         = state.match;
     this.eveningId     = state.eveningId     ?? '';
     this.players       = state.players       ?? [];
     this.isInhaalAvond = state.isInhaalAvond ?? false;
+    this.evenings      = state.evenings      ?? [];
 
     if (this.match.played) {
       this.form.patchValue({
