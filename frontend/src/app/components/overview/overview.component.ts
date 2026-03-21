@@ -365,7 +365,7 @@ export class AbsentDialogComponent {
       <button mat-stroked-button *ngIf="schedule" (click)="printSchedule()">
         <mat-icon>print</mat-icon> Afdrukken
       </button>
-      <mat-form-field *ngIf="schedule" style="min-width:230px" subscriptSizing="dynamic">
+      <mat-form-field *ngIf="schedule" style="min-width:320px" subscriptSizing="dynamic">
         <mat-label>Avond</mat-label>
         <mat-select [(ngModel)]="activeTab">
           <mat-select-trigger>
