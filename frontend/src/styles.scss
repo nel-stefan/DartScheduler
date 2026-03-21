@@ -16,7 +16,27 @@ $dart-theme: mat.define-light-theme((
   density: 0,
 ));
 
-@include mat.all-component-themes($dart-theme);
+// Only include themes for components actually used — omits datepicker, stepper,
+// autocomplete, list, menu, paginator, slider, tree, etc.
+@include mat.core-theme($dart-theme);
+@include mat.button-theme($dart-theme);
+@include mat.card-theme($dart-theme);
+@include mat.checkbox-theme($dart-theme);
+@include mat.chips-theme($dart-theme);
+@include mat.dialog-theme($dart-theme);
+@include mat.divider-theme($dart-theme);
+@include mat.form-field-theme($dart-theme);
+@include mat.icon-theme($dart-theme);
+@include mat.input-theme($dart-theme);
+@include mat.option-theme($dart-theme);
+@include mat.pseudo-checkbox-theme($dart-theme);
+@include mat.radio-theme($dart-theme);
+@include mat.select-theme($dart-theme);
+@include mat.snack-bar-theme($dart-theme);
+@include mat.table-theme($dart-theme);
+@include mat.tabs-theme($dart-theme);
+@include mat.toolbar-theme($dart-theme);
+@include mat.tooltip-theme($dart-theme);
 
 html, body {
   height: 100%;
