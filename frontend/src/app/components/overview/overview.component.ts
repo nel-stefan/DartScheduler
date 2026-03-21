@@ -307,26 +307,6 @@ export interface ScoreDialogData {
             </mat-select>
           </mat-form-field>
         </div>
-        <!-- 180s and highest finish -->
-        <mat-divider style="margin:10px 0 8px"></mat-divider>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <mat-form-field subscriptSizing="dynamic">
-            <mat-label>180's {{ data.nameA }}</mat-label>
-            <input matInput type="number" formControlName="playerA180s" min="0" placeholder="0">
-          </mat-form-field>
-          <mat-form-field subscriptSizing="dynamic">
-            <mat-label>180's {{ data.nameB }}</mat-label>
-            <input matInput type="number" formControlName="playerB180s" min="0" placeholder="0">
-          </mat-form-field>
-          <mat-form-field subscriptSizing="dynamic">
-            <mat-label>Hoogste finish {{ data.nameA }}</mat-label>
-            <input matInput type="number" formControlName="playerAHighestFinish" min="0" placeholder="0">
-          </mat-form-field>
-          <mat-form-field subscriptSizing="dynamic">
-            <mat-label>Hoogste finish {{ data.nameB }}</mat-label>
-            <input matInput type="number" formControlName="playerBHighestFinish" min="0" placeholder="0">
-          </mat-form-field>
-        </div>
         <!-- Administrative fields -->
         <mat-divider style="margin:10px 0 8px"></mat-divider>
         <div class="admin-row">
@@ -368,10 +348,6 @@ export class ScoreDialogComponent {
     leg2Turns:  [this.data.match.leg2Turns  || null as number | null],
     leg3Winner: [this.data.match.leg3Winner || ''],
     leg3Turns:  [this.data.match.leg3Turns  || null as number | null],
-    playerA180s:          [this.data.match.playerA180s          ?? 0],
-    playerB180s:          [this.data.match.playerB180s          ?? 0],
-    playerAHighestFinish: [this.data.match.playerAHighestFinish ?? 0],
-    playerBHighestFinish: [this.data.match.playerBHighestFinish ?? 0],
     secretaryNr: [this.data.match.secretaryNr || ''],
     counterNr:   [this.data.match.counterNr   || ''],
   });
@@ -391,10 +367,10 @@ export class ScoreDialogComponent {
       leg2Turns:      v.leg2Turns ?? 0,
       leg3Winner:     v.leg3Winner ?? '',
       leg3Turns:      v.leg3Turns ?? 0,
-      playerA180s:          v.playerA180s ?? 0,
-      playerB180s:          v.playerB180s ?? 0,
-      playerAHighestFinish: v.playerAHighestFinish ?? 0,
-      playerBHighestFinish: v.playerBHighestFinish ?? 0,
+      playerA180s:          0,
+      playerB180s:          0,
+      playerAHighestFinish: 0,
+      playerBHighestFinish: 0,
       reportedBy:     '',
       rescheduleDate: '',
       secretaryNr:    v.secretaryNr ?? '',
