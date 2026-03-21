@@ -1,4 +1,4 @@
-<mat-toolbar color="primary" class="app-toolbar">
+<mat-toolbar color="primary" class="app-toolbar" *ngIf="!isMobile">
   <img src="assets/logo.svg" alt="dart" class="toolbar-logo">
   <span class="toolbar-title">DartScheduler</span>
   <span class="toolbar-spacer"></span>
@@ -31,6 +31,6 @@
   </nav>
 </mat-toolbar>
 
-<main class="app-content">
+<main [class.app-content]="!isMobile">
   <router-outlet />
 </main>
