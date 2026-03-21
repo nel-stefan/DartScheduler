@@ -140,7 +140,7 @@ export interface ScoreDialogData {
             <mat-select formControlName="playedDate">
               <mat-option value="">— kies avond —</mat-option>
               <mat-option *ngFor="let ev of data.evenings" [value]="ev.date">
-                Avond {{ ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
+                {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
               </mat-option>
             </mat-select>
           </mat-form-field>
@@ -661,7 +661,7 @@ export class OverviewComponent implements OnInit {
         nrB:   this.playerNr(match.playerB),
         players: this.players,
         isInhaalAvond,
-        evenings: (this.schedule?.evenings ?? []).filter(e => !e.isInhaalAvond),
+        evenings: this.schedule?.evenings ?? [],
       } as ScoreDialogData,
     });
     ref.afterClosed().subscribe((result: {

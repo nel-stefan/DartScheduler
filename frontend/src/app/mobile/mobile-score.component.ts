@@ -209,7 +209,7 @@ function displayName(name: string): string {
           <select class="field-select" formControlName="playedDate">
             <option value="">— kies avond —</option>
             <option *ngFor="let ev of evenings" [value]="ev.date">
-              Avond {{ ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
+              {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
             </option>
           </select>
         </div>
