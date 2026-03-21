@@ -29,7 +29,6 @@ import { MatIconModule } from '@angular/material/icon';
     <nav class="mobile-nav">
       <a routerLink="avond" routerLinkActive="active"><mat-icon>sports_bar</mat-icon>Avond</a>
       <a routerLink="stand" routerLinkActive="active"><mat-icon>leaderboard</mat-icon>Stand</a>
-      <a routerLink="stats" routerLinkActive="active"><mat-icon>emoji_events</mat-icon>Stats</a>
     </nav>
   `,
 })
