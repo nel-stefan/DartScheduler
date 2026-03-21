@@ -478,11 +478,11 @@ export class AbsentDialogComponent {
                 <th mat-header-cell *matHeaderCellDef></th>
                 <td mat-cell *matCellDef="let m" style="text-align:right">
                   <button mat-stroked-button color="primary" *ngIf="!m.played"
-                    (click)="openScore(m)">
+                    (click)="openScore(m, ev.isInhaalAvond)">
                     <mat-icon>edit</mat-icon> Score
                   </button>
                   <button mat-button color="accent" *ngIf="m.played"
-                    (click)="openScore(m)" matTooltip="Score wijzigen">
+                    (click)="openScore(m, ev.isInhaalAvond)" matTooltip="Score wijzigen">
                     <mat-icon>check_circle</mat-icon> Wijzigen
                   </button>
                 </td>
@@ -645,8 +645,7 @@ export class OverviewComponent implements OnInit {
     return `${this.playedCount(ev)}/${total}`;
   }
 
-  openScore(match: Match): void {
-    const isInhaalAvond = this.schedule?.evenings.find(ev => ev.id === match.eveningId)?.isInhaalAvond ?? false;
+  openScore(match: Match, isInhaalAvond = false): void {
     const ref = this.dialog.open(ScoreDialogComponent, {
       data: {
         match,
