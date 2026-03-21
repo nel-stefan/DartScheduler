@@ -50,6 +50,7 @@ func (uc *ScoreUseCase) Submit(ctx context.Context, in SubmitScoreInput) error {
 	match.RescheduleDate = in.RescheduleDate
 	match.SecretaryNr = in.SecretaryNr
 	match.CounterNr = in.CounterNr
+	match.PlayedDate = in.PlayedDate
 	match.PlayerA180s = in.PlayerA180s
 	match.PlayerB180s = in.PlayerB180s
 	match.PlayerAHighestFinish = in.PlayerAHighestFinish

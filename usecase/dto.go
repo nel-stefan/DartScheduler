@@ -54,6 +54,7 @@ type SubmitScoreInput struct {
 	RescheduleDate string
 	SecretaryNr    string
 	CounterNr      string
+	PlayedDate     string
 	PlayerA180s          int
 	PlayerB180s          int
 	PlayerAHighestFinish int

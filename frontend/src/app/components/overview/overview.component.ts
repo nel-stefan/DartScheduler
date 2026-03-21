@@ -35,6 +35,7 @@ export interface ScoreDialogData {
   nrA: string;
   nrB: string;
   players: Player[];
+  isInhaalAvond: boolean;
 }
 
 @Component({
@@ -132,6 +133,12 @@ export interface ScoreDialogData {
             </mat-select>
           </mat-form-field>
         </div>
+        <div *ngIf="data.isInhaalAvond" style="margin-top:8px">
+          <mat-form-field style="width:100%" subscriptSizing="dynamic">
+            <mat-label>Datum gespeeld</mat-label>
+            <input matInput type="date" formControlName="playedDate">
+          </mat-form-field>
+        </div>
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -157,6 +164,7 @@ export class ScoreDialogComponent {
     leg3Turns:  [this.data.match.leg3Turns  || null as number | null],
     secretaryNr: [this.data.match.secretaryNr || ''],
     counterNr:   [this.data.match.counterNr   || ''],
+    playedDate:  [this.data.match.playedDate  || ''],
   });
 
   isValid(): boolean {
@@ -182,6 +190,7 @@ export class ScoreDialogComponent {
       rescheduleDate: '',
       secretaryNr:    v.secretaryNr ?? '',
       counterNr:      v.counterNr ?? '',
+      playedDate:     v.playedDate ?? '',
     });
   }
 }
@@ -637,6 +646,7 @@ export class OverviewComponent implements OnInit {
   }
 
   openScore(match: Match): void {
+    const isInhaalAvond = this.schedule?.evenings.find(ev => ev.id === match.eveningId)?.isInhaalAvond ?? false;
     const ref = this.dialog.open(ScoreDialogComponent, {
       data: {
         match,
@@ -645,6 +655,7 @@ export class OverviewComponent implements OnInit {
         nrA:   this.playerNr(match.playerA),
         nrB:   this.playerNr(match.playerB),
         players: this.players,
+        isInhaalAvond,
       } as ScoreDialogData,
     });
     ref.afterClosed().subscribe((result: {
@@ -655,10 +666,11 @@ export class OverviewComponent implements OnInit {
       playerAHighestFinish: number; playerBHighestFinish: number;
       reportedBy: string; rescheduleDate: string;
       secretaryNr: string; counterNr: string;
+      playedDate: string;
     } | undefined) => {
       if (!result) return;
       console.log('[openScore] submitting result', match.id, result);
-      this.scoreService.submitResult(match.id, result).subscribe({
+      this.scoreService.submitResult(match.id, { ...result, playedDate: result.playedDate ?? '' }).subscribe({
         next: () => {
           this.snackBar.open('Resultaat opgeslagen!', 'OK', { duration: 2000 });
           if (this.schedule) this.loadScheduleById(this.schedule.id, true);

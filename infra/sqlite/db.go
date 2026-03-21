@@ -48,6 +48,7 @@ var alterations = []string{
 	`ALTER TABLE matches ADD COLUMN player_b_180s INTEGER NOT NULL DEFAULT 0`,
 	`ALTER TABLE matches ADD COLUMN player_a_highest_finish INTEGER NOT NULL DEFAULT 0`,
 	`ALTER TABLE matches ADD COLUMN player_b_highest_finish INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE matches ADD COLUMN played_date TEXT NOT NULL DEFAULT ''`,
 }
 
 // dataMigrations are named, one-time data migrations run after schema setup.

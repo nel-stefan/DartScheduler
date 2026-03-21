@@ -17,6 +17,7 @@ export class ScoreService {
     playerAHighestFinish: number; playerBHighestFinish: number;
     reportedBy: string; rescheduleDate: string;
     secretaryNr: string; counterNr: string;
+    playedDate: string;
   }): Observable<void> {
     return this.http.put<void>(`${this.base}/matches/${matchId}/score`, data);
   }

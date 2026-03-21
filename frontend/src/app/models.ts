@@ -31,6 +31,7 @@ export interface Match {
   rescheduleDate: string;
   secretaryNr: string;
   counterNr: string;
+  playedDate: string;
   playerA180s: number;
   playerB180s: number;
   playerAHighestFinish: number;

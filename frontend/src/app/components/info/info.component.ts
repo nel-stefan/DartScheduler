@@ -36,6 +36,8 @@ interface MatchRow {
   myScore: number | null;
   oppScore: number | null;
   result: 'W' | 'V' | 'G' | 'Afgemeld' | '—';
+  isCatchUp: boolean;
+  playedDate: string; // set for catch-up matches that have been played
 }
 
 @Component({
@@ -371,7 +373,22 @@ interface MatchRow {
 
                   <ng-container matColumnDef="date">
                     <th mat-header-cell *matHeaderCellDef style="width:110px">Datum</th>
-                    <td mat-cell *matCellDef="let r">{{ r.eveningDate | date:'d MMM yyyy' }}</td>
+                    <td mat-cell *matCellDef="let r">
+                      <span [style.color]="r.isCatchUp ? '#7b1fa2' : null">
+                        {{ r.eveningDate | date:'d MMM yyyy' }}
+                        <span *ngIf="r.isCatchUp" style="font-size:10px;font-weight:600;margin-left:2px">inhaal</span>
+                      </span>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="playedDate">
+                    <th mat-header-cell *matHeaderCellDef style="width:110px">Gespeeld op</th>
+                    <td mat-cell *matCellDef="let r">
+                      <span *ngIf="r.isCatchUp && r.playedDate" style="color:#7b1fa2;font-weight:500">
+                        {{ r.playedDate | date:'d MMM yyyy' }}
+                      </span>
+                      <span *ngIf="!r.isCatchUp || !r.playedDate" style="color:#bdbdbd">—</span>
+                    </td>
                   </ng-container>
 
                   <ng-container matColumnDef="opponent">
@@ -551,7 +568,7 @@ export class InfoComponent implements OnInit {
 
   summaryCols = ['nr', 'name', 'eveningCount', 'totalMatches', 'consecutive', 'buddy'];
   statCols    = ['nr', 'name', 'minTurns', 'avgTurns', 'avgScore', '180s', 'hf'];
-  matchCols   = ['evening', 'date', 'opponent', 'score', 'result'];
+  matchCols   = ['evening', 'date', 'playedDate', 'opponent', 'score', 'result'];
   openCols    = ['evening', 'date', 'playerA', 'playerB'];
 
   ngOnInit(): void {
@@ -582,11 +599,13 @@ export class InfoComponent implements OnInit {
     const playerMap = new Map(this.info.players.map(p => [p.id, p]));
 
     for (const ev of this.schedule.evenings) {
-      if (ev.isInhaalAvond) continue;
       for (const m of ev.matches) {
         const isA = m.playerA === this.selectedPlayerId;
         const isB = m.playerB === this.selectedPlayerId;
         if (!isA && !isB) continue;
+
+        // For catch-up evenings only include matches that have been played or reported
+        if (ev.isInhaalAvond && !m.played && !m.reportedBy) continue;
 
         const opponentId = isA ? m.playerB : m.playerA;
         const opp = playerMap.get(opponentId);
@@ -602,7 +621,16 @@ export class InfoComponent implements OnInit {
           result = myScore > oppScore ? 'W' : myScore < oppScore ? 'V' : 'G';
         }
 
-        rows.push({ eveningNumber: ev.number, eveningDate: ev.date, opponentName, myScore, oppScore, result });
+        rows.push({
+          eveningNumber: ev.number,
+          eveningDate: ev.date,
+          opponentName,
+          myScore,
+          oppScore,
+          result,
+          isCatchUp: ev.isInhaalAvond,
+          playedDate: m.playedDate ?? '',
+        });
       }
     }
 

@@ -30,10 +30,11 @@ type submitScoreRequest struct {
 	RescheduleDate string `json:"rescheduleDate"`
 	SecretaryNr    string `json:"secretaryNr"`
 	CounterNr      string `json:"counterNr"`
-	PlayerA180s          int `json:"playerA180s"`
-	PlayerB180s          int `json:"playerB180s"`
-	PlayerAHighestFinish int `json:"playerAHighestFinish"`
-	PlayerBHighestFinish int `json:"playerBHighestFinish"`
+	PlayerA180s          int    `json:"playerA180s"`
+	PlayerB180s          int    `json:"playerB180s"`
+	PlayerAHighestFinish int    `json:"playerAHighestFinish"`
+	PlayerBHighestFinish int    `json:"playerBHighestFinish"`
+	PlayedDate           string `json:"playedDate"`
 }
 
 type reportAbsentRequest struct {
@@ -95,6 +96,7 @@ func (h *ScoreHandler) Submit(w http.ResponseWriter, r *http.Request) {
 		PlayerB180s:          req.PlayerB180s,
 		PlayerAHighestFinish: req.PlayerAHighestFinish,
 		PlayerBHighestFinish: req.PlayerBHighestFinish,
+		PlayedDate:           req.PlayedDate,
 	}); err != nil {
 		httpErrorDomain(w, err)
 		return

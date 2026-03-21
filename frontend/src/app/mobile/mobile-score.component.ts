@@ -184,6 +184,15 @@ function displayName(name: string): string {
         </div>
       </div>
 
+      <!-- Datum gespeeld (alleen voor inhaalwedstrijden) -->
+      <div class="card" *ngIf="isInhaalAvond">
+        <p class="card-title">Inhaalwedstrijd</p>
+        <div class="field-row">
+          <span class="field-label">Datum</span>
+          <input class="field-input" type="date" formControlName="playedDate">
+        </div>
+      </div>
+
       <p class="error" *ngIf="errorMsg">{{ errorMsg }}</p>
 
       <button type="submit" class="submit-btn" [disabled]="submitting || !formValid()">
@@ -200,11 +209,12 @@ export class MobileScoreComponent implements OnInit {
   private snackBar     = inject(MatSnackBar);
   private fb           = inject(FormBuilder);
 
-  match:     Match  | null = null;
-  players:   Player[]      = [];
-  eveningId  = '';
-  submitting = false;
-  errorMsg   = '';
+  match:          Match  | null = null;
+  players:        Player[]      = [];
+  eveningId       = '';
+  isInhaalAvond   = false;
+  submitting      = false;
+  errorMsg        = '';
 
   form = this.fb.group({
     leg1Winner: ['', Validators.required],
@@ -215,18 +225,20 @@ export class MobileScoreComponent implements OnInit {
     leg3Turns:  [null as number | null, [Validators.required, Validators.min(1)]],
     secretaryNr: [''],
     counterNr:   [''],
+    playedDate:  [''],
   });
 
   get nameA(): string { return this.match ? this.playerName(this.match.playerA) : ''; }
   get nameB(): string { return this.match ? this.playerName(this.match.playerB) : ''; }
 
   ngOnInit(): void {
-    const state = history.state as { match?: Match; eveningId?: string; players?: Player[] };
+    const state = history.state as { match?: Match; eveningId?: string; players?: Player[]; isInhaalAvond?: boolean };
     if (!state?.match) { this.router.navigate(['/m/avond']); return; }
 
-    this.match     = state.match;
-    this.eveningId = state.eveningId ?? '';
-    this.players   = state.players  ?? [];
+    this.match         = state.match;
+    this.eveningId     = state.eveningId     ?? '';
+    this.players       = state.players       ?? [];
+    this.isInhaalAvond = state.isInhaalAvond ?? false;
 
     if (this.match.played) {
       this.form.patchValue({
@@ -238,6 +250,7 @@ export class MobileScoreComponent implements OnInit {
         leg3Turns:   this.match.leg3Turns,
         secretaryNr: this.match.secretaryNr,
         counterNr:   this.match.counterNr,
+        playedDate:  this.match.playedDate,
       });
     }
   }
@@ -281,6 +294,7 @@ export class MobileScoreComponent implements OnInit {
       rescheduleDate:        '',
       secretaryNr:           v.secretaryNr ?? '',
       counterNr:             v.counterNr   ?? '',
+      playedDate:            v.playedDate  ?? '',
     }).subscribe({
       next: () => {
         this.submitting = false;
