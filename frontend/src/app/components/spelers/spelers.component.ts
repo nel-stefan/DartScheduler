@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Inject, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -129,7 +129,7 @@ export class BuddyDialogComponent {
 // --- Players page ---
 
 @Component({
-  selector: 'app-upload',
+  selector: 'app-spelers',
   standalone: true,
   imports: [
     CommonModule, MatSnackBarModule, MatButtonModule, MatIconModule,
@@ -137,7 +137,6 @@ export class BuddyDialogComponent {
     MatCheckboxModule, MatSelectModule, MatFormFieldModule,
   ],
   styles: [`
-    .import-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     table { width: 100%; }
     .actions-cell { text-align: right; white-space: nowrap; }
     .buddy-chip { font-size: 11px; }
@@ -147,25 +146,6 @@ export class BuddyDialogComponent {
     }
   `],
   template: `
-    <mat-card style="margin-bottom:24px">
-      <mat-card-header>
-        <mat-card-title>Spelers importeren</mat-card-title>
-        <mat-card-subtitle>Upload een Excel-bestand met de ledenlijst</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content style="padding-top:16px">
-        <div class="import-row">
-          <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="onFileSelected($event)">
-          <button mat-raised-button color="primary" (click)="fileInput.click()">
-            <mat-icon>upload_file</mat-icon> Excel-bestand kiezen
-          </button>
-          <span *ngIf="selectedFile" style="color:#555">{{ selectedFile.name }}</span>
-          <button mat-raised-button color="accent" [disabled]="!selectedFile || loading" (click)="upload()">
-            {{ loading ? 'Bezig…' : 'Importeren' }}
-          </button>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
     <mat-card *ngIf="players.length > 0">
       <mat-card-header>
         <mat-card-title>Spelers ({{ players.length }})</mat-card-title>
@@ -257,21 +237,16 @@ export class BuddyDialogComponent {
       </mat-card-content>
     </mat-card>
 
-    <p *ngIf="players.length === 0 && !loading" style="color:#888;text-align:center;padding:32px 0">
+    <p *ngIf="players.length === 0" style="color:#888;text-align:center;padding:32px 0">
       Nog geen spelers geïmporteerd.
     </p>
   `,
 })
-export class UploadComponent implements OnInit {
+export class SpelersComponent implements OnInit {
   private playerService = inject(PlayerService);
   private snackBar      = inject(MatSnackBar);
   private dialog        = inject(MatDialog);
-  private cdr           = inject(ChangeDetectorRef);
 
-  @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
-
-  selectedFile: File | null = null;
-  loading = false;
   players: Player[] = [];
   buddyMap: Record<string, string[]> = {};
   selection = new Set<string>();
@@ -342,31 +317,6 @@ export class UploadComponent implements OnInit {
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
       });
     }
-  }
-
-  onFileSelected(event: Event): void {
-    this.selectedFile = (event.target as HTMLInputElement).files?.[0] ?? null;
-    this.cdr.detectChanges();
-  }
-
-  upload(): void {
-    if (!this.selectedFile) return;
-    this.loading = true;
-    this.playerService.import(this.selectedFile).subscribe({
-      next: (res) => {
-        this.snackBar.open(`${res.imported} spelers geïmporteerd`, 'OK', { duration: 3000 });
-        this.selectedFile = null;
-        this.fileInputRef.nativeElement.value = '';
-        this.loading = false;
-        this.loadPlayers();
-      },
-      error: (err) => {
-        this.snackBar.open(`Fout: ${err.message ?? err.statusText}`, 'Sluiten', { duration: 5000 });
-        this.selectedFile = null;
-        this.fileInputRef.nativeElement.value = '';
-        this.loading = false;
-      },
-    });
   }
 
   deletePlayer(player: Player): void {

@@ -7,9 +7,9 @@ export const routes: Routes = [
       import('./components/overview/overview.component').then((m) => m.OverviewComponent),
   },
   {
-    path: 'upload',
+    path: 'spelers',
     loadComponent: () =>
-      import('./components/upload/upload.component').then((m) => m.UploadComponent),
+      import('./components/spelers/spelers.component').then((m) => m.SpelersComponent),
   },
   {
     path: 'evening/:id',
@@ -30,6 +30,11 @@ export const routes: Routes = [
     path: 'info',
     loadComponent: () =>
       import('./components/info/info.component').then((m) => m.InfoComponent),
+  },
+  {
+    path: 'beheer',
+    loadComponent: () =>
+      import('./components/beheer/beheer.component').then((m) => m.BeheerComponent),
   },
 {
     path: 'm',

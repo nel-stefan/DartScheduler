@@ -10,7 +10,6 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -21,202 +20,9 @@ import { ScheduleService } from '../../services/schedule.service';
 import { PlayerService } from '../../services/player.service';
 import { ScoreService } from '../../services/score.service';
 import { SeasonService } from '../../services/season.service';
-import { Schedule, Player, Match, Evening, GenerateScheduleRequest } from '../../models';
+import { Schedule, Player, Match, Evening } from '../../models';
 import { environment } from '../../../environments/environment';
 import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-stat-dialog.component';
-
-// ---------------------------------------------------------------------------
-// Generate-dialog
-// ---------------------------------------------------------------------------
-
-@Component({
-  selector: 'app-generate-dialog',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-            MatFormFieldModule, MatInputModule, MatSelectModule],
-  styles: [`
-    .slot-row { display:flex; align-items:center; gap:12px; padding:4px 0; border-bottom:1px solid #f5f5f5; }
-    .slot-date { color:#555; min-width:180px; font-size:13px; }
-    .slot-nr   { min-width:64px; font-size:13px; font-weight:500; }
-  `],
-  template: `
-    <h2 mat-dialog-title>Schema genereren</h2>
-    <mat-dialog-content style="min-width:480px">
-      <form [formGroup]="form" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;padding-top:8px">
-        <mat-form-field style="grid-column:1/-1"><mat-label>Naam competitie</mat-label>
-          <input matInput formControlName="competitionName">
-        </mat-form-field>
-        <mat-form-field style="grid-column:1/-1"><mat-label>Seizoen (bijv. 2026)</mat-label>
-          <input matInput formControlName="season" placeholder="2026">
-        </mat-form-field>
-        <mat-form-field><mat-label>Aantal avonden (totaal)</mat-label>
-          <input matInput type="number" formControlName="numEvenings">
-        </mat-form-field>
-        <mat-form-field><mat-label>Interval (dagen)</mat-label>
-          <input matInput type="number" formControlName="intervalDays">
-        </mat-form-field>
-        <mat-form-field style="grid-column:1/-1"><mat-label>Startdatum (YYYY-MM-DD)</mat-label>
-          <input matInput formControlName="startDate" placeholder="2026-04-01">
-        </mat-form-field>
-      </form>
-
-      <!-- Avondenlijst -->
-      <div *ngIf="slots.length > 0" style="margin-top:16px">
-        <div style="font-weight:500;margin-bottom:8px;font-size:14px">
-          Avondtype instellen
-          <span style="color:#888;font-size:12px;font-weight:400;margin-left:8px">
-            {{ regularCount }} speelavonden · {{ inhaalCount }} inhaalavonden · {{ vrijCount }} vrij
-          </span>
-        </div>
-        <div style="max-height:280px;overflow-y:auto">
-          <div class="slot-row" *ngFor="let s of slots">
-            <span class="slot-nr">Avond {{ s.nr }}</span>
-            <span class="slot-date">{{ s.date | date:'EEE d MMM yyyy' }}</span>
-            <mat-form-field style="min-width:130px" subscriptSizing="dynamic">
-              <mat-select [(value)]="slotTypes[s.nr]">
-                <mat-option value="normaal">Normaal</mat-option>
-                <mat-option value="inhaal">Inhaalavond</mat-option>
-                <mat-option value="vrij">Vrije avond</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-        </div>
-      </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Annuleren</button>
-      <button mat-raised-button color="primary"
-              [disabled]="form.invalid || regularCount === 0"
-              (click)="submit()">Genereren</button>
-    </mat-dialog-actions>
-  `,
-})
-export class GenerateDialogComponent implements OnInit {
-  private dialogRef = inject(MatDialogRef<GenerateDialogComponent>);
-  fb = inject(FormBuilder);
-
-  constructor(@Inject(MAT_DIALOG_DATA) public data: null) {}
-
-  form = this.fb.group({
-    competitionName: ['Liga 2026', Validators.required],
-    season:          ['2026', Validators.required],
-    numEvenings:  [20, [Validators.required, Validators.min(1)]],
-    startDate:    ['2026-04-01', Validators.required],
-    intervalDays: [7,  [Validators.required, Validators.min(1)]],
-  });
-
-  slotTypes: Record<number, string> = {};
-  slots: { nr: number; date: Date }[] = [];
-
-  ngOnInit(): void {
-    this.form.valueChanges.subscribe(() => this.rebuildSlots());
-    this.rebuildSlots();
-  }
-
-  get regularCount(): number { return this.slots.filter(s => (this.slotTypes[s.nr] ?? 'normaal') === 'normaal').length; }
-  get inhaalCount():  number { return this.slots.filter(s => this.slotTypes[s.nr] === 'inhaal').length; }
-  get vrijCount():    number { return this.slots.filter(s => this.slotTypes[s.nr] === 'vrij').length; }
-
-  private rebuildSlots(): void {
-    const v = this.form.value;
-    const n = v.numEvenings ?? 0;
-    const start = v.startDate ? new Date(v.startDate) : null;
-    const interval = v.intervalDays ?? 7;
-    if (n > 0 && start && !isNaN(start.getTime())) {
-      this.slots = Array.from({ length: n }, (_, i) => {
-        const d = new Date(start);
-        d.setDate(d.getDate() + i * interval);
-        return { nr: i + 1, date: d };
-      });
-    } else {
-      this.slots = [];
-    }
-    for (let i = 1; i <= n; i++) {
-      if (!this.slotTypes[i]) this.slotTypes[i] = 'normaal';
-    }
-  }
-
-  submit(): void {
-    if (!this.form.valid || this.regularCount === 0) return;
-    const v = this.form.value;
-    const inhaalNrs = this.slots.filter(s => this.slotTypes[s.nr] === 'inhaal').map(s => s.nr);
-    const vrijeNrs  = this.slots.filter(s => this.slotTypes[s.nr] === 'vrij').map(s => s.nr);
-    this.dialogRef.close({
-      competitionName: v.competitionName,
-      season:          v.season,
-      numEvenings:     v.numEvenings,
-      startDate:       v.startDate,
-      intervalDays:    v.intervalDays,
-      inhaalNrs,
-      vrijeNrs,
-    } as GenerateScheduleRequest);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Import-season-dialog
-// ---------------------------------------------------------------------------
-
-@Component({
-  selector: 'app-import-season-dialog',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-            MatFormFieldModule, MatInputModule, MatIconModule],
-  template: `
-    <h2 mat-dialog-title>Oud seizoen importeren</h2>
-    <mat-dialog-content>
-      <form [formGroup]="form" style="display:flex;flex-direction:column;gap:12px;min-width:340px;padding-top:8px">
-        <mat-form-field><mat-label>Naam competitie</mat-label>
-          <input matInput formControlName="competitionName">
-        </mat-form-field>
-        <mat-form-field><mat-label>Seizoen (bijv. 2025)</mat-label>
-          <input matInput formControlName="season" placeholder="2025">
-        </mat-form-field>
-        <div>
-          <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="onFile($event)">
-          <button mat-stroked-button type="button" (click)="fileInput.click()">
-            <mat-icon>upload_file</mat-icon> Excel kiezen
-          </button>
-          <span *ngIf="file" style="margin-left:8px;color:#555;font-size:13px">{{ file.name }}</span>
-        </div>
-      </form>
-      <p style="color:#757575;font-size:12px;margin-top:12px">
-        Ondersteunde formaten:<br>
-        • <strong>Speelschema matrix</strong>: rij 1 = datums, cellen = "nr - nr" of "nr (naam) - nr (naam)".
-        Kolommen met "INHAAL" worden als inhaalavonden geïmporteerd.<br>
-        • <strong>Platte tabel</strong>: kolommen avond, datum, nr a, naam a, nr b, naam b, leg1, beurten1, …
-      </p>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Annuleren</button>
-      <button mat-raised-button color="primary" [disabled]="form.invalid || !file" (click)="submit()">Importeren</button>
-    </mat-dialog-actions>
-  `,
-})
-export class ImportSeasonDialogComponent {
-  private dialogRef = inject(MatDialogRef<ImportSeasonDialogComponent>);
-  fb = inject(FormBuilder);
-  file: File | null = null;
-
-  form = this.fb.group({
-    competitionName: ['', Validators.required],
-    season:          ['', Validators.required],
-  });
-
-  onFile(e: Event): void {
-    this.file = (e.target as HTMLInputElement).files?.[0] ?? null;
-    if (this.file && !this.form.value.competitionName) {
-      const name = this.file.name.replace(/\.xlsx?$/i, '');
-      this.form.patchValue({ competitionName: name, season: name.replace(/\D/g, '') });
-    }
-  }
-
-  submit(): void {
-    if (this.form.valid && this.file) {
-      this.dialogRef.close({ file: this.file, ...this.form.value });
-    }
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Score-dialog (leg-entry for best of 3)
@@ -484,7 +290,7 @@ export class AbsentDialogComponent {
   imports: [
     CommonModule,
     MatButtonModule, MatCardModule, MatTableModule, MatTabsModule,
-    MatSnackBarModule, MatDialogModule, MatChipsModule, MatIconModule,
+    MatSnackBarModule, MatDialogModule, MatIconModule,
     MatTooltipModule, MatSelectModule, MatFormFieldModule, MatInputModule,
     FormsModule, ReactiveFormsModule,
     AbsentDialogComponent, EveningStatDialogComponent,
@@ -498,15 +304,8 @@ export class AbsentDialogComponent {
       flex-wrap: wrap;
     }
     .schedule-title { margin: 0; font-size: 22px; font-weight: 500; }
-    .tab-label { display: flex; align-items: center; gap: 6px; }
-    .dot {
-      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-    }
-    .dot-done    { background: #2e7d32; }
-    .dot-partial { background: #f57c00; }
-    .dot-open    { background: #bdbdbd; }
-    .dot-inhaal  { background: #7b1fa2; }
     table { width: 100%; }
+    :host ::ng-deep .mat-mdc-tab-header { display: none; }
     .score-cell { font-weight: 600; color: #2e7d32; }
     .vs-cell { color: #9e9e9e; width: 36px; text-align: center; }
     .empty-state {
@@ -547,20 +346,9 @@ export class AbsentDialogComponent {
     <div class="schedule-header">
       <h2 class="schedule-title">{{ schedule?.competitionName ?? 'DartScheduler' }}</h2>
 
-      <button mat-raised-button color="primary" (click)="openGenerate()">
-        <mat-icon>auto_awesome</mat-icon> Schema genereren
-      </button>
-      <button mat-stroked-button (click)="openImportSeason()">
-        <mat-icon>history</mat-icon> Oud seizoen importeren
-      </button>
-
       <button mat-stroked-button *ngIf="schedule" (click)="printSchedule()">
         <mat-icon>print</mat-icon> Afdrukken
       </button>
-      <button mat-icon-button color="warn" *ngIf="schedule" (click)="deleteSchedule()" matTooltip="Seizoen verwijderen">
-        <mat-icon>delete</mat-icon>
-      </button>
-
       <mat-form-field *ngIf="schedule" style="min-width:200px" subscriptSizing="dynamic">
         <mat-label>Ga naar avond</mat-label>
         <mat-select [(ngModel)]="activeTab">
@@ -573,29 +361,15 @@ export class AbsentDialogComponent {
 
     <div *ngIf="!schedule" class="empty-state">
       <mat-icon>sports_bar</mat-icon>
-      <p>Nog geen schema. Importeer eerst spelers via <strong>Spelers</strong>, dan genereer je hier een schema.</p>
+      <p>Nog geen schema. Ga naar <strong>Beheer</strong> om spelers te importeren en een schema te genereren.</p>
     </div>
 
     <mat-tab-group *ngIf="schedule" animationDuration="150ms" [selectedIndex]="activeTab"
-                   (selectedIndexChange)="activeTab = $event" color="primary" backgroundColor="primary">
+                   (selectedIndexChange)="activeTab = $event">
       <mat-tab *ngFor="let ev of schedule.evenings">
-        <ng-template mat-tab-label>
-          <span class="tab-label" style="flex-direction:column;align-items:center;gap:1px;line-height:1.2">
-            <span style="display:flex;align-items:center;gap:5px">
-              <span class="dot"
-                [class.dot-inhaal]="ev.isInhaalAvond"
-                [class.dot-done]="!ev.isInhaalAvond && allPlayed(ev)"
-                [class.dot-partial]="!ev.isInhaalAvond && somePlayed(ev)"
-                [class.dot-open]="!ev.isInhaalAvond && nonePlayed(ev)">
-              </span>
-              {{ ev.number }}
-            </span>
-            <span style="font-size:9px;opacity:0.75;font-weight:400;letter-spacing:0">{{ ev.date | date:'d MMM' }}</span>
-          </span>
-        </ng-template>
 
         <!-- Tab-inhoud -->
-        <mat-card style="border-radius:0 0 8px 8px; border-top: none;">
+        <mat-card style="border-radius:8px;">
           <mat-card-header style="padding-bottom:0">
             <div class="card-header-row" style="width:100%">
               <div>
@@ -829,9 +603,6 @@ export class OverviewComponent implements OnInit {
     return ev.matches?.filter(m => m.played).length ?? 0;
   }
 
-  allPlayed(ev: Evening):  boolean { return (ev.matches?.length ?? 0) > 0 && this.playedCount(ev) === (ev.matches?.length ?? 0); }
-  nonePlayed(ev: Evening): boolean { return this.playedCount(ev) === 0; }
-  somePlayed(ev: Evening): boolean { return !this.allPlayed(ev) && !this.nonePlayed(ev); }
   openCount(ev: Evening):  number  { return (ev.matches ?? []).filter(m => !m.played).length; }
 
   openScore(match: Match): void {
@@ -942,19 +713,6 @@ export class OverviewComponent implements OnInit {
     window.open(`${environment.apiBaseUrl}/export/evening/${eveningId}/print`, '_blank');
   }
 
-  deleteSchedule(): void {
-    if (!this.schedule) return;
-    if (!confirm(`Seizoen "${this.schedule.competitionName}" verwijderen? Dit verwijdert ook alle avonden en wedstrijden.`)) return;
-    this.scheduleService.deleteSchedule(this.schedule.id).subscribe({
-      next: () => {
-        this.schedule = null;
-        this.snackBar.open('Seizoen verwijderd', 'OK', { duration: 2000 });
-        this.seasonService.load();
-      },
-      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
-    });
-  }
-
   deleteEvening(ev: Evening): void {
     if (!confirm(`Inhaalavond ${ev.number} verwijderen?`)) return;
     this.scheduleService.deleteEvening(this.schedule!.id, ev.id).subscribe({
@@ -966,32 +724,4 @@ export class OverviewComponent implements OnInit {
     });
   }
 
-  openGenerate(): void {
-    const ref = this.dialog.open(GenerateDialogComponent, { data: null });
-    ref.afterClosed().subscribe((req: GenerateScheduleRequest | undefined) => {
-      if (!req) return;
-      this.scheduleService.generate(req).subscribe({
-        next: (s) => {
-          this.snackBar.open('Schema gegenereerd!', 'OK', { duration: 3000 });
-          this.seasonService.load(s.id);
-        },
-        error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
-      });
-    });
-  }
-
-
-  openImportSeason(): void {
-    const ref = this.dialog.open(ImportSeasonDialogComponent);
-    ref.afterClosed().subscribe((result: { file: File; competitionName: string; season: string } | undefined) => {
-      if (!result) return;
-      this.scheduleService.importSeason(result.file, result.competitionName, result.season).subscribe({
-        next: (s) => {
-          this.snackBar.open('Seizoen geïmporteerd!', 'OK', { duration: 3000 });
-          this.seasonService.load(s.id);
-        },
-        error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
-      });
-    });
-  }
 }
