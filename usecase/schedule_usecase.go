@@ -140,6 +140,15 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 	return sched, nil
 }
 
+func (uc *ScheduleUseCase) RenameSchedule(ctx context.Context, id domain.ScheduleID, name string) error {
+	sched, err := uc.schedules.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	sched.CompetitionName = name
+	return uc.schedules.Save(ctx, sched)
+}
+
 func toIntSet(nrs []int) map[int]bool {
 	s := make(map[int]bool, len(nrs))
 	for _, n := range nrs {

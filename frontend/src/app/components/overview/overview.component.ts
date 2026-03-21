@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Inject, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, Inject, DestroyRef, ViewChild, ElementRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, distinctUntilChanged } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -303,7 +303,20 @@ export class AbsentDialogComponent {
       margin-bottom: 20px;
       flex-wrap: wrap;
     }
-    .schedule-title { margin: 0; font-size: 22px; font-weight: 500; }
+    .schedule-title {
+      margin: 0; font-size: 22px; font-weight: 500;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .title-input {
+      font-size: 22px; font-weight: 500; font-family: inherit;
+      border: none; border-bottom: 2px solid #795548; outline: none;
+      background: transparent; padding: 0; min-width: 200px; width: auto;
+    }
+    .title-edit-btn {
+      opacity: 0; transition: opacity .15s; cursor: pointer;
+      background: none; border: none; padding: 2px; color: #9e9e9e;
+    }
+    .schedule-title:hover .title-edit-btn { opacity: 1; }
     table { width: 100%; }
     :host ::ng-deep .mat-mdc-tab-header { display: none; }
     .score-cell { font-weight: 600; color: #2e7d32; }
@@ -344,16 +357,44 @@ export class AbsentDialogComponent {
   `],
   template: `
     <div class="schedule-header">
-      <h2 class="schedule-title">{{ schedule?.competitionName ?? 'DartScheduler' }}</h2>
+      <h2 class="schedule-title">
+        <ng-container *ngIf="!editingTitle">
+          {{ schedule?.competitionName ?? 'DartScheduler' }}
+          <button *ngIf="schedule" class="title-edit-btn" (click)="startEditTitle()" matTooltip="Naam aanpassen">
+            <mat-icon style="font-size:18px;width:18px;height:18px">edit</mat-icon>
+          </button>
+        </ng-container>
+        <ng-container *ngIf="editingTitle">
+          <input #titleInput class="title-input" [(ngModel)]="titleDraft"
+                 (keydown.enter)="saveTitle()" (keydown.escape)="cancelEditTitle()"
+                 (blur)="saveTitle()">
+        </ng-container>
+      </h2>
 
       <button mat-stroked-button *ngIf="schedule" (click)="printSchedule()">
         <mat-icon>print</mat-icon> Afdrukken
       </button>
-      <mat-form-field *ngIf="schedule" style="min-width:200px" subscriptSizing="dynamic">
-        <mat-label>Ga naar avond</mat-label>
+      <mat-form-field *ngIf="schedule" style="min-width:230px" subscriptSizing="dynamic">
+        <mat-label>Avond</mat-label>
         <mat-select [(ngModel)]="activeTab">
+          <mat-select-trigger>
+            <ng-container *ngIf="schedule.evenings[activeTab] as ev">
+              <span [style.background]="eveningColor(ev)"
+                    style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle;flex-shrink:0"></span>
+              {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }}
+              <span style="color:#9e9e9e;margin-left:4px">— {{ ev.date | date:'d MMM' }}</span>
+            </ng-container>
+          </mat-select-trigger>
           <mat-option *ngFor="let ev of schedule.evenings; let i = index" [value]="i">
-            {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM' }}
+            <span style="display:flex;align-items:center;gap:8px;width:100%">
+              <span [style.background]="eveningColor(ev)"
+                    style="width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block"></span>
+              <span style="flex:1">{{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }}</span>
+              <span style="color:#9e9e9e;font-size:12px">{{ ev.date | date:'d MMM' }}</span>
+              <span [style.color]="eveningColor(ev)" style="font-size:12px;min-width:32px;text-align:right;font-weight:500">
+                {{ eveningCountLabel(ev) }}
+              </span>
+            </span>
           </mat-option>
         </mat-select>
       </mat-form-field>
@@ -538,11 +579,15 @@ export class OverviewComponent implements OnInit {
   private dialog           = inject(MatDialog);
   private destroyRef       = inject(DestroyRef);
 
+  @ViewChild('titleInput') titleInputRef?: ElementRef<HTMLInputElement>;
+
   schedule: Schedule | null = null;
   players:  Player[] = [];
   activeTab = 0;
   matchCols = ['playerA', 'vs', 'playerB', 'score', 'actions'];
   catchUpSearch = '';
+  editingTitle = false;
+  titleDraft   = '';
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -578,6 +623,30 @@ export class OverviewComponent implements OnInit {
     return idx >= 0 ? idx : evenings.length - 1;
   }
 
+  startEditTitle(): void {
+    this.titleDraft = this.schedule!.competitionName;
+    this.editingTitle = true;
+    setTimeout(() => this.titleInputRef?.nativeElement.select());
+  }
+
+  saveTitle(): void {
+    if (!this.editingTitle || !this.schedule) return;
+    this.editingTitle = false;
+    const name = this.titleDraft.trim();
+    if (!name || name === this.schedule.competitionName) return;
+    this.scheduleService.renameSchedule(this.schedule.id, name).subscribe({
+      next: () => {
+        this.schedule!.competitionName = name;
+        this.seasonService.load(this.schedule!.id);
+      },
+      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+    });
+  }
+
+  cancelEditTitle(): void {
+    this.editingTitle = false;
+  }
+
   playerName(id: string): string {
     const p = this.players.find((p) => p.id === id);
     if (!p) return id.slice(0, 8);
@@ -604,6 +673,21 @@ export class OverviewComponent implements OnInit {
   }
 
   openCount(ev: Evening):  number  { return (ev.matches ?? []).filter(m => !m.played).length; }
+
+  eveningColor(ev: Evening): string {
+    if (ev.isInhaalAvond) return '#7b1fa2';
+    const played = this.playedCount(ev);
+    const total  = ev.matches?.length ?? 0;
+    if (total === 0 || played === 0) return '#9e9e9e';
+    if (played === total) return '#2e7d32';
+    return '#f57c00';
+  }
+
+  eveningCountLabel(ev: Evening): string {
+    if (ev.isInhaalAvond) return `${this.openCount(ev)} open`;
+    const total = ev.matches?.length ?? 0;
+    return `${this.playedCount(ev)}/${total}`;
+  }
 
   openScore(match: Match): void {
     const ref = this.dialog.open(ScoreDialogComponent, {

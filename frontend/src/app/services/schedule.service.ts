@@ -29,6 +29,10 @@ export class ScheduleService {
     return this.http.post<Schedule>(`${this.base}/schedules/${scheduleId}/inhaal-avond`, { date });
   }
 
+  renameSchedule(id: string, competitionName: string): Observable<void> {
+    return this.http.patch<void>(`${this.base}/schedules/${id}`, { competitionName });
+  }
+
   deleteSchedule(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/schedules/${id}`);
   }
