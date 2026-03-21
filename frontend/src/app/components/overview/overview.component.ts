@@ -21,7 +21,6 @@ import { ScheduleService } from '../../services/schedule.service';
 import { PlayerService } from '../../services/player.service';
 import { ScoreService } from '../../services/score.service';
 import { SeasonService } from '../../services/season.service';
-import { EveningStatService } from '../../services/evening-stat.service';
 import { Schedule, Player, Match, Evening, GenerateScheduleRequest } from '../../models';
 import { environment } from '../../../environments/environment';
 import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-stat-dialog.component';
@@ -752,7 +751,6 @@ export class OverviewComponent implements OnInit {
   private playerService    = inject(PlayerService);
   private scoreService     = inject(ScoreService);
   private seasonService    = inject(SeasonService);
-  private eveningStatSvc   = inject(EveningStatService);
   private snackBar         = inject(MatSnackBar);
   private dialog           = inject(MatDialog);
   private destroyRef       = inject(DestroyRef);
@@ -919,9 +917,8 @@ export class OverviewComponent implements OnInit {
       .map(p => ({ id: p.id, name: p.name }));
     this.dialog.open(EveningStatDialogComponent, {
       data: {
-        evenings: [],
+        scheduleId: this.schedule!.id,
         players,
-        preselectedEveningId: ev.id,
       } as EveningStatDialogData,
     }).afterClosed().subscribe(saved => {
       if (saved) this.snackBar.open('Opgeslagen', '', { duration: 2000 });

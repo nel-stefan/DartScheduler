@@ -48,12 +48,25 @@ CREATE TABLE IF NOT EXISTS matches (
     played     INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS season_player_stats (
+    schedule_id    TEXT NOT NULL REFERENCES schedules(id),
+    player_id      TEXT NOT NULL,
+    one_eighties   INTEGER NOT NULL DEFAULT 0,
+    highest_finish INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (schedule_id, player_id)
+);
+
 CREATE TABLE IF NOT EXISTS evening_player_stats (
     evening_id     TEXT NOT NULL REFERENCES evenings(id),
     player_id      TEXT NOT NULL,
     one_eighties   INTEGER NOT NULL DEFAULT 0,
     highest_finish INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (evening_id, player_id)
+);
+
+CREATE TABLE IF NOT EXISTS applied_migrations (
+    name       TEXT PRIMARY KEY,
+    applied_at DATETIME NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_matches_evening   ON matches(evening_id);

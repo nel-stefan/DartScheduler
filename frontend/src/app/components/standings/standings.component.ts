@@ -11,8 +11,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ScoreService } from '../../services/score.service';
 import { SeasonService } from '../../services/season.service';
-import { ScheduleService } from '../../services/schedule.service';
-import { PlayerStats, DutyStats, Evening } from '../../models';
+import { PlayerStats, DutyStats } from '../../models';
 import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-stat-dialog.component';
 
 @Component({
@@ -303,16 +302,14 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
   `,
 })
 export class StandingsComponent implements OnInit {
-  private scoreService   = inject(ScoreService);
-  private seasonService  = inject(SeasonService);
-  private scheduleService = inject(ScheduleService);
-  private dialog         = inject(MatDialog);
-  private destroyRef     = inject(DestroyRef);
+  private scoreService  = inject(ScoreService);
+  private seasonService = inject(SeasonService);
+  private dialog        = inject(MatDialog);
+  private destroyRef    = inject(DestroyRef);
 
   classes:   { label: string; stats: PlayerStats[] }[] = [];
   dutyStats: DutyStats[] = [];
   allStats:  PlayerStats[] = [];
-  evenings:  Evening[]    = [];
 
   matchCols = ['rank', 'nr', 'name', 'wins', 'losses', 'pf', 'pa', '180s', 'edit'];
   dutyCols  = ['rank', 'nr', 'name', 'count'];
@@ -343,18 +340,15 @@ export class StandingsComponent implements OnInit {
     this.scoreService.getDutyStats(sid).subscribe((d) => {
       this.dutyStats = d.sort((a, b) => b.count - a.count);
     });
-    if (sid) {
-      this.scheduleService.getById(sid).subscribe(schedule => {
-        this.evenings = schedule.evenings;
-      });
-    }
   }
 
   openStatDialog(stat: PlayerStats): void {
+    const sid = this.seasonService.selectedId$.value;
+    if (!sid) return;
     this.dialog.open(EveningStatDialogComponent, {
       data: {
-        evenings: this.evenings.map(e => ({ id: e.id, number: e.number, isInhaalAvond: e.isInhaalAvond })),
-        players: [],
+        scheduleId: sid,
+        players: [{ id: stat.player.id, name: stat.player.name }],
         preselectedPlayerId: stat.player.id,
       } as EveningStatDialogData,
     }).afterClosed().subscribe(saved => {

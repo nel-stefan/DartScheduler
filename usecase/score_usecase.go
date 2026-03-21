@@ -9,12 +9,13 @@ import (
 )
 
 type ScoreUseCase struct {
-	matches  domain.MatchRepository
-	evenings domain.EveningRepository
+	matches      domain.MatchRepository
+	evenings     domain.EveningRepository
+	seasonStats  domain.SeasonPlayerStatRepository
 }
 
-func NewScoreUseCase(matches domain.MatchRepository, evenings domain.EveningRepository) *ScoreUseCase {
-	return &ScoreUseCase{matches: matches, evenings: evenings}
+func NewScoreUseCase(matches domain.MatchRepository, evenings domain.EveningRepository, seasonStats domain.SeasonPlayerStatRepository) *ScoreUseCase {
+	return &ScoreUseCase{matches: matches, evenings: evenings, seasonStats: seasonStats}
 }
 
 // Submit records the result for a match.
@@ -241,19 +242,7 @@ func (uc *ScoreUseCase) GetStats(ctx context.Context, players []domain.Player, s
 			default:
 				st.Draws++
 			}
-			isA := m.PlayerA == p.ID
-			if isA {
-				st.OneEighties += m.PlayerA180s
-				if m.PlayerAHighestFinish > st.HighestFinish {
-					st.HighestFinish = m.PlayerAHighestFinish
-				}
-			} else {
-				st.OneEighties += m.PlayerB180s
-				if m.PlayerBHighestFinish > st.HighestFinish {
-					st.HighestFinish = m.PlayerBHighestFinish
-				}
-			}
-			pid := p.ID.String()
+				pid := p.ID.String()
 			for _, leg := range []struct {
 				w string
 				t int
@@ -275,6 +264,24 @@ func (uc *ScoreUseCase) GetStats(ctx context.Context, players []domain.Player, s
 			st.MinTurns = minT
 			st.AvgTurns = float64(sum) / float64(len(wonLegTurns))
 			st.AvgScorePerTurn = 501.0 / st.AvgTurns
+		}
+	}
+
+	// Overlay season-level 180s / highest-finish when available.
+	if uc.seasonStats != nil && scheduleID != nil {
+		sStats, err := uc.seasonStats.FindBySchedule(ctx, *scheduleID)
+		if err != nil {
+			return nil, err
+		}
+		sMap := make(map[domain.PlayerID]domain.SeasonPlayerStat, len(sStats))
+		for _, s := range sStats {
+			sMap[s.PlayerID] = s
+		}
+		for pid, st := range statsMap {
+			if ss, ok := sMap[pid]; ok {
+				st.OneEighties = ss.OneEighties
+				st.HighestFinish = ss.HighestFinish
+			}
 		}
 	}
 

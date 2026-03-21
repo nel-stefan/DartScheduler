@@ -6,16 +6,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
-import { EveningStatService } from '../services/evening-stat.service';
+import { SeasonStatService } from '../services/season-stat.service';
 
 export interface EveningStatDialogData {
-  /** Evenings list for the season (used when no evening is pre-selected). */
-  evenings: { id: string; number: number; isInhaalAvond: boolean }[];
-  /** Players to choose from. */
+  scheduleId: string;
   players: { id: string; name: string }[];
-  /** Pre-select a specific evening (overview use-case). */
-  preselectedEveningId?: string;
-  /** Pre-select a specific player (standings use-case). */
+  /** Pre-select a player (standings use-case). */
   preselectedPlayerId?: string;
 }
 
@@ -33,19 +29,10 @@ function displayName(name: string): string {
     .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   `],
   template: `
-    <h2 mat-dialog-title>180s / Hoge Finish</h2>
-    <mat-dialog-content style="min-width:360px;padding-top:8px">
+    <h2 mat-dialog-title>180s / Hoge Finish — {{ playerLabel }}</h2>
+    <mat-dialog-content style="min-width:320px;padding-top:8px">
 
-      <mat-form-field style="width:100%" subscriptSizing="dynamic" *ngIf="!data.preselectedEveningId">
-        <mat-label>Avond</mat-label>
-        <mat-select [(ngModel)]="selectedEveningId" (ngModelChange)="loadStat()">
-          <mat-option *ngFor="let ev of data.evenings" [value]="ev.id">
-            {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field style="width:100%;margin-top:8px" subscriptSizing="dynamic" *ngIf="!data.preselectedPlayerId">
+      <mat-form-field style="width:100%" subscriptSizing="dynamic" *ngIf="!data.preselectedPlayerId">
         <mat-label>Speler</mat-label>
         <mat-select [(ngModel)]="selectedPlayerId" (ngModelChange)="loadStat()">
           <mat-option *ngFor="let p of data.players" [value]="p.id">
@@ -54,7 +41,7 @@ function displayName(name: string): string {
         </mat-select>
       </mat-form-field>
 
-      <div class="fields" *ngIf="selectedEveningId && selectedPlayerId">
+      <div class="fields" *ngIf="selectedPlayerId">
         <mat-form-field subscriptSizing="dynamic">
           <mat-label>180s</mat-label>
           <input matInput type="number" [(ngModel)]="oneEighties" min="0">
@@ -69,7 +56,7 @@ function displayName(name: string): string {
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
       <button mat-flat-button color="primary"
-              [disabled]="saving || !selectedEveningId || !selectedPlayerId"
+              [disabled]="saving || !selectedPlayerId"
               (click)="save()">
         {{ saving ? 'Opslaan…' : 'Opslaan' }}
       </button>
@@ -77,25 +64,30 @@ function displayName(name: string): string {
   `,
 })
 export class EveningStatDialogComponent implements OnInit {
-  data           = inject<EveningStatDialogData>(MAT_DIALOG_DATA);
-  dialogRef      = inject(MatDialogRef<EveningStatDialogComponent>);
-  private svc    = inject(EveningStatService);
+  data        = inject<EveningStatDialogData>(MAT_DIALOG_DATA);
+  dialogRef   = inject(MatDialogRef<EveningStatDialogComponent>);
+  private svc = inject(SeasonStatService);
 
-  selectedEveningId = this.data.preselectedEveningId ?? '';
-  selectedPlayerId  = this.data.preselectedPlayerId  ?? '';
+  selectedPlayerId = this.data.preselectedPlayerId ?? '';
   oneEighties   = 0;
   highestFinish = 0;
   saving        = false;
 
   fmt = displayName;
 
+  get playerLabel(): string {
+    if (!this.selectedPlayerId) return '';
+    const p = this.data.players.find(x => x.id === this.selectedPlayerId);
+    return p ? displayName(p.name) : '';
+  }
+
   ngOnInit(): void {
-    if (this.selectedEveningId && this.selectedPlayerId) this.loadStat();
+    if (this.selectedPlayerId) this.loadStat();
   }
 
   loadStat(): void {
-    if (!this.selectedEveningId || !this.selectedPlayerId) return;
-    this.svc.getByEvening(this.selectedEveningId).subscribe(stats => {
+    if (!this.selectedPlayerId) return;
+    this.svc.getBySchedule(this.data.scheduleId).subscribe(stats => {
       const s = stats.find(x => x.playerId === this.selectedPlayerId);
       this.oneEighties   = s?.oneEighties   ?? 0;
       this.highestFinish = s?.highestFinish ?? 0;
@@ -104,7 +96,7 @@ export class EveningStatDialogComponent implements OnInit {
 
   save(): void {
     this.saving = true;
-    this.svc.upsert(this.selectedEveningId, this.selectedPlayerId, this.oneEighties, this.highestFinish)
+    this.svc.upsert(this.data.scheduleId, this.selectedPlayerId, this.oneEighties, this.highestFinish)
       .subscribe({
         next:  () => { this.saving = false; this.dialogRef.close(true); },
         error: () => { this.saving = false; },
