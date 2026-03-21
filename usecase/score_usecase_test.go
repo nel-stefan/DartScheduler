@@ -320,6 +320,367 @@ func TestSubmit_AdminFieldsPersisted(t *testing.T) {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// matchesByPlayerRepo: match repo that stores matches per player for stats tests
+// ---------------------------------------------------------------------------
+
+type matchesByPlayerRepo struct {
+	data map[domain.PlayerID][]domain.Match
+}
+
+func newMatchesByPlayerRepo() *matchesByPlayerRepo {
+	return &matchesByPlayerRepo{data: make(map[domain.PlayerID][]domain.Match)}
+}
+
+func (r *matchesByPlayerRepo) addForPlayer(pid domain.PlayerID, m domain.Match) {
+	r.data[pid] = append(r.data[pid], m)
+}
+
+func (r *matchesByPlayerRepo) FindByPlayer(_ context.Context, pid domain.PlayerID) ([]domain.Match, error) {
+	return r.data[pid], nil
+}
+func (r *matchesByPlayerRepo) FindByPlayerAndSchedule(_ context.Context, pid domain.PlayerID, _ domain.ScheduleID) ([]domain.Match, error) {
+	return r.data[pid], nil
+}
+func (r *matchesByPlayerRepo) FindAllPlayed(_ context.Context) ([]domain.Match, error) {
+	seen := make(map[domain.MatchID]struct{})
+	var all []domain.Match
+	for _, ms := range r.data {
+		for _, m := range ms {
+			if _, ok := seen[m.ID]; !ok {
+				seen[m.ID] = struct{}{}
+				all = append(all, m)
+			}
+		}
+	}
+	return all, nil
+}
+func (r *matchesByPlayerRepo) Save(_ context.Context, _ domain.Match) error        { return nil }
+func (r *matchesByPlayerRepo) SaveBatch(_ context.Context, _ []domain.Match) error { return nil }
+func (r *matchesByPlayerRepo) FindByID(_ context.Context, _ domain.MatchID) (domain.Match, error) {
+	return domain.Match{}, domain.ErrNotFound
+}
+func (r *matchesByPlayerRepo) FindByEvening(_ context.Context, _ domain.EveningID) ([]domain.Match, error) {
+	return nil, nil
+}
+func (r *matchesByPlayerRepo) UpdateResult(_ context.Context, _ domain.Match) error { return nil }
+func (r *matchesByPlayerRepo) FindBySchedule(_ context.Context, _ domain.ScheduleID) ([]domain.Match, error) {
+	return nil, nil
+}
+func (r *matchesByPlayerRepo) FindCancelledBySchedule(_ context.Context, _ domain.ScheduleID) ([]domain.Match, error) {
+	return nil, nil
+}
+func (r *matchesByPlayerRepo) DeleteByEvening(_ context.Context, _ domain.EveningID) error {
+	return nil
+}
+func (r *matchesByPlayerRepo) DeleteBySchedule(_ context.Context, _ domain.ScheduleID) error {
+	return nil
+}
+func (r *matchesByPlayerRepo) DeleteByPlayer(_ context.Context, _ domain.PlayerID) error { return nil }
+
+// ---------------------------------------------------------------------------
+// GetStats tests
+// ---------------------------------------------------------------------------
+
+// TestGetStats_WinAndLoss verifies wins, losses, and point totals are counted correctly.
+func TestGetStats_WinAndLoss(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "1", Name: "A"}
+	pB := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "2", Name: "B"}
+
+	scoreA, scoreB := 2, 0
+	m := domain.Match{
+		ID:      domain.MatchID(uuid.New()),
+		PlayerA: pA.ID,
+		PlayerB: pB.ID,
+		Played:  true,
+		ScoreA:  &scoreA,
+		ScoreB:  &scoreB,
+	}
+
+	repo := newMatchesByPlayerRepo()
+	repo.addForPlayer(pA.ID, m)
+	repo.addForPlayer(pB.ID, m)
+
+	uc := usecase.NewScoreUseCase(repo, nil, nil)
+	stats, err := uc.GetStats(ctx, []domain.Player{pA, pB}, nil)
+	if err != nil {
+		t.Fatalf("GetStats error: %v", err)
+	}
+
+	byID := make(map[domain.PlayerID]usecase.PlayerStats)
+	for _, s := range stats {
+		byID[s.Player.ID] = s
+	}
+
+	aStats := byID[pA.ID]
+	if aStats.Wins != 1 || aStats.Losses != 0 || aStats.Played != 1 {
+		t.Errorf("player A: wins=%d losses=%d played=%d, want 1/0/1", aStats.Wins, aStats.Losses, aStats.Played)
+	}
+	if aStats.PointsFor != 2 || aStats.PointsAgainst != 0 {
+		t.Errorf("player A points: for=%d against=%d, want 2/0", aStats.PointsFor, aStats.PointsAgainst)
+	}
+
+	bStats := byID[pB.ID]
+	if bStats.Wins != 0 || bStats.Losses != 1 {
+		t.Errorf("player B: wins=%d losses=%d, want 0/1", bStats.Wins, bStats.Losses)
+	}
+}
+
+// TestGetStats_DrawCounted verifies that 1–1 results increment the Draws counter.
+func TestGetStats_DrawCounted(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "1"}
+	pB := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "2"}
+
+	s1, s2 := 1, 1
+	m := domain.Match{
+		ID:      domain.MatchID(uuid.New()),
+		PlayerA: pA.ID,
+		PlayerB: pB.ID,
+		Played:  true,
+		ScoreA:  &s1,
+		ScoreB:  &s2,
+	}
+
+	repo := newMatchesByPlayerRepo()
+	repo.addForPlayer(pA.ID, m)
+	repo.addForPlayer(pB.ID, m)
+
+	uc := usecase.NewScoreUseCase(repo, nil, nil)
+	stats, err := uc.GetStats(ctx, []domain.Player{pA, pB}, nil)
+	if err != nil {
+		t.Fatalf("GetStats error: %v", err)
+	}
+	for _, s := range stats {
+		if s.Draws != 1 {
+			t.Errorf("player %s: draws=%d, want 1", s.Player.Nr, s.Draws)
+		}
+	}
+}
+
+// TestGetStats_TurnStats verifies MinTurns and AvgTurns are computed from won legs.
+func TestGetStats_TurnStats(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "1"}
+	pB := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "2"}
+
+	paStr := pA.ID.String()
+	scoreA, scoreB := 2, 1
+	m := domain.Match{
+		ID:         domain.MatchID(uuid.New()),
+		PlayerA:    pA.ID,
+		PlayerB:    pB.ID,
+		Played:     true,
+		ScoreA:     &scoreA,
+		ScoreB:     &scoreB,
+		Leg1Winner: paStr,
+		Leg1Turns:  12,
+		Leg2Winner: pB.ID.String(),
+		Leg2Turns:  15,
+		Leg3Winner: paStr,
+		Leg3Turns:  18,
+	}
+
+	repo := newMatchesByPlayerRepo()
+	repo.addForPlayer(pA.ID, m)
+
+	uc := usecase.NewScoreUseCase(repo, nil, nil)
+	stats, err := uc.GetStats(ctx, []domain.Player{pA}, nil)
+	if err != nil {
+		t.Fatalf("GetStats error: %v", err)
+	}
+	if len(stats) != 1 {
+		t.Fatalf("expected 1 stat, got %d", len(stats))
+	}
+	s := stats[0]
+	if s.MinTurns != 12 {
+		t.Errorf("MinTurns: got %d, want 12", s.MinTurns)
+	}
+	wantAvg := 15.0 // (12 + 18) / 2
+	if s.AvgTurns != wantAvg {
+		t.Errorf("AvgTurns: got %v, want %v", s.AvgTurns, wantAvg)
+	}
+}
+
+// TestGetStats_UnplayedMatchesIgnored verifies that matches with Played==false are skipped.
+func TestGetStats_UnplayedMatchesIgnored(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "1"}
+
+	m := domain.Match{
+		ID:      domain.MatchID(uuid.New()),
+		PlayerA: pA.ID,
+		Played:  false,
+	}
+
+	repo := newMatchesByPlayerRepo()
+	repo.addForPlayer(pA.ID, m)
+
+	uc := usecase.NewScoreUseCase(repo, nil, nil)
+	stats, err := uc.GetStats(ctx, []domain.Player{pA}, nil)
+	if err != nil {
+		t.Fatalf("GetStats error: %v", err)
+	}
+	if stats[0].Played != 0 {
+		t.Errorf("expected Played=0 for unplayed match, got %d", stats[0].Played)
+	}
+}
+
+// TestGetStats_WithScheduleID verifies scheduleID path uses FindByPlayerAndSchedule.
+func TestGetStats_WithScheduleID(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "1"}
+
+	schedID := domain.ScheduleID(uuid.New())
+	scoreA, scoreB := 2, 0
+	m := domain.Match{
+		ID:      domain.MatchID(uuid.New()),
+		PlayerA: pA.ID,
+		Played:  true,
+		ScoreA:  &scoreA,
+		ScoreB:  &scoreB,
+	}
+
+	repo := newMatchesByPlayerRepo()
+	repo.addForPlayer(pA.ID, m)
+
+	uc := usecase.NewScoreUseCase(repo, nil, nil)
+	stats, err := uc.GetStats(ctx, []domain.Player{pA}, &schedID)
+	if err != nil {
+		t.Fatalf("GetStats error: %v", err)
+	}
+	if stats[0].Wins != 1 {
+		t.Errorf("expected 1 win, got %d", stats[0].Wins)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// GetDutyStats tests
+// ---------------------------------------------------------------------------
+
+// TestGetDutyStats_SecretaryAndCounter verifies secretary/counter counts per player.
+func TestGetDutyStats_SecretaryAndCounter(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "1", Name: "Alpha"}
+	pB := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "2", Name: "Beta"}
+
+	evID := domain.EveningID(uuid.New())
+	scoreA, scoreB := 2, 0
+	m := domain.Match{
+		ID:          domain.MatchID(uuid.New()),
+		EveningID:   evID,
+		PlayerA:     pA.ID,
+		PlayerB:     pB.ID,
+		Played:      true,
+		ScoreA:      &scoreA,
+		ScoreB:      &scoreB,
+		SecretaryNr: "1", // pA's nr
+		CounterNr:   "2", // pB's nr
+	}
+
+	repo := newMatchesByPlayerRepo()
+	repo.addForPlayer(pA.ID, m)
+	repo.addForPlayer(pB.ID, m)
+
+	uc := usecase.NewScoreUseCase(repo, &stubEveningRepo{}, nil)
+	stats, err := uc.GetDutyStats(ctx, []domain.Player{pA, pB}, nil)
+	if err != nil {
+		t.Fatalf("GetDutyStats error: %v", err)
+	}
+
+	byNr := make(map[string]usecase.DutyStats)
+	for _, s := range stats {
+		byNr[s.Player.Nr] = s
+	}
+
+	if byNr["1"].SecretaryCount != 1 {
+		t.Errorf("player 1 SecretaryCount: got %d, want 1", byNr["1"].SecretaryCount)
+	}
+	if byNr["1"].CounterCount != 0 {
+		t.Errorf("player 1 CounterCount: got %d, want 0", byNr["1"].CounterCount)
+	}
+	if byNr["2"].CounterCount != 1 {
+		t.Errorf("player 2 CounterCount: got %d, want 1", byNr["2"].CounterCount)
+	}
+	if byNr["1"].Count != 1 {
+		t.Errorf("player 1 Count: got %d, want 1", byNr["1"].Count)
+	}
+}
+
+// TestGetDutyStats_NoMatches verifies empty result when there are no played matches.
+func TestGetDutyStats_NoMatches(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "1"}
+
+	repo := newMatchesByPlayerRepo()
+	uc := usecase.NewScoreUseCase(repo, &stubEveningRepo{}, nil)
+
+	stats, err := uc.GetDutyStats(ctx, []domain.Player{pA}, nil)
+	if err != nil {
+		t.Fatalf("GetDutyStats error: %v", err)
+	}
+	if len(stats) != 1 {
+		t.Fatalf("expected 1 entry, got %d", len(stats))
+	}
+	if stats[0].Count != 0 {
+		t.Errorf("expected Count=0 for player with no duties, got %d", stats[0].Count)
+	}
+}
+
+// TestGetDutyStats_WithScheduleID verifies the scheduleID path deduplicates matches.
+func TestGetDutyStats_WithScheduleID(t *testing.T) {
+	ctx := context.Background()
+
+	pA := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "1", Name: "Alpha"}
+	pB := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "2", Name: "Beta"}
+
+	schedID := domain.ScheduleID(uuid.New())
+	evID := domain.EveningID(uuid.New())
+	scoreA, scoreB := 2, 0
+	m := domain.Match{
+		ID:          domain.MatchID(uuid.New()),
+		EveningID:   evID,
+		PlayerA:     pA.ID,
+		PlayerB:     pB.ID,
+		Played:      true,
+		ScoreA:      &scoreA,
+		ScoreB:      &scoreB,
+		SecretaryNr: "1",
+	}
+
+	repo := newMatchesByPlayerRepo()
+	repo.addForPlayer(pA.ID, m)
+	repo.addForPlayer(pB.ID, m)
+
+	ev := domain.Evening{ID: evID, Number: 1}
+	uc := usecase.NewScoreUseCase(repo, &stubEveningRepo{evenings: []domain.Evening{ev}}, nil)
+
+	stats, err := uc.GetDutyStats(ctx, []domain.Player{pA, pB}, &schedID)
+	if err != nil {
+		t.Fatalf("GetDutyStats error: %v", err)
+	}
+
+	byNr := make(map[string]usecase.DutyStats)
+	for _, s := range stats {
+		byNr[s.Player.Nr] = s
+	}
+
+	if byNr["1"].SecretaryCount != 1 {
+		t.Errorf("player 1 SecretaryCount: got %d, want 1", byNr["1"].SecretaryCount)
+	}
+	if len(byNr["1"].SecretaryMatches) != 1 || byNr["1"].SecretaryMatches[0].EveningNr != 1 {
+		t.Errorf("player 1 SecretaryMatches: got %v", byNr["1"].SecretaryMatches)
+	}
+}
+
 // TestSubmit_NotFoundError verifies an error is returned for an unknown match ID.
 func TestSubmit_NotFoundError(t *testing.T) {
 	ctx := context.Background()
