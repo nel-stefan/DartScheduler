@@ -75,7 +75,7 @@ func ExportEvening(_ context.Context, sched domain.Schedule, ev domain.Evening, 
 	defer f.Close()
 
 	// Primary sheet: the requested evening.
-	ws := "Wedstrijden"
+	ws := "Blad1"
 	f.SetSheetName("Sheet1", ws)
 	if err := writeEveningSheet(f, ws, ev, players, playerMap, firstNameNr, playerLabel, reportedByLabel); err != nil {
 		return err
