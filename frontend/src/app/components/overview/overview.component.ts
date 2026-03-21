@@ -560,6 +560,15 @@ export class AbsentDialogComponent {
       <button mat-icon-button color="warn" *ngIf="schedule" (click)="deleteSchedule()" matTooltip="Seizoen verwijderen">
         <mat-icon>delete</mat-icon>
       </button>
+
+      <mat-form-field *ngIf="schedule" style="min-width:200px" subscriptSizing="dynamic">
+        <mat-label>Ga naar avond</mat-label>
+        <mat-select [(ngModel)]="activeTab">
+          <mat-option *ngFor="let ev of schedule.evenings; let i = index" [value]="i">
+            {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM' }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
 
     <div *ngIf="!schedule" class="empty-state">
