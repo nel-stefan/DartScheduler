@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, Inject, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
@@ -217,9 +217,10 @@ export class ImportSeasonDialogComponent {
   selector: 'app-beheer',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
+    CommonModule, FormsModule, ReactiveFormsModule,
     MatSnackBarModule, MatButtonModule, MatIconModule,
     MatCardModule, MatDialogModule, MatDividerModule, MatTooltipModule,
+    MatFormFieldModule, MatInputModule,
   ],
   styles: [`
     .section-title { font-size: 18px; font-weight: 500; margin: 0 0 16px; }
@@ -231,6 +232,11 @@ export class ImportSeasonDialogComponent {
     }
     .season-name { font-weight: 500; }
     .season-meta { font-size: 12px; color: #757575; margin-top: 2px; }
+    .rename-input {
+      font-size: 14px; font-weight: 500; font-family: inherit;
+      border: none; border-bottom: 2px solid #795548; outline: none;
+      background: transparent; padding: 2px 0; min-width: 180px;
+    }
     .import-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .action-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
   `],
@@ -260,12 +266,24 @@ export class ImportSeasonDialogComponent {
 
           <div class="seasons-list">
             <div class="season-row" *ngFor="let s of seasons">
-              <div>
-                <div class="season-name">{{ s.competitionName }}</div>
+              <div style="flex:1;min-width:0">
+                <ng-container *ngIf="editingSeasonId !== s.id">
+                  <div class="season-name">{{ s.competitionName }}</div>
+                </ng-container>
+                <ng-container *ngIf="editingSeasonId === s.id">
+                  <input #renameInput class="rename-input" [(ngModel)]="renameDraft"
+                         (keydown.enter)="saveRename(s)" (keydown.escape)="cancelRename()"
+                         (blur)="saveRename(s)">
+                </ng-container>
                 <div class="season-meta">Seizoen {{ s.season }} · {{ s.eveningCount }} avonden</div>
               </div>
+              <button mat-icon-button (click)="startRename(s)" matTooltip="Naam aanpassen"
+                      *ngIf="editingSeasonId !== s.id">
+                <mat-icon>edit</mat-icon>
+              </button>
               <button mat-icon-button color="warn" (click)="deleteSeason(s)"
-                      matTooltip="Seizoen verwijderen">
+                      matTooltip="Seizoen verwijderen"
+                      *ngIf="editingSeasonId !== s.id">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
@@ -306,9 +324,13 @@ export class BeheerComponent implements OnInit {
 
   @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
 
+  @ViewChild('renameInput') renameInputRef?: ElementRef<HTMLInputElement>;
+
   seasons: SeasonSummary[] = [];
   selectedFile: File | null = null;
   loading = false;
+  editingSeasonId = '';
+  renameDraft     = '';
 
   ngOnInit(): void {
     this.loadSeasons();
@@ -349,6 +371,30 @@ export class BeheerComponent implements OnInit {
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
       });
     });
+  }
+
+  startRename(s: SeasonSummary): void {
+    this.renameDraft     = s.competitionName;
+    this.editingSeasonId = s.id;
+    setTimeout(() => this.renameInputRef?.nativeElement.select());
+  }
+
+  saveRename(s: SeasonSummary): void {
+    if (this.editingSeasonId !== s.id) return;
+    this.editingSeasonId = '';
+    const name = this.renameDraft.trim();
+    if (!name || name === s.competitionName) return;
+    this.scheduleService.renameSchedule(s.id, name).subscribe({
+      next: () => {
+        s.competitionName = name;
+        this.seasonService.load();
+      },
+      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+    });
+  }
+
+  cancelRename(): void {
+    this.editingSeasonId = '';
   }
 
   deleteSeason(s: SeasonSummary): void {
