@@ -129,6 +129,12 @@ export interface BuddyPairItem {
   eveningNrs: number[];
 }
 
+export interface EveningPlayerStat {
+  playerId: string;
+  oneEighties: number;
+  highestFinish: number;
+}
+
 export interface GenerateScheduleRequest {
   competitionName: string;
   season: string;

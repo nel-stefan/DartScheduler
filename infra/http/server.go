@@ -34,6 +34,7 @@ func NewRouter(
 	statsH *handler.StatsHandler,
 	exportH *handler.ExportHandler,
 	systemH *handler.SystemHandler,
+	eveningStatH *handler.EveningStatHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 	r.Use(chimw.Recoverer)
@@ -66,6 +67,8 @@ func NewRouter(
 
 		r.Put("/matches/{id}/score", scoreH.Submit)
 		r.Post("/evenings/{id}/report-absent", scoreH.ReportAbsent)
+		r.Get("/evenings/{id}/player-stats", eveningStatH.GetByEvening)
+		r.Put("/evenings/{id}/player-stats/{playerId}", eveningStatH.Upsert)
 
 		r.Get("/stats", statsH.Get)
 		r.Get("/stats/duties", statsH.GetDuties)

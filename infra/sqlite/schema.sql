@@ -48,6 +48,14 @@ CREATE TABLE IF NOT EXISTS matches (
     played     INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS evening_player_stats (
+    evening_id     TEXT NOT NULL REFERENCES evenings(id),
+    player_id      TEXT NOT NULL,
+    one_eighties   INTEGER NOT NULL DEFAULT 0,
+    highest_finish INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (evening_id, player_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_matches_evening   ON matches(evening_id);
 CREATE INDEX IF NOT EXISTS idx_matches_player_a  ON matches(player_a);
 CREATE INDEX IF NOT EXISTS idx_matches_player_b  ON matches(player_b);
