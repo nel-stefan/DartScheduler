@@ -2,11 +2,13 @@ import { Component, inject, OnInit, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { filter, distinctUntilChanged } from 'rxjs';
 import { Evening, Match, Player } from '../models';
 import { ScheduleService } from '../services/schedule.service';
 import { PlayerService } from '../services/player.service';
 import { SeasonService } from '../services/season.service';
+import { MobileStateService } from './mobile-state.service';
 
 function displayName(name: string): string {
   const idx = name.indexOf(', ');
@@ -16,34 +18,23 @@ function displayName(name: string): string {
 @Component({
   selector: 'app-mobile-avond',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   styles: [`
     :host { display: block; }
 
     .header {
-      background: #4e342e; color: #fff; padding: 12px 16px 0;
+      background: #4e342e; color: #fff; padding: 12px 16px;
       position: sticky; top: 0; z-index: 10;
     }
     .header-title { font-size: 15px; font-weight: 500; margin: 0 0 8px; }
 
-    .chips {
-      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px;
-      scrollbar-width: none;
+    .evening-select {
+      width: 100%; padding: 6px 10px; border-radius: 8px; font-size: 14px;
+      background: rgba(255,255,255,.15); color: #fff;
+      border: 1.5px solid rgba(255,255,255,.35); appearance: none;
+      cursor: pointer;
     }
-    .chips::-webkit-scrollbar { display: none; }
-
-    .chip {
-      flex-shrink: 0; padding: 4px 12px; border-radius: 16px; font-size: 12px;
-      cursor: pointer; border: 1.5px solid rgba(255,255,255,.35);
-      color: rgba(255,255,255,.65); background: transparent; white-space: nowrap;
-    }
-    .chip.active {
-      background: rgba(255,255,255,.18); border-color: #fff; color: #fff; font-weight: 600;
-    }
-    .chip.inhaal { border-color: rgba(206,147,216,.5); color: rgba(206,147,216,.85); }
-    .chip.inhaal.active {
-      background: rgba(206,147,216,.15); border-color: #ce93d8; color: #ce93d8;
-    }
+    .evening-select option { background: #4e342e; color: #fff; }
 
     .body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 
@@ -86,16 +77,11 @@ function displayName(name: string): string {
   template: `
     <div class="header">
       <p class="header-title">Avond</p>
-      <div class="chips">
-        <button
-          *ngFor="let ev of evenings"
-          class="chip"
-          [class.active]="ev.id === selectedEveningId"
-          [class.inhaal]="ev.isInhaalAvond"
-          (click)="selectEvening(ev.id)">
-          {{ ev.isInhaalAvond ? 'Inhaal' : 'Avond ' + ev.number }}
-        </button>
-      </div>
+      <select class="evening-select" [(ngModel)]="selectedEveningId" (ngModelChange)="onSelectChange($event)">
+        <option *ngFor="let ev of evenings" [value]="ev.id">
+          {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM' }}
+        </option>
+      </select>
     </div>
 
     <div class="loader" *ngIf="loading">Laden…</div>
@@ -126,6 +112,7 @@ export class MobileAvondComponent implements OnInit {
   private scheduleService = inject(ScheduleService);
   private playerService   = inject(PlayerService);
   private seasonService   = inject(SeasonService);
+  private mobileState     = inject(MobileStateService);
   private router          = inject(Router);
   private destroyRef      = inject(DestroyRef);
 
@@ -151,7 +138,11 @@ export class MobileAvondComponent implements OnInit {
     this.loading = true;
     this.scheduleService.getById(id).subscribe(schedule => {
       this.evenings = schedule.evenings;
-      this.autoSelect();
+      if (this.mobileState.selectedEveningId) {
+        this.selectedEveningId = this.mobileState.selectedEveningId;
+      } else {
+        this.autoSelect();
+      }
       this.loading = false;
     });
   }
@@ -161,10 +152,11 @@ export class MobileAvondComponent implements OnInit {
     const today    = new Date().toISOString().split('T')[0];
     const upcoming = this.evenings.find(e => e.date >= today);
     this.selectedEveningId = upcoming?.id ?? this.evenings[this.evenings.length - 1].id;
+    this.mobileState.selectedEveningId = this.selectedEveningId;
   }
 
-  selectEvening(id: string): void {
-    this.selectedEveningId = id;
+  onSelectChange(id: string): void {
+    this.mobileState.selectedEveningId = id;
   }
 
   playerName(id: string): string {
