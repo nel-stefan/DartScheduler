@@ -599,13 +599,12 @@ export class InfoComponent implements OnInit {
     const playerMap = new Map(this.info.players.map(p => [p.id, p]));
 
     for (const ev of this.schedule.evenings) {
+      if (ev.isInhaalAvond) continue; // catch-up matches are the same objects as in their regular evening
+
       for (const m of ev.matches) {
         const isA = m.playerA === this.selectedPlayerId;
         const isB = m.playerB === this.selectedPlayerId;
         if (!isA && !isB) continue;
-
-        // For catch-up evenings only include matches that have been played or reported
-        if (ev.isInhaalAvond && !m.played && !m.reportedBy) continue;
 
         const opponentId = isA ? m.playerB : m.playerA;
         const opp = playerMap.get(opponentId);
@@ -628,7 +627,7 @@ export class InfoComponent implements OnInit {
           myScore,
           oppScore,
           result,
-          isCatchUp: ev.isInhaalAvond,
+          isCatchUp: !!m.playedDate,
           playedDate: m.playedDate ?? '',
         });
       }
