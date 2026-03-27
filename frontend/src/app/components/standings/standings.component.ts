@@ -334,10 +334,10 @@ export class StandingsComponent implements OnInit {
 
   private loadStats(): void {
     const sid = this.seasonService.selectedId$.value || undefined;
-    this.selectedTabIndex = 0;
     this.scoreService.getStats(sid).subscribe((s) => {
       this.allStats = s;
       this.classes = this.buildClasses(s);
+      this.selectedTabIndex = 0;
     });
     this.scoreService.getDutyStats(sid).subscribe((d) => {
       this.dutyStats = d.sort((a, b) => b.count - a.count);
