@@ -337,7 +337,10 @@ export class StandingsComponent implements OnInit {
     this.scoreService.getStats(sid).subscribe((s) => {
       this.allStats = s;
       this.classes = this.buildClasses(s);
-      this.selectedTabIndex = 0;
+      // Defer reset to after MatTabGroup has processed the new @ContentChildren tabs.
+      // Setting the index synchronously causes a race: MatTabGroup fires selectedIndexChange
+      // while rebuilding its tab list, which overwrites our value via the two-way binding.
+      setTimeout(() => { this.selectedTabIndex = 0; });
     });
     this.scoreService.getDutyStats(sid).subscribe((d) => {
       this.dutyStats = d.sort((a, b) => b.count - a.count);
