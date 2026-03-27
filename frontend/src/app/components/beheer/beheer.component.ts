@@ -14,7 +14,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ScheduleService } from '../../services/schedule.service';
 import { PlayerService } from '../../services/player.service';
 import { SeasonService } from '../../services/season.service';
+import { SystemService } from '../../services/system.service';
 import { SeasonSummary, GenerateScheduleRequest } from '../../models';
+import { environment } from '../../../environments/environment';
 
 // ---------------------------------------------------------------------------
 // Generate-dialog
@@ -239,6 +241,10 @@ export class ImportSeasonDialogComponent {
     }
     .import-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .action-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .server-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .version-chip { background: #e8f5e9; color: #2e7d32; border-radius: 12px; padding: 4px 12px; font-size: 13px; font-weight: 500; }
+    .log-box { background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 12px; line-height: 1.5; padding: 12px 16px; border-radius: 6px; max-height: 480px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+    .log-empty { color: #9e9e9e; font-style: italic; font-size: 13px; }
   `],
   template: `
     <div style="max-width:700px">
@@ -311,6 +317,26 @@ export class ImportSeasonDialogComponent {
         </mat-card-content>
       </mat-card>
 
+      <!-- Server -->
+      <mat-card style="margin-top:24px">
+        <mat-card-header>
+          <mat-card-title>Server</mat-card-title>
+        </mat-card-header>
+        <mat-card-content style="padding-top:16px">
+          <div class="server-meta">
+            <span class="version-chip">{{ version }}</span>
+            <button mat-stroked-button (click)="refreshLogs()">
+              <mat-icon>refresh</mat-icon> Vernieuwen
+            </button>
+          </div>
+          <div *ngIf="logsLoading" style="color:#9e9e9e;font-size:13px">Laden...</div>
+          <div *ngIf="!logsLoading && logs.length === 0" class="log-empty">
+            Nog geen log regels.
+          </div>
+          <div *ngIf="!logsLoading && logs.length > 0" class="log-box">{{ logs.join('\n') }}</div>
+        </mat-card-content>
+      </mat-card>
+
     </div>
   `,
 })
@@ -318,6 +344,7 @@ export class BeheerComponent implements OnInit {
   private scheduleService = inject(ScheduleService);
   private playerService   = inject(PlayerService);
   private seasonService   = inject(SeasonService);
+  private systemService   = inject(SystemService);
   private snackBar        = inject(MatSnackBar);
   private dialog          = inject(MatDialog);
   private cdr             = inject(ChangeDetectorRef);
@@ -332,8 +359,21 @@ export class BeheerComponent implements OnInit {
   editingSeasonId = '';
   renameDraft     = '';
 
+  version     = environment.version;
+  logs:        string[] = [];
+  logsLoading = false;
+
   ngOnInit(): void {
     this.loadSeasons();
+    this.refreshLogs();
+  }
+
+  refreshLogs(): void {
+    this.logsLoading = true;
+    this.systemService.getLogs().subscribe({
+      next: ({ logs }) => { this.logs = logs; this.logsLoading = false; },
+      error: ()        => { this.logsLoading = false; },
+    });
   }
 
   loadSeasons(): void {
