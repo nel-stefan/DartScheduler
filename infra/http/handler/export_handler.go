@@ -50,6 +50,26 @@ func (h *ExportHandler) EveningPrint(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *ExportHandler) EveningPDF(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	date, err := h.uc.EveningDate(r.Context(), id)
+	if err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	filename := fmt.Sprintf("wedstrijdformulier_%s.pdf", date.Format("2006-01-02"))
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	if err := h.uc.ExportEvening(r.Context(), pdf.EveningExporter{}, id, w); err != nil {
+		httpErrorDomain(w, err)
+	}
+}
+
 func (h *ExportHandler) EveningExcel(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)

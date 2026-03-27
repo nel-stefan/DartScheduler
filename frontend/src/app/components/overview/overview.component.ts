@@ -432,6 +432,9 @@ export class AbsentDialogComponent {
                 <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel">
                   <mat-icon>file_download</mat-icon>
                 </button>
+                <button mat-icon-button (click)="exportEveningPdf(ev.id)" matTooltip="Exporteren naar PDF">
+                  <mat-icon>picture_as_pdf</mat-icon>
+                </button>
                 <button mat-icon-button (click)="printEvening(ev.id)" matTooltip="Afdrukken">
                   <mat-icon>print</mat-icon>
                 </button>
@@ -760,6 +763,10 @@ export class OverviewComponent implements OnInit {
 
   exportEvening(eveningId: string): void {
     window.open(`${environment.apiBaseUrl}/export/evening/${eveningId}/excel`, '_blank');
+  }
+
+  exportEveningPdf(eveningId: string): void {
+    window.open(`${environment.apiBaseUrl}/export/evening/${eveningId}/pdf`, '_blank');
   }
 
   printEvening(eveningId: string): void {
