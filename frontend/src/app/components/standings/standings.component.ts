@@ -106,7 +106,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
 
       <!-- Screen: tabs -->
       <div class="screen-only">
-      <mat-tab-group animationDuration="150ms" color="primary">
+      <mat-tab-group animationDuration="150ms" color="primary" [(selectedIndex)]="selectedTabIndex">
 
         <mat-tab *ngFor="let cls of classes" [label]="cls.label">
           <mat-card style="border-radius:0 0 8px 8px;border-top:none">
@@ -310,6 +310,7 @@ export class StandingsComponent implements OnInit {
   classes:   { label: string; stats: PlayerStats[] }[] = [];
   dutyStats: DutyStats[] = [];
   allStats:  PlayerStats[] = [];
+  selectedTabIndex = 0;
 
   matchCols = ['rank', 'nr', 'name', 'wins', 'losses', 'pf', 'pa', '180s', 'edit'];
   dutyCols  = ['rank', 'nr', 'name', 'count'];
@@ -333,6 +334,7 @@ export class StandingsComponent implements OnInit {
 
   private loadStats(): void {
     const sid = this.seasonService.selectedId$.value || undefined;
+    this.selectedTabIndex = 0;
     this.scoreService.getStats(sid).subscribe((s) => {
       this.allStats = s;
       this.classes = this.buildClasses(s);

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Full-stack wedstrijdplanningssysteem voor een dartclub. Go-backend + Angular 17-frontend, geleverd als één binair bestand via `//go:embed`.
 
-**Key dependencies:** `github.com/go-chi/chi/v5`, `github.com/xuri/excelize/v2`, `github.com/google/uuid`, `github.com/mattn/go-sqlite3` (CGO).
+**Key dependencies:** `github.com/go-chi/chi/v5`, `github.com/xuri/excelize/v2`, `github.com/jung-kurt/gofpdf`, `github.com/google/uuid`, `github.com/mattn/go-sqlite3` (CGO).
 
 ## Architecture
 
@@ -66,6 +66,9 @@ make docker     # Bouw en start via docker compose
 - **Repository-interfaces** zitten in `domain/`; implementaties in `infra/sqlite/`.
 - **DTOs** voor use-case input/output staan in `usecase/dto.go`.
 - **Paginagrootte Excel-avondformulier:** 26 rijen per pagina (`rowsPerPage = 26`).
+- **PDF-exporters (`infra/pdf/`):** Twee exporters:
+  - `Exporter` — volledige competitie (één pagina per avond, eenvoudige match-tabel).
+  - `EveningExporter` — wedstrijdformulier per avond, 1-op-1 replica van de Excel-export: A4 liggend, 25 datarijen per pagina (`rowsPerPage = 25`), zelfde 17 kolommen en breedtes. Inhaalopmerkingen worden als extra pagina's achteraan toegevoegd via `emptyExport`.
 
 ## Test coverage
 
