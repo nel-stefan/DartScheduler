@@ -3,10 +3,9 @@ import { Router } from '@angular/router';
 
 /** Scores worden nu ingevoerd via het dialoogvenster in het schema-overzicht. */
 @Component({
-  selector: 'app-score-entry',
-  standalone: true,
-  imports: [],
-  template: '',
+    selector: 'app-score-entry',
+    imports: [],
+    template: ''
 })
 export class ScoreEntryComponent implements OnInit {
   private router = inject(Router);

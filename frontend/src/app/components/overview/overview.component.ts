@@ -41,11 +41,10 @@ export interface ScoreDialogData {
 }
 
 @Component({
-  selector: 'app-score-dialog',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-            MatFormFieldModule, MatInputModule, MatRadioModule, MatSelectModule, MatDividerModule],
-  styles: [`
+    selector: 'app-score-dialog',
+    imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
+        MatFormFieldModule, MatInputModule, MatRadioModule, MatSelectModule, MatDividerModule],
+    styles: [`
     .matchup { font-size: 13px; text-align: center; margin-bottom: 12px; color: #444; }
     .matchup strong { font-size: 14px; color: #111; }
     .matchup .vs { color: #999; margin: 0 6px; }
@@ -65,7 +64,7 @@ export interface ScoreDialogData {
     .turns-field { width: 80px; }
     .admin-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   `],
-  template: `
+    template: `
     <h2 mat-dialog-title style="font-size:16px;margin-bottom:4px">Score invoeren</h2>
     <mat-dialog-content style="min-width:400px;padding-top:0">
       <div class="matchup">
@@ -152,7 +151,7 @@ export interface ScoreDialogData {
       <button mat-button (click)="dialogRef.close()">Annuleren</button>
       <button mat-raised-button color="primary" [disabled]="!isValid()" (click)="submit()">Opslaan</button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class ScoreDialogComponent {
   dialogRef = inject(MatDialogRef<ScoreDialogComponent>);
@@ -209,11 +208,10 @@ export class ScoreDialogComponent {
 interface AbsentDialogData { evening: Evening; players: Player[]; }
 
 @Component({
-  selector: 'app-absent-dialog',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule,
-            MatSelectModule, MatInputModule, MatIconModule],
-  template: `
+    selector: 'app-absent-dialog',
+    imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule,
+        MatSelectModule, MatInputModule, MatIconModule],
+    template: `
     <h2 mat-dialog-title>Speler afmelden — avond {{ data.evening.number }}</h2>
     <mat-dialog-content style="min-width:420px;padding-top:8px">
 
@@ -255,7 +253,7 @@ interface AbsentDialogData { evening: Evening; players: Player[]; }
         <mat-icon>person_off</mat-icon> Afmelden
       </button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class AbsentDialogComponent {
   data      = inject<AbsentDialogData>(MAT_DIALOG_DATA);
@@ -301,17 +299,16 @@ export class AbsentDialogComponent {
 // ---------------------------------------------------------------------------
 
 @Component({
-  selector: 'app-overview',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatButtonModule, MatCardModule, MatTableModule, MatTabsModule,
-    MatSnackBarModule, MatDialogModule, MatIconModule,
-    MatTooltipModule, MatSelectModule, MatFormFieldModule, MatInputModule,
-    FormsModule, ReactiveFormsModule,
-    AbsentDialogComponent, EveningStatDialogComponent,
-  ],
-  styles: [`
+    selector: 'app-overview',
+    imports: [
+        CommonModule,
+        MatButtonModule, MatCardModule, MatTableModule, MatTabsModule,
+        MatSnackBarModule, MatDialogModule, MatIconModule,
+        MatTooltipModule, MatSelectModule, MatFormFieldModule, MatInputModule,
+        FormsModule, ReactiveFormsModule,
+        AbsentDialogComponent, EveningStatDialogComponent,
+    ],
+    styles: [`
     .schedule-header {
       display: flex;
       align-items: center;
@@ -358,7 +355,7 @@ export class AbsentDialogComponent {
       .print-only    { display: block !important; }
     }
   `],
-  template: `
+    template: `
     <div class="schedule-header">
       <h2 class="schedule-title">{{ schedule?.competitionName ?? 'DartScheduler' }}</h2>
 
@@ -562,7 +559,7 @@ export class AbsentDialogComponent {
         </tbody>
       </table>
     </div>
-  `,
+  `
 })
 export class OverviewComponent implements OnInit {
   private scheduleService  = inject(ScheduleService);

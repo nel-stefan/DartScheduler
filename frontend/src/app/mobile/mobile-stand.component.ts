@@ -7,10 +7,9 @@ import { SeasonService } from '../services/season.service';
 import { PlayerStats, DutyStats } from '../models';
 
 @Component({
-  selector: 'app-mobile-stand',
-  standalone: true,
-  imports: [CommonModule],
-  styles: [`
+    selector: 'app-mobile-stand',
+    imports: [CommonModule],
+    styles: [`
     :host { display: block; }
 
     .header {
@@ -80,7 +79,7 @@ import { PlayerStats, DutyStats } from '../models';
     .loader { padding: 40px; text-align: center; color: #9e9e9e; }
     .empty  { padding: 20px 14px; text-align: center; color: #9e9e9e; font-size: 13px; }
   `],
-  template: `
+    template: `
     <div class="header">
       <h2>Stand</h2>
     </div>
@@ -147,7 +146,7 @@ import { PlayerStats, DutyStats } from '../models';
         <div class="empty" *ngIf="dutyStats.length === 0">Nog geen schrijvers of tellers geregistreerd.</div>
       </div>
     </div>
-  `,
+  `
 })
 export class MobileStandComponent implements OnInit {
   private scoreService  = inject(ScoreService);

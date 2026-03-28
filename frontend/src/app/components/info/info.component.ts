@@ -39,11 +39,10 @@ interface MatchRow {
 }
 
 @Component({
-  selector: 'app-info',
-  standalone: true,
-  imports: [CommonModule, MatCardModule, MatTableModule, MatIconModule, MatChipsModule,
-            MatTabsModule, MatSelectModule, MatFormFieldModule, MatButtonModule],
-  styles: [`
+    selector: 'app-info',
+    imports: [CommonModule, MatCardModule, MatTableModule, MatIconModule, MatChipsModule,
+        MatTabsModule, MatSelectModule, MatFormFieldModule, MatButtonModule],
+    styles: [`
     .page { padding: 24px; }
     h2 { margin: 0 0 20px 0; }
 
@@ -98,7 +97,7 @@ interface MatchRow {
     .duty-evening-table .cnt-cell { color: #c62828; font-weight: 600; }
     .duty-evening-table .tot-cell { font-weight: 700; }
   `],
-  template: `
+    template: `
     <div class="page">
       <h2>Seizoen Info</h2>
 
@@ -487,7 +486,7 @@ interface MatchRow {
 
       </mat-tab-group>
     </div>
-  `,
+  `
 })
 export class InfoComponent implements OnInit {
   private scheduleService = inject(ScheduleService);

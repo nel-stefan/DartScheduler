@@ -15,11 +15,10 @@ import { PlayerStats, DutyStats } from '../../models';
 import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-stat-dialog.component';
 
 @Component({
-  selector: 'app-standings',
-  standalone: true,
-  imports: [CommonModule, MatButtonModule, MatCardModule, MatDialogModule,
-            MatTableModule, MatTabsModule, MatIconModule, MatTooltipModule, EveningStatDialogComponent],
-  styles: [`
+    selector: 'app-standings',
+    imports: [CommonModule, MatButtonModule, MatCardModule, MatDialogModule,
+        MatTableModule, MatTabsModule, MatIconModule, MatTooltipModule, EveningStatDialogComponent],
+    styles: [`
     .section-title {
       font-size: 18px;
       font-weight: 500;
@@ -75,7 +74,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
 
     }
   `],
-  template: `
+    template: `
     <div style="padding:24px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
         <h2 style="margin:0">Klassement</h2>
@@ -299,7 +298,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
       </div><!-- /print-only -->
 
     </div>
-  `,
+  `
 })
 export class StandingsComponent implements OnInit {
   private scoreService  = inject(ScoreService);

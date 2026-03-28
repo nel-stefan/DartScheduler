@@ -3,10 +3,9 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-mobile-shell',
-  standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
-  styles: [`
+    selector: 'app-mobile-shell',
+    imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+    styles: [`
     :host { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
     .mobile-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #f5f0ee; }
     .mobile-nav {
@@ -24,12 +23,12 @@ import { MatIconModule } from '@angular/material/icon';
       }
     }
   `],
-  template: `
+    template: `
     <div class="mobile-content"><router-outlet /></div>
     <nav class="mobile-nav">
       <a routerLink="avond" routerLinkActive="active"><mat-icon>sports_bar</mat-icon>Avond</a>
       <a routerLink="stand" routerLinkActive="active"><mat-icon>leaderboard</mat-icon>Stand</a>
     </nav>
-  `,
+  `
 })
 export class MobileShellComponent {}

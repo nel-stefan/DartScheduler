@@ -23,16 +23,15 @@ import { environment } from '../../../environments/environment';
 // ---------------------------------------------------------------------------
 
 @Component({
-  selector: 'app-generate-dialog',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-            MatFormFieldModule, MatInputModule, MatSelectModule],
-  styles: [`
+    selector: 'app-generate-dialog',
+    imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule],
+    styles: [`
     .slot-row { display:flex; align-items:center; gap:12px; padding:4px 0; border-bottom:1px solid #f5f5f5; }
     .slot-date { color:#555; min-width:180px; font-size:13px; }
     .slot-nr   { min-width:64px; font-size:13px; font-weight:500; }
   `],
-  template: `
+    template: `
     <h2 mat-dialog-title>Schema genereren</h2>
     <mat-dialog-content style="min-width:480px">
       <form [formGroup]="form" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;padding-top:8px">
@@ -82,7 +81,7 @@ import { environment } from '../../../environments/environment';
               [disabled]="form.invalid || regularCount === 0"
               (click)="submit()">Genereren</button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class GenerateDialogComponent implements OnInit {
   private dialogRef = inject(MatDialogRef<GenerateDialogComponent>);
@@ -151,11 +150,10 @@ export class GenerateDialogComponent implements OnInit {
 // ---------------------------------------------------------------------------
 
 @Component({
-  selector: 'app-import-season-dialog',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-            MatFormFieldModule, MatInputModule, MatIconModule],
-  template: `
+    selector: 'app-import-season-dialog',
+    imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
+        MatFormFieldModule, MatInputModule, MatIconModule],
+    template: `
     <h2 mat-dialog-title>Oud seizoen importeren</h2>
     <mat-dialog-content>
       <form [formGroup]="form" style="display:flex;flex-direction:column;gap:12px;min-width:340px;padding-top:8px">
@@ -184,7 +182,7 @@ export class GenerateDialogComponent implements OnInit {
       <button mat-button mat-dialog-close>Annuleren</button>
       <button mat-raised-button color="primary" [disabled]="form.invalid || !file" (click)="submit()">Importeren</button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class ImportSeasonDialogComponent {
   private dialogRef = inject(MatDialogRef<ImportSeasonDialogComponent>);
@@ -216,15 +214,14 @@ export class ImportSeasonDialogComponent {
 // ---------------------------------------------------------------------------
 
 @Component({
-  selector: 'app-beheer',
-  standalone: true,
-  imports: [
-    CommonModule, FormsModule, ReactiveFormsModule,
-    MatSnackBarModule, MatButtonModule, MatIconModule,
-    MatCardModule, MatDialogModule, MatDividerModule, MatTooltipModule,
-    MatFormFieldModule, MatInputModule,
-  ],
-  styles: [`
+    selector: 'app-beheer',
+    imports: [
+        CommonModule, FormsModule, ReactiveFormsModule,
+        MatSnackBarModule, MatButtonModule, MatIconModule,
+        MatCardModule, MatDialogModule, MatDividerModule, MatTooltipModule,
+        MatFormFieldModule, MatInputModule,
+    ],
+    styles: [`
     .section-title { font-size: 18px; font-weight: 500; margin: 0 0 16px; }
     .seasons-list { display: flex; flex-direction: column; gap: 8px; }
     .season-row {
@@ -246,7 +243,7 @@ export class ImportSeasonDialogComponent {
     .log-box { background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 12px; line-height: 1.5; padding: 12px 16px; border-radius: 6px; max-height: 480px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
     .log-empty { color: #9e9e9e; font-style: italic; font-size: 13px; }
   `],
-  template: `
+    template: `
     <div style="max-width:700px">
 
       <!-- Seizoenen -->
@@ -338,7 +335,7 @@ export class ImportSeasonDialogComponent {
       </mat-card>
 
     </div>
-  `,
+  `
 })
 export class BeheerComponent implements OnInit {
   private scheduleService = inject(ScheduleService);

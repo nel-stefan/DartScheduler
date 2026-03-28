@@ -16,10 +16,9 @@ function displayName(name: string): string {
 }
 
 @Component({
-  selector: 'app-mobile-avond',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  styles: [`
+    selector: 'app-mobile-avond',
+    imports: [CommonModule, FormsModule],
+    styles: [`
     :host { display: block; }
 
     .header {
@@ -74,7 +73,7 @@ function displayName(name: string): string {
     .empty { padding: 40px 16px; text-align: center; color: #9e9e9e; font-size: 14px; }
     .loader { padding: 40px 16px; text-align: center; color: #9e9e9e; }
   `],
-  template: `
+    template: `
     <div class="header">
       <p class="header-title">Avond</p>
       <select class="evening-select" [(ngModel)]="selectedEveningId" (ngModelChange)="onSelectChange($event)">
@@ -106,7 +105,7 @@ function displayName(name: string): string {
         </div>
       </div>
     </div>
-  `,
+  `
 })
 export class MobileAvondComponent implements OnInit {
   private scheduleService = inject(ScheduleService);

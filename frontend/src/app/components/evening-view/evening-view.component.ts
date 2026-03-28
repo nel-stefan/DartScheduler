@@ -10,10 +10,9 @@ import { PlayerService } from '../../services/player.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
-  selector: 'app-evening-view',
-  standalone: true,
-  imports: [CommonModule, RouterModule, MatButtonModule, MatCardModule, MatTableModule],
-  template: `
+    selector: 'app-evening-view',
+    imports: [CommonModule, RouterModule, MatButtonModule, MatCardModule, MatTableModule],
+    template: `
     <div style="padding:24px">
       <button mat-button routerLink="/">← Back</button>
       <h2>Evening {{ evening?.number }} – {{ evening?.date | date:'mediumDate' }}</h2>
@@ -48,7 +47,7 @@ import { environment } from '../../../environments/environment';
         </mat-card-content>
       </mat-card>
     </div>
-  `,
+  `
 })
 export class EveningViewComponent implements OnInit {
   private route = inject(ActivatedRoute);

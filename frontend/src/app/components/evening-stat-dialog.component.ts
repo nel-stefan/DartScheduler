@@ -21,14 +21,13 @@ function displayName(name: string): string {
 }
 
 @Component({
-  selector: 'app-evening-stat-dialog',
-  standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule,
-            MatFormFieldModule, MatSelectModule, MatInputModule],
-  styles: [`
+    selector: 'app-evening-stat-dialog',
+    imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule,
+        MatFormFieldModule, MatSelectModule, MatInputModule],
+    styles: [`
     .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   `],
-  template: `
+    template: `
     <h2 mat-dialog-title>180s / Hoge Finish — {{ playerLabel }}</h2>
     <mat-dialog-content style="min-width:320px;padding-top:8px">
 
@@ -61,7 +60,7 @@ function displayName(name: string): string {
         {{ saving ? 'Opslaan…' : 'Opslaan' }}
       </button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class EveningStatDialogComponent implements OnInit {
   data        = inject<EveningStatDialogData>(MAT_DIALOG_DATA);

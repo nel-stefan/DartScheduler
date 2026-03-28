@@ -13,10 +13,9 @@ function displayName(name: string): string {
 }
 
 @Component({
-  selector: 'app-mobile-score',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatSnackBarModule],
-  styles: [`
+    selector: 'app-mobile-score',
+    imports: [CommonModule, ReactiveFormsModule, MatSnackBarModule],
+    styles: [`
     :host { display: block; min-height: 100dvh; background: #f5f0ee; }
 
     .top-bar {
@@ -95,7 +94,7 @@ function displayName(name: string): string {
 
     .error { color: #c62828; font-size: 12px; margin-top: 4px; }
   `],
-  template: `
+    template: `
     <div class="top-bar">
       <button class="back-btn" (click)="goBack()">&#8592;</button>
       <h2>Score invoeren</h2>
@@ -223,7 +222,7 @@ function displayName(name: string): string {
       </button>
 
     </form>
-  `,
+  `
 })
 export class MobileScoreComponent implements OnInit {
   private route        = inject(ActivatedRoute);

@@ -11,15 +11,14 @@ import { SeasonService } from './services/season.service';
 import { environment } from '../environments/environment';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [
-    RouterOutlet, RouterLink, RouterLinkActive, CommonModule,
-    MatToolbarModule, MatButtonModule, MatIconModule,
-    MatSelectModule, MatFormFieldModule,
-  ],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
+    selector: 'app-root',
+    imports: [
+        RouterOutlet, RouterLink, RouterLinkActive, CommonModule,
+        MatToolbarModule, MatButtonModule, MatIconModule,
+        MatSelectModule, MatFormFieldModule,
+    ],
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
   protected seasonService = inject(SeasonService);

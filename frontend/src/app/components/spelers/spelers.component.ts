@@ -19,11 +19,10 @@ import { Player } from '../../models';
 // --- Edit dialog ---
 
 @Component({
-  selector: 'app-player-edit-dialog',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-            MatFormFieldModule, MatInputModule, MatSelectModule],
-  template: `
+    selector: 'app-player-edit-dialog',
+    imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
+        MatFormFieldModule, MatInputModule, MatSelectModule],
+    template: `
     <h2 mat-dialog-title>Speler bewerken</h2>
     <mat-dialog-content>
       <form [formGroup]="form" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;min-width:480px;padding-top:8px">
@@ -51,7 +50,7 @@ import { Player } from '../../models';
       <button mat-button mat-dialog-close>Annuleren</button>
       <button mat-raised-button color="primary" [disabled]="form.invalid" (click)="submit()">Opslaan</button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class PlayerEditDialogComponent {
   private dialogRef = inject(MatDialogRef<PlayerEditDialogComponent>);
@@ -83,10 +82,9 @@ export class PlayerEditDialogComponent {
 // --- Buddy dialog ---
 
 @Component({
-  selector: 'app-buddy-dialog',
-  standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatCheckboxModule, MatDividerModule],
-  template: `
+    selector: 'app-buddy-dialog',
+    imports: [CommonModule, MatDialogModule, MatButtonModule, MatCheckboxModule, MatDividerModule],
+    template: `
     <h2 mat-dialog-title>Voorkeur speelpartners voor {{ data.player.name }}</h2>
     <mat-dialog-content style="max-height:420px;overflow-y:auto;min-width:320px">
       <p style="color:#666;font-size:13px;margin-top:0">
@@ -107,7 +105,7 @@ export class PlayerEditDialogComponent {
       <button mat-button mat-dialog-close>Annuleren</button>
       <button mat-raised-button color="primary" (click)="submit()">Opslaan</button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class BuddyDialogComponent {
   private dialogRef = inject(MatDialogRef<BuddyDialogComponent>);
@@ -129,14 +127,13 @@ export class BuddyDialogComponent {
 // --- Players page ---
 
 @Component({
-  selector: 'app-spelers',
-  standalone: true,
-  imports: [
-    CommonModule, MatSnackBarModule, MatButtonModule, MatIconModule,
-    MatCardModule, MatTableModule, MatDialogModule, MatChipsModule,
-    MatCheckboxModule, MatSelectModule, MatFormFieldModule,
-  ],
-  styles: [`
+    selector: 'app-spelers',
+    imports: [
+        CommonModule, MatSnackBarModule, MatButtonModule, MatIconModule,
+        MatCardModule, MatTableModule, MatDialogModule, MatChipsModule,
+        MatCheckboxModule, MatSelectModule, MatFormFieldModule,
+    ],
+    styles: [`
     table { width: 100%; }
     .actions-cell { text-align: right; white-space: nowrap; }
     .buddy-chip { font-size: 11px; }
@@ -145,7 +142,7 @@ export class BuddyDialogComponent {
       background: #e3f2fd; border-radius: 6px; padding: 8px 16px; margin-bottom: 12px;
     }
   `],
-  template: `
+    template: `
     <mat-card *ngIf="players.length > 0">
       <mat-card-header>
         <mat-card-title>Spelers ({{ players.length }})</mat-card-title>
@@ -240,7 +237,7 @@ export class BuddyDialogComponent {
     <p *ngIf="players.length === 0" style="color:#888;text-align:center;padding:32px 0">
       Nog geen spelers geïmporteerd.
     </p>
-  `,
+  `
 })
 export class SpelersComponent implements OnInit {
   private playerService = inject(PlayerService);
