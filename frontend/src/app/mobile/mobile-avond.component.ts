@@ -9,11 +9,7 @@ import { ScheduleService } from '../services/schedule.service';
 import { PlayerService } from '../services/player.service';
 import { SeasonService } from '../services/season.service';
 import { MobileStateService } from './mobile-state.service';
-
-function displayName(name: string): string {
-  const idx = name.indexOf(', ');
-  return idx >= 0 ? `${name.slice(idx + 2)} ${name.slice(0, idx)}` : name;
-}
+import { displayName } from '../utils/display-name';
 
 @Component({
     selector: 'app-mobile-avond',

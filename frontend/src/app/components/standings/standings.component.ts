@@ -17,7 +17,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
 @Component({
     selector: 'app-standings',
     imports: [CommonModule, MatButtonModule, MatCardModule, MatDialogModule,
-        MatTableModule, MatTabsModule, MatIconModule, MatTooltipModule, EveningStatDialogComponent],
+        MatTableModule, MatTabsModule, MatIconModule, MatTooltipModule],
     styles: [`
     .section-title {
       font-size: 18px;
@@ -310,19 +310,11 @@ export class StandingsComponent implements OnInit {
   dutyStats: DutyStats[] = [];
   allStats:  PlayerStats[] = [];
   selectedTabIndex = 0;
+  minTurnsRecord:     PlayerStats | null = null;
+  highestFinishRecord: PlayerStats | null = null;
 
   matchCols = ['rank', 'nr', 'name', 'wins', 'losses', 'pf', 'pa', '180s', 'edit'];
   dutyCols  = ['rank', 'nr', 'name', 'count'];
-
-  get minTurnsRecord(): PlayerStats | null {
-    const c = this.allStats.filter(s => s.minTurns > 0);
-    return c.length ? c.reduce((b, s) => s.minTurns < b.minTurns ? s : b) : null;
-  }
-
-  get highestFinishRecord(): PlayerStats | null {
-    const c = this.allStats.filter(s => s.highestFinish > 0);
-    return c.length ? c.reduce((b, s) => s.highestFinish > b.highestFinish ? s : b) : null;
-  }
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -336,6 +328,10 @@ export class StandingsComponent implements OnInit {
     this.scoreService.getStats(sid).subscribe((s) => {
       this.allStats = s;
       this.classes = this.buildClasses(s);
+      const withMinTurns = s.filter(x => x.minTurns > 0);
+      this.minTurnsRecord = withMinTurns.length ? withMinTurns.reduce((b, x) => x.minTurns < b.minTurns ? x : b) : null;
+      const withHF = s.filter(x => x.highestFinish > 0);
+      this.highestFinishRecord = withHF.length ? withHF.reduce((b, x) => x.highestFinish > b.highestFinish ? x : b) : null;
       // Defer reset to after MatTabGroup has processed the new @ContentChildren tabs.
       // Setting the index synchronously causes a race: MatTabGroup fires selectedIndexChange
       // while rebuilding its tab list, which overwrites our value via the two-way binding.
@@ -361,17 +357,21 @@ export class StandingsComponent implements OnInit {
   }
 
   private buildClasses(allStats: PlayerStats[]): { label: string; stats: PlayerStats[] }[] {
-    const classValues = [...new Set(allStats.map(s => s.player.class || ''))].sort();
-    if (classValues.every(c => c === '')) {
+    const byClass = new Map<string, PlayerStats[]>();
+    for (const stat of allStats) {
+      const cls = stat.player.class || '';
+      if (!byClass.has(cls)) byClass.set(cls, []);
+      byClass.get(cls)!.push(stat);
+    }
+    const noClass = byClass.get('') ?? [];
+    byClass.delete('');
+    if (byClass.size === 0) {
       return [{ label: 'Alle spelers', stats: this.sortedStats(allStats) }];
     }
-    const result = classValues
-      .filter(c => c !== '')
-      .map(c => {
-        const filtered = allStats.filter(s => (s.player.class || '') === c);
-        return { label: `Klasse ${c}`, stats: this.sortedStats(filtered) };
-      });
-    const noClass = allStats.filter(s => !s.player.class);
+    const result = [...byClass.keys()].sort().map(c => ({
+      label: `Klasse ${c}`,
+      stats: this.sortedStats(byClass.get(c)!),
+    }));
     if (noClass.length > 0) {
       result.push({ label: 'Overig', stats: this.sortedStats(noClass) });
     }

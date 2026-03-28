@@ -306,7 +306,6 @@ export class AbsentDialogComponent {
         MatSnackBarModule, MatDialogModule, MatIconModule,
         MatTooltipModule, MatSelectModule, MatFormFieldModule, MatInputModule,
         FormsModule, ReactiveFormsModule,
-        AbsentDialogComponent, EveningStatDialogComponent,
     ],
     styles: [`
     .schedule-header {

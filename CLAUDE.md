@@ -2,9 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+
+## Build Standards
+This is an Angular/TypeScript project. Always ensure zero build warnings after changes — run `ng build` or the equivalent build command to verify.
+## Configuration 
+When upgrading dependencies or aligning configs, check related JSON config files (tsconfig, angular.json, package.json) for consistency.
+
 ## Project
 
-Full-stack wedstrijdplanningssysteem voor een dartclub. Go-backend + Angular 17-frontend, geleverd als één binair bestand via `//go:embed`.
+Full-stack wedstrijdplanningssysteem voor een dartclub. Go-backend + Angular 19-frontend, geleverd als één binair bestand via `//go:embed`.
 
 **Key dependencies:** `github.com/go-chi/chi/v5`, `github.com/xuri/excelize/v2`, `github.com/jung-kurt/gofpdf`, `github.com/google/uuid`, `github.com/mattn/go-sqlite3` (CGO).
 
@@ -61,7 +67,7 @@ make docker     # Bouw en start via docker compose
 
 ## Key conventions
 
-- **Naamopmaak:** Namen zijn opgeslagen als `"Achternaam, Voornaam"`. Gebruik altijd `domain.FormatDisplayName(name)` voor weergave in UI, Excel en HTML-exports.
+- **Naamopmaak:** Namen zijn opgeslagen als `"Achternaam, Voornaam"`. Gebruik altijd `domain.FormatDisplayName(name)` voor weergave in Go (UI, Excel, HTML-exports) en `displayName()` uit `frontend/src/app/utils/display-name.ts` in de Angular-frontend.
 - **Buildvolgorde Excel:** Heights → Widths → Merges → Values → Styles (merges wissen stijlen).
 - **Repository-interfaces** zitten in `domain/`; implementaties in `infra/sqlite/`.
 - **DTOs** voor use-case input/output staan in `usecase/dto.go`.
@@ -78,3 +84,11 @@ make docker     # Bouw en start via docker compose
 | `infra/excel/` | `importer_test.go` (7 tests) |
 | `usecase/` | `schedule_usecase_test.go`, `score_usecase_test.go` (8 tests) |
 | `domain/` | `player_test.go` |
+
+
+## Testing 
+After any code cleanup or refactoring, run the full test suite and build to confirm nothing regressed.
+
+
+## Git 
+After every tested piece of code create a commit and after finishing the task push the commits

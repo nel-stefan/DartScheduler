@@ -9,6 +9,7 @@ import { ScheduleService } from '../services/schedule.service';
 import { PlayerService } from '../services/player.service';
 import { SeasonService } from '../services/season.service';
 import { EveningStatService } from '../services/evening-stat.service';
+import { displayName } from '../utils/display-name';
 
 interface StatRow {
   playerId:      string;
@@ -16,11 +17,6 @@ interface StatRow {
   oneEighties:   number;
   highestFinish: number;
   dirty:         boolean;
-}
-
-function displayName(name: string): string {
-  const idx = name.indexOf(', ');
-  return idx >= 0 ? `${name.slice(idx + 2)} ${name.slice(0, idx)}` : name;
 }
 
 @Component({

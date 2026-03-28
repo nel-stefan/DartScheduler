@@ -6,11 +6,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Match, Player, Evening } from '../models';
 import { ScoreService } from '../services/score.service';
 import { MobileStateService } from './mobile-state.service';
-
-function displayName(name: string): string {
-  const idx = name.indexOf(', ');
-  return idx >= 0 ? `${name.slice(idx + 2)} ${name.slice(0, idx)}` : name;
-}
+import { displayName } from '../utils/display-name';
 
 @Component({
     selector: 'app-mobile-score',

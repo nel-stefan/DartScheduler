@@ -7,17 +7,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { SeasonStatService } from '../services/season-stat.service';
+import { displayName } from '../utils/display-name';
 
 export interface EveningStatDialogData {
   scheduleId: string;
   players: { id: string; name: string }[];
   /** Pre-select a player (standings use-case). */
   preselectedPlayerId?: string;
-}
-
-function displayName(name: string): string {
-  const idx = name.indexOf(', ');
-  return idx >= 0 ? `${name.slice(idx + 2)} ${name.slice(0, idx)}` : name;
 }
 
 @Component({
