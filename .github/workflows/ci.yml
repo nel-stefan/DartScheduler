@@ -57,7 +57,7 @@ jobs:
           done
 
       - name: Upload Angular dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: angular-dist
           path: web/dist/
@@ -141,7 +141,7 @@ jobs:
 
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: go-coverage
           path: coverage.out
