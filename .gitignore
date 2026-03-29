@@ -1,4 +1,5 @@
 dartscheduler
+server
 .env
 .env.development
 .env.production

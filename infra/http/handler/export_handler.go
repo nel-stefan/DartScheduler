@@ -14,9 +14,9 @@ import (
 )
 
 type ExportHandler struct {
-	uc           *usecase.ExportUseCase
-	excelEvExp   excelexport.EveningExporter
-	pdfEvExp     pdf.EveningExporter
+	uc            *usecase.ExportUseCase
+	excelEvExp    excelexport.EveningExporter
+	pdfEvExp      pdf.EveningExporter
 	htmlEvPrinter htmlexport.EveningPrinter
 }
 

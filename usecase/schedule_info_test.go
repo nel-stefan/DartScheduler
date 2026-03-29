@@ -310,8 +310,8 @@ func TestImportSeason_LegWinnerDerivation(t *testing.T) {
 			Date:       time.Now(),
 			NrA:        "1",
 			NrB:        "2",
-			Leg1Winner: "1",   // pA wins leg 1
-			Leg2Winner: "1",   // pA wins leg 2
+			Leg1Winner: "1", // pA wins leg 1
+			Leg2Winner: "1", // pA wins leg 2
 		},
 	}
 

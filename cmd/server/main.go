@@ -37,7 +37,7 @@ func main() {
 	eveningRepo := sqlite.NewEveningRepo(db)
 	matchRepo := sqlite.NewMatchRepo(db)
 	eveningStatRepo := sqlite.NewEveningPlayerStatRepo(db)
-	seasonStatRepo  := sqlite.NewSeasonPlayerStatRepo(db)
+	seasonStatRepo := sqlite.NewSeasonPlayerStatRepo(db)
 
 	// Use cases
 	playerUC := usecase.NewPlayerUseCase(playerRepo, matchRepo)
@@ -50,11 +50,11 @@ func main() {
 	schedH := handler.NewScheduleHandler(scheduleUC)
 	scoreH := handler.NewScoreHandler(scoreUC)
 	statsH := handler.NewStatsHandler(playerRepo, scoreUC)
-	exportH      := handler.NewExportHandler(exportUC, cfg.ClubName, cfg.LogoPath)
-	systemH      := handler.NewSystemHandler(logBuf)
+	exportH := handler.NewExportHandler(exportUC, cfg.ClubName, cfg.LogoPath)
+	systemH := handler.NewSystemHandler(logBuf)
 	eveningStatH := handler.NewEveningStatHandler(eveningStatRepo)
-	seasonStatH  := handler.NewSeasonStatHandler(seasonStatRepo)
-	configH      := handler.NewConfigHandler(cfg.AppTitle, cfg.ClubName)
+	seasonStatH := handler.NewSeasonStatHandler(seasonStatRepo)
+	configH := handler.NewConfigHandler(cfg.AppTitle, cfg.ClubName)
 
 	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH, eveningStatH, seasonStatH, configH, cfg.AllowedOrigin)
 

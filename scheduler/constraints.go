@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	maxMatchesPerPlayerPerEvening      = 3 // hard ceiling for regular players
-	maxMatchesPerBuddyPlayerPerEvening = 4 // buddies need extra slack to align on shared evenings
-	maxConsecutiveEvenings             = 2 // playing 3+ evenings in a row is forbidden
+	maxMatchesPerPlayerPerEvening      = 3    // hard ceiling for regular players
+	maxMatchesPerBuddyPlayerPerEvening = 4    // buddies need extra slack to align on shared evenings
+	maxConsecutiveEvenings             = 2    // playing 3+ evenings in a row is forbidden
 	maxTripleFraction                  = 0.10 // at most 10% of active evenings may have 3 matches
 )
 

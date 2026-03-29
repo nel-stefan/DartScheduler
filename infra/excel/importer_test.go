@@ -99,7 +99,7 @@ func TestImportPlayers_SponsorsSkipped(t *testing.T) {
 func TestImportPlayers_EmptyRowsSkipped(t *testing.T) {
 	buf := buildLedenlijst(t, [][]string{
 		{"1", "Lid Een", "", "", "", "", "", "", "", ""},
-		{"", "", "", "", "", "", "", "", "", ""},  // empty row
+		{"", "", "", "", "", "", "", "", "", ""}, // empty row
 		{"2", "Lid Twee", "", "", "", "", "", "", "", ""},
 	})
 
