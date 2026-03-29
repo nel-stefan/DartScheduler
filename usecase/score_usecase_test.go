@@ -367,7 +367,17 @@ func (r *matchesByPlayerRepo) FindByEvening(_ context.Context, _ domain.EveningI
 }
 func (r *matchesByPlayerRepo) UpdateResult(_ context.Context, _ domain.Match) error { return nil }
 func (r *matchesByPlayerRepo) FindBySchedule(_ context.Context, _ domain.ScheduleID) ([]domain.Match, error) {
-	return nil, nil
+	seen := make(map[domain.MatchID]struct{})
+	var all []domain.Match
+	for _, ms := range r.data {
+		for _, m := range ms {
+			if _, ok := seen[m.ID]; !ok {
+				seen[m.ID] = struct{}{}
+				all = append(all, m)
+			}
+		}
+	}
+	return all, nil
 }
 func (r *matchesByPlayerRepo) FindCancelledBySchedule(_ context.Context, _ domain.ScheduleID) ([]domain.Match, error) {
 	return nil, nil
