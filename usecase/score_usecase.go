@@ -97,19 +97,13 @@ func (uc *ScoreUseCase) GetDutyStats(ctx context.Context, players []domain.Playe
 	var matchList []domain.Match
 	var err error
 	if scheduleID != nil {
-		seen := make(map[domain.MatchID]struct{})
-		for _, p := range players {
-			pm, e := uc.matches.FindByPlayerAndSchedule(ctx, p.ID, *scheduleID)
-			if e != nil {
-				return nil, e
-			}
-			for _, m := range pm {
-				if m.Played {
-					if _, ok := seen[m.ID]; !ok {
-						seen[m.ID] = struct{}{}
-						matchList = append(matchList, m)
-					}
-				}
+		all, e := uc.matches.FindBySchedule(ctx, *scheduleID)
+		if e != nil {
+			return nil, e
+		}
+		for _, m := range all {
+			if m.Played {
+				matchList = append(matchList, m)
 			}
 		}
 	} else {
@@ -206,19 +200,35 @@ func (uc *ScoreUseCase) GetStats(ctx context.Context, players []domain.Player, s
 		statsMap[players[i].ID] = &PlayerStats{Player: players[i]}
 	}
 
-	for _, p := range players {
-		var matches []domain.Match
+	// Fetch all matches in a single query, then group by player to avoid N+1.
+	var allMatches []domain.Match
+	if scheduleID != nil {
 		var err error
-		if scheduleID != nil {
-			matches, err = uc.matches.FindByPlayerAndSchedule(ctx, p.ID, *scheduleID)
-		} else {
-			matches, err = uc.matches.FindByPlayer(ctx, p.ID)
-		}
+		allMatches, err = uc.matches.FindBySchedule(ctx, *scheduleID)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		// No schedule filter: iterate per player (no batch method without schedule).
+		for _, p := range players {
+			pm, err := uc.matches.FindByPlayer(ctx, p.ID)
+			if err != nil {
+				return nil, err
+			}
+			allMatches = append(allMatches, pm...)
+		}
+	}
+
+	// Group matches by each player they involve.
+	matchesByPlayer := make(map[domain.PlayerID][]domain.Match, len(players))
+	for _, m := range allMatches {
+		matchesByPlayer[m.PlayerA] = append(matchesByPlayer[m.PlayerA], m)
+		matchesByPlayer[m.PlayerB] = append(matchesByPlayer[m.PlayerB], m)
+	}
+
+	for _, p := range players {
 		var wonLegTurns []int
-		for _, m := range matches {
+		for _, m := range matchesByPlayer[p.ID] {
 			if !m.Played || m.ScoreA == nil || m.ScoreB == nil {
 				continue
 			}
@@ -243,7 +253,7 @@ func (uc *ScoreUseCase) GetStats(ctx context.Context, players []domain.Player, s
 			default:
 				st.Draws++
 			}
-				pid := p.ID.String()
+			pid := p.ID.String()
 			for _, leg := range []struct {
 				w string
 				t int

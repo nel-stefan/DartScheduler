@@ -40,7 +40,7 @@ func (h *PlayerHandler) Import(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.uc.ImportPlayers(r.Context(), players, nil); err != nil {
-		httpError(w, err, http.StatusInternalServerError)
+		httpErrorDomain(w, err)
 		return
 	}
 

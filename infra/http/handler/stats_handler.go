@@ -43,7 +43,7 @@ func (h *StatsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 	stats, err := h.uc.GetStats(r.Context(), formatPlayerNames(players), schedID)
 	if err != nil {
-		httpError(w, err, http.StatusInternalServerError)
+		httpErrorDomain(w, err)
 		return
 	}
 	writeJSON(w, stats)
@@ -67,7 +67,7 @@ func (h *StatsHandler) GetDuties(w http.ResponseWriter, r *http.Request) {
 	}
 	stats, err := h.uc.GetDutyStats(r.Context(), formatPlayerNames(players), schedID)
 	if err != nil {
-		httpError(w, err, http.StatusInternalServerError)
+		httpErrorDomain(w, err)
 		return
 	}
 	writeJSON(w, stats)

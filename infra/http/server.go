@@ -38,11 +38,12 @@ func NewRouter(
 	eveningStatH *handler.EveningStatHandler,
 	seasonStatH *handler.SeasonStatHandler,
 	configH *handler.ConfigHandler,
+	allowedOrigin string,
 ) http.Handler {
 	r := chi.NewRouter()
 	r.Use(chimw.Recoverer)
 	r.Use(mw.Logger)
-	r.Use(mw.CORS)
+	r.Use(mw.CORSWithOrigin(allowedOrigin))
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

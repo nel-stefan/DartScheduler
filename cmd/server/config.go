@@ -27,15 +27,20 @@ type AppConfig struct {
 	// the logo is rendered at the top of PDF and HTML match forms.
 	// Leave empty to omit the logo.
 	LogoPath string
+
+	// AllowedOrigin is the value of the Access-Control-Allow-Origin header.
+	// Use "*" for development; set to your frontend origin in production.
+	AllowedOrigin string
 }
 
 func loadConfig() AppConfig {
 	cfg := AppConfig{
-		Port:         "8080",
-		DatabaseType: "sqlite",
-		DatabasePath: "dartscheduler.db",
-		ClubName:     "DARTCLUB GROLZICHT",
-		AppTitle:     "DartScheduler",
+		Port:          "8080",
+		DatabaseType:  "sqlite",
+		DatabasePath:  "dartscheduler.db",
+		ClubName:      "DARTCLUB GROLZICHT",
+		AppTitle:      "DartScheduler",
+		AllowedOrigin: "*",
 	}
 	if v := os.Getenv("PORT"); v != "" {
 		cfg.Port = v
@@ -54,6 +59,9 @@ func loadConfig() AppConfig {
 	}
 	if v := os.Getenv("LOGO_PATH"); v != "" {
 		cfg.LogoPath = v
+	}
+	if v := os.Getenv("ALLOWED_ORIGIN"); v != "" {
+		cfg.AllowedOrigin = v
 	}
 	return cfg
 }

@@ -22,8 +22,8 @@ func main() {
 
 	logBuf := logbuf.New(200)
 	log.SetOutput(io.MultiWriter(os.Stderr, logBuf))
-	log.Printf("config: port=%s db_type=%s db_path=%s club=%q title=%q logo=%q",
-		cfg.Port, cfg.DatabaseType, cfg.DatabasePath, cfg.ClubName, cfg.AppTitle, cfg.LogoPath)
+	log.Printf("config: port=%s db_type=%s db_path=%s club=%q title=%q logo=%q cors=%q",
+		cfg.Port, cfg.DatabaseType, cfg.DatabasePath, cfg.ClubName, cfg.AppTitle, cfg.LogoPath, cfg.AllowedOrigin)
 
 	db, err := sqlite.Open(cfg.DatabasePath)
 	if err != nil {
@@ -56,7 +56,7 @@ func main() {
 	seasonStatH  := handler.NewSeasonStatHandler(seasonStatRepo)
 	configH      := handler.NewConfigHandler(cfg.AppTitle, cfg.ClubName)
 
-	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH, eveningStatH, seasonStatH, configH)
+	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH, eveningStatH, seasonStatH, configH, cfg.AllowedOrigin)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 

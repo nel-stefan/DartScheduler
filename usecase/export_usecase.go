@@ -48,12 +48,16 @@ func (uc *ExportUseCase) Export(ctx context.Context, exp Exporter, w io.Writer) 
 	if err != nil {
 		return err
 	}
+	allMatches, err := uc.matches.FindBySchedule(ctx, sched.ID)
+	if err != nil {
+		return err
+	}
+	byEvening := make(map[domain.EveningID][]domain.Match, len(evenings))
+	for _, m := range allMatches {
+		byEvening[m.EveningID] = append(byEvening[m.EveningID], m)
+	}
 	for i, ev := range evenings {
-		ms, err := uc.matches.FindByEvening(ctx, ev.ID)
-		if err != nil {
-			return err
-		}
-		evenings[i].Matches = ms
+		evenings[i].Matches = byEvening[ev.ID]
 	}
 	sched.Evenings = evenings
 
@@ -67,20 +71,11 @@ func (uc *ExportUseCase) Export(ctx context.Context, exp Exporter, w io.Writer) 
 
 // EveningDate returns the date of the evening with the given ID.
 func (uc *ExportUseCase) EveningDate(ctx context.Context, eveningID domain.EveningID) (time.Time, error) {
-	sched, err := uc.schedules.FindLatest(ctx)
+	ev, err := uc.evenings.FindByID(ctx, eveningID)
 	if err != nil {
 		return time.Time{}, err
 	}
-	evenings, err := uc.evenings.FindBySchedule(ctx, sched.ID)
-	if err != nil {
-		return time.Time{}, err
-	}
-	for _, ev := range evenings {
-		if ev.ID == eveningID {
-			return ev.Date, nil
-		}
-	}
-	return time.Time{}, domain.ErrNotFound
+	return ev.Date, nil
 }
 
 // ExportEvening exports a single evening's matches in wedstrijdformulier format.

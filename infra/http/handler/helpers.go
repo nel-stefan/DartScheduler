@@ -10,11 +10,14 @@ import (
 )
 
 func writeJSON(w http.ResponseWriter, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(v); err != nil {
+	b, err := json.Marshal(v)
+	if err != nil {
 		log.Printf("[writeJSON] encode error: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(b)
 }
 
 func httpError(w http.ResponseWriter, err error, code int) {
@@ -37,5 +40,9 @@ func httpErrorDomain(w http.ResponseWriter, err error) {
 		code = http.StatusInternalServerError
 	}
 	log.Printf("[httpErrorDomain] status=%d err=%v", code, err)
-	http.Error(w, err.Error(), code)
+	if code >= 500 {
+		http.Error(w, "internal server error", code)
+	} else {
+		http.Error(w, err.Error(), code)
+	}
 }

@@ -112,8 +112,10 @@ func buddyTargetedSwap(
 	}
 	sets := eveningPlayerSets(matches, current, numEvenings)
 
-	rng.Shuffle(len(buddyPairs), func(a, b int) { buddyPairs[a], buddyPairs[b] = buddyPairs[b], buddyPairs[a] })
-	for _, bp := range buddyPairs {
+	shuffledPairs := make([]domain.BuddyPreference, len(buddyPairs))
+	copy(shuffledPairs, buddyPairs)
+	rng.Shuffle(len(shuffledPairs), func(a, b int) { shuffledPairs[a], shuffledPairs[b] = shuffledPairs[b], shuffledPairs[a] })
+	for _, bp := range shuffledPairs {
 		a, b := bp.PlayerID, bp.BuddyID
 
 		// Find an evening where A plays but B doesn't (or vice versa).
@@ -139,8 +141,10 @@ func buddyTargetedSwap(
 
 			// Strategy: find a match of `extra` on ei and swap it with a match
 			// of `absent` on some other evening — bringing absent to ei.
-			extraMatches := playerMatchIdx[extra]
-			absentMatches := playerMatchIdx[absent]
+			extraMatches := make([]int, len(playerMatchIdx[extra]))
+			copy(extraMatches, playerMatchIdx[extra])
+			absentMatches := make([]int, len(playerMatchIdx[absent]))
+			copy(absentMatches, playerMatchIdx[absent])
 			rng.Shuffle(len(extraMatches), func(x, y int) { extraMatches[x], extraMatches[y] = extraMatches[y], extraMatches[x] })
 			rng.Shuffle(len(absentMatches), func(x, y int) { absentMatches[x], absentMatches[y] = absentMatches[y], absentMatches[x] })
 
