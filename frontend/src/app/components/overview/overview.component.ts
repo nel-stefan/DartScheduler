@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Inject, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, Inject, DestroyRef, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, distinctUntilChanged } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -378,26 +378,26 @@ export class AbsentDialogComponent {
   `],
     template: `
     <div class="schedule-header">
-      <h2 class="schedule-title">{{ schedule?.competitionName ?? 'DartScheduler' }}</h2>
-    
-      @if (schedule) {
+      <h2 class="schedule-title">{{ schedule()?.competitionName ?? 'DartScheduler' }}</h2>
+
+      @if (schedule()) {
         <button mat-stroked-button (click)="printSchedule()">
           <mat-icon>print</mat-icon> Afdrukken
         </button>
       }
-      @if (schedule) {
+      @if (schedule()) {
         <mat-form-field style="min-width:320px" subscriptSizing="dynamic">
           <mat-label>Avond</mat-label>
-          <mat-select [(ngModel)]="activeTab">
+          <mat-select [ngModel]="activeTab()" (ngModelChange)="activeTab.set($event)">
             <mat-select-trigger>
-              @if (schedule.evenings[activeTab]; as ev) {
+              @if (schedule()!.evenings[activeTab()]; as ev) {
                 <span [style.background]="eveningColor(ev)"
                 style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle;flex-shrink:0"></span>
                 {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }}
                 <span style="color:#9e9e9e;margin-left:4px">— {{ ev.date | date:'d MMM' }}</span>
               }
             </mat-select-trigger>
-            @for (ev of schedule.evenings; track ev; let i = $index) {
+            @for (ev of schedule()!.evenings; track ev; let i = $index) {
               <mat-option [value]="i">
                 <span style="display:flex;align-items:center;gap:8px;width:100%">
                   <span [style.background]="eveningColor(ev)"
@@ -415,17 +415,17 @@ export class AbsentDialogComponent {
       }
     </div>
     
-    @if (!schedule) {
+    @if (!schedule()) {
       <div class="empty-state">
         <mat-icon>sports_bar</mat-icon>
         <p>Nog geen schema. Ga naar <strong>Beheer</strong> om spelers te importeren en een schema te genereren.</p>
       </div>
     }
     
-    @if (schedule) {
-      <mat-tab-group animationDuration="150ms" [selectedIndex]="activeTab"
-        (selectedIndexChange)="activeTab = $event">
-        @for (ev of schedule.evenings; track ev) {
+    @if (schedule()) {
+      <mat-tab-group animationDuration="150ms" [selectedIndex]="activeTab()"
+        (selectedIndexChange)="activeTab.set($event)">
+        @for (ev of schedule()!.evenings; track ev) {
           <mat-tab>
             <!-- Tab-inhoud -->
             <mat-card style="border-radius:8px;">
@@ -497,9 +497,9 @@ export class AbsentDialogComponent {
                   <mat-form-field
                     style="width:100%;margin-bottom:8px" subscriptSizing="dynamic">
                     <mat-label>Zoek op nr (bijv. 12 of 12 34)</mat-label>
-                    <input matInput [(ngModel)]="catchUpSearch" placeholder="nr A   nr B">
-                    @if (catchUpSearch) {
-                      <button matSuffix mat-icon-button (click)="catchUpSearch=''">
+                    <input matInput [ngModel]="catchUpSearch()" (ngModelChange)="catchUpSearch.set($event)" placeholder="nr A   nr B">
+                    @if (catchUpSearch()) {
+                      <button matSuffix mat-icon-button (click)="catchUpSearch.set('')">
                         <mat-icon>close</mat-icon>
                       </button>
                     }
@@ -568,9 +568,9 @@ export class AbsentDialogComponent {
     }
     
     <!-- Print-only schedule matrix -->
-    @if (schedule && printData) {
+    @if (schedule() && printData) {
       <div class="print-only">
-        <p class="print-schedule-title">{{ schedule.competitionName }} — {{ schedule.season }}</p>
+        <p class="print-schedule-title">{{ schedule()!.competitionName }} — {{ schedule()!.season }}</p>
         <!-- Page 1: first half of evenings -->
         <table class="print-schedule-table">
           <thead>
@@ -605,7 +605,7 @@ export class AbsentDialogComponent {
         </table>
         <!-- Page 2: second half of evenings -->
         <div style="page-break-before:always"></div>
-        <p class="print-schedule-title">{{ schedule.competitionName }} — {{ schedule.season }}</p>
+        <p class="print-schedule-title">{{ schedule()!.competitionName }} — {{ schedule()!.season }}</p>
         <table class="print-schedule-table">
           <thead>
             <tr>
@@ -650,12 +650,12 @@ export class OverviewComponent implements OnInit {
   private dialog           = inject(MatDialog);
   private destroyRef       = inject(DestroyRef);
 
-  schedule: Schedule | null = null;
-  players:  Player[] = [];
-  activeTab = 0;
+  schedule = signal<Schedule | null>(null);
+  players  = signal<Player[]>([]);
+  activeTab = signal(0);
   matchCols = ['playerA', 'vs', 'playerB', 'score', 'actions'];
-  catchUpSearch = '';
-  lastCatchUpPlayedDate = '';
+  catchUpSearch = signal('');
+  lastCatchUpPlayedDate = signal('');
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -663,16 +663,16 @@ export class OverviewComponent implements OnInit {
       filter(id => !!id),
       distinctUntilChanged(),
     ).subscribe(id => {
-      if (this.schedule?.id !== id) this.loadScheduleById(id);
+      if (this.schedule()?.id !== id) this.loadScheduleById(id);
     });
-    this.playerService.list().subscribe({ next: (ps) => (this.players = ps), error: () => {} });
+    this.playerService.list().subscribe({ next: (ps) => (this.players.set(ps)), error: () => {} });
   }
 
   loadScheduleById(id: string, preserveTab = false): void {
     this.scheduleService.getById(id).subscribe({
       next: (s) => {
-        this.schedule = s;
-        if (!preserveTab) this.activeTab = this.firstUpcomingTab(s.evenings);
+        this.schedule.set(s);
+        if (!preserveTab) this.activeTab.set(this.firstUpcomingTab(s.evenings));
       },
       error: () => {},
     });
@@ -686,17 +686,17 @@ export class OverviewComponent implements OnInit {
   }
 
   playerName(id: string): string {
-    const p = this.players.find((p) => p.id === id);
+    const p = this.players().find((p) => p.id === id);
     if (!p) return id.slice(0, 8);
     return p.nr ? `${p.nr} ${p.name}` : p.name;
   }
 
   playerNr(id: string): string {
-    return this.players.find((p) => p.id === id)?.nr ?? '';
+    return this.players().find((p) => p.id === id)?.nr ?? '';
   }
 
   filteredMatches(ev: Evening): Match[] {
-    const q = this.catchUpSearch.trim().toLowerCase();
+    const q = this.catchUpSearch().trim().toLowerCase();
     if (!q) return ev.matches;
     const tokens = q.split(/\s+/);
     return ev.matches.filter(m => {
@@ -735,10 +735,10 @@ export class OverviewComponent implements OnInit {
         nameB: this.playerName(match.playerB),
         nrA:   this.playerNr(match.playerA),
         nrB:   this.playerNr(match.playerB),
-        players: this.players,
+        players: this.players(),
         isInhaalAvond,
-        evenings: this.schedule?.evenings ?? [],
-        defaultPlayedDate: this.lastCatchUpPlayedDate,
+        evenings: this.schedule()?.evenings ?? [],
+        defaultPlayedDate: this.lastCatchUpPlayedDate(),
       } as ScoreDialogData,
     });
     ref.afterClosed().subscribe((result: {
@@ -754,9 +754,9 @@ export class OverviewComponent implements OnInit {
       if (!result) return;
       this.scoreService.submitResult(match.id, { ...result, playedDate: result.playedDate ?? '' }).subscribe({
         next: () => {
-          if (isInhaalAvond && result.playedDate) this.lastCatchUpPlayedDate = result.playedDate;
+          if (isInhaalAvond && result.playedDate) this.lastCatchUpPlayedDate.set(result.playedDate);
           this.snackBar.open('Resultaat opgeslagen!', 'OK', { duration: 2000 });
-          if (this.schedule) this.loadScheduleById(this.schedule.id, true);
+          if (this.schedule()) this.loadScheduleById(this.schedule()!.id, true);
         },
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
       });
@@ -768,8 +768,8 @@ export class OverviewComponent implements OnInit {
     half2: { number: number; date: string; isCatchUp: boolean }[]; rows2: string[][];
     rowCount: number;
   } | null {
-    if (!this.schedule) return null;
-    const evs = this.schedule.evenings;
+    if (!this.schedule()) return null;
+    const evs = this.schedule()!.evenings;
     const mid = Math.ceil(evs.length / 2);
     const maxRows = Math.max(0, ...evs
       .filter(e => !e.isInhaalAvond)
@@ -801,7 +801,7 @@ export class OverviewComponent implements OnInit {
 
   openAbsentDialog(ev: Evening): void {
     const ref = this.dialog.open(AbsentDialogComponent, {
-      data: { evening: ev, players: this.players } as AbsentDialogData,
+      data: { evening: ev, players: this.players() } as AbsentDialogData,
       minWidth: '420px',
     });
     ref.afterClosed().subscribe((result: { playerId: string; reportedBy: string } | undefined) => {
@@ -809,7 +809,7 @@ export class OverviewComponent implements OnInit {
       this.scoreService.reportAbsent(ev.id, result.playerId, result.reportedBy).subscribe({
         next: () => {
           this.snackBar.open('Speler afgemeld', 'OK', { duration: 2000 });
-          if (this.schedule) this.loadScheduleById(this.schedule.id, true);
+          if (this.schedule()) this.loadScheduleById(this.schedule()!.id, true);
         },
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
       });
@@ -818,12 +818,12 @@ export class OverviewComponent implements OnInit {
 
   openStatDialog(ev: Evening): void {
     const playerIdsOnEvening = new Set(ev.matches.flatMap(m => [m.playerA, m.playerB]));
-    const players = this.players
+    const players = this.players()
       .filter(p => playerIdsOnEvening.has(p.id))
       .map(p => ({ id: p.id, name: p.name }));
     this.dialog.open(EveningStatDialogComponent, {
       data: {
-        scheduleId: this.schedule!.id,
+        scheduleId: this.schedule()!.id,
         players,
       } as EveningStatDialogData,
     }).afterClosed().subscribe(saved => {
@@ -845,10 +845,10 @@ export class OverviewComponent implements OnInit {
 
   deleteEvening(ev: Evening): void {
     if (!confirm(`Inhaalavond ${ev.number} verwijderen?`)) return;
-    this.scheduleService.deleteEvening(this.schedule!.id, ev.id).subscribe({
+    this.scheduleService.deleteEvening(this.schedule()!.id, ev.id).subscribe({
       next: () => {
         this.snackBar.open('Avond verwijderd', 'OK', { duration: 2000 });
-        this.loadScheduleById(this.schedule!.id);
+        this.loadScheduleById(this.schedule()!.id);
       },
       error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
     });

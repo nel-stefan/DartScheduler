@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged } from 'rxjs';
 
@@ -83,25 +83,25 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
       </div>
     
       <!-- Records: minste beurten + hoogste finish (overkoepelend) -->
-      @if (minTurnsRecord || highestFinishRecord) {
+      @if (minTurnsRecord() || highestFinishRecord()) {
         <div class="records-row screen-only">
-          @if (minTurnsRecord) {
+          @if (minTurnsRecord()) {
             <div class="record-card">
               <mat-icon class="record-icon" style="color:#0277bd">speed</mat-icon>
               <div class="record-body">
                 <div class="record-label">Minste beurten</div>
-                <div class="record-name">{{ minTurnsRecord.player.name }}</div>
-                <div class="record-value" style="color:#0277bd">{{ minTurnsRecord.minTurns }}</div>
+                <div class="record-name">{{ minTurnsRecord()!.player.name }}</div>
+                <div class="record-value" style="color:#0277bd">{{ minTurnsRecord()!.minTurns }}</div>
               </div>
             </div>
           }
-          @if (highestFinishRecord) {
+          @if (highestFinishRecord()) {
             <div class="record-card">
               <mat-icon class="record-icon" style="color:#e65100">star</mat-icon>
               <div class="record-body">
                 <div class="record-label">Hoogste finish</div>
-                <div class="record-name">{{ highestFinishRecord.player.name }}</div>
-                <div class="record-value" style="color:#e65100">{{ highestFinishRecord.highestFinish }}</div>
+                <div class="record-name">{{ highestFinishRecord()!.player.name }}</div>
+                <div class="record-value" style="color:#e65100">{{ highestFinishRecord()!.highestFinish }}</div>
               </div>
             </div>
           }
@@ -110,10 +110,10 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
     
       <!-- Screen: tabs -->
       <div class="screen-only">
-        @if (!loading) {
+        @if (!loading()) {
         <mat-tab-group animationDuration="150ms" color="primary" [selectedIndex]="0">
-    
-          @for (cls of classes; track cls) {
+
+          @for (cls of classes(); track cls) {
             <mat-tab [label]="cls.label">
               <mat-card style="border-radius:0 0 8px 8px;border-top:none">
                 <mat-card-content>
@@ -187,7 +187,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
                 <p style="color:#616161;font-size:13px;margin:12px 0 8px 0">
                   Totaal aantal keer als schrijver of teller ingezet (gecombineerd).
                 </p>
-                <table mat-table [dataSource]="dutyStats" style="width:100%">
+                <table mat-table [dataSource]="dutyStats()" style="width:100%">
     
                   <ng-container matColumnDef="rank">
                     <th mat-header-cell *matHeaderCellDef class="rank-col">#</th>
@@ -213,7 +213,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
                   <tr mat-row *matRowDef="let row; columns: dutyCols;"></tr>
                 </table>
     
-                @if (dutyStats.length === 0) {
+                @if (dutyStats().length === 0) {
                   <p style="color:#9e9e9e;text-align:center;padding:24px 0">
                     Nog geen schrijvers of tellers geregistreerd.
                   </p>
@@ -229,27 +229,27 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
       <!-- Print: flat sections -->
       <div class="print-only">
         <!-- Records -->
-        @if (minTurnsRecord || highestFinishRecord) {
+        @if (minTurnsRecord() || highestFinishRecord()) {
           <div style="display:flex;gap:24px;margin-bottom:12px">
-            @if (minTurnsRecord) {
+            @if (minTurnsRecord()) {
               <div>
                 <span style="font-size:9pt;color:#757575">Minste beurten: </span>
-                <strong>{{ minTurnsRecord.player.name }}</strong>
-                <span style="font-size:9pt"> ({{ minTurnsRecord.minTurns }})</span>
+                <strong>{{ minTurnsRecord()!.player.name }}</strong>
+                <span style="font-size:9pt"> ({{ minTurnsRecord()!.minTurns }})</span>
               </div>
             }
-            @if (highestFinishRecord) {
+            @if (highestFinishRecord()) {
               <div>
                 <span style="font-size:9pt;color:#757575">Hoogste finish: </span>
-                <strong>{{ highestFinishRecord.player.name }}</strong>
-                <span style="font-size:9pt"> ({{ highestFinishRecord.highestFinish }})</span>
+                <strong>{{ highestFinishRecord()!.player.name }}</strong>
+                <span style="font-size:9pt"> ({{ highestFinishRecord()!.highestFinish }})</span>
               </div>
             }
           </div>
         }
     
         <!-- Page 1: all class standings -->
-        @for (cls of classes; track cls) {
+        @for (cls of classes(); track cls) {
           <div>
             <h3 class="print-section-title">{{ cls.label }}</h3>
             <table class="print-table">
@@ -299,7 +299,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
             </tr>
           </thead>
           <tbody>
-            @for (s of dutyStats; track s; let i = $index) {
+            @for (s of dutyStats(); track s; let i = $index) {
               <tr>
                 <td>{{ i + 1 }}</td>
                 <td>{{ s.player.nr }}</td>
@@ -320,12 +320,12 @@ export class StandingsComponent implements OnInit {
   private dialog        = inject(MatDialog);
   private destroyRef    = inject(DestroyRef);
 
-  classes:   { label: string; stats: PlayerStats[] }[] = [];
-  dutyStats: DutyStats[] = [];
-  allStats:  PlayerStats[] = [];
-  loading = true;
-  minTurnsRecord:     PlayerStats | null = null;
-  highestFinishRecord: PlayerStats | null = null;
+  classes   = signal<{ label: string; stats: PlayerStats[] }[]>([]);
+  dutyStats = signal<DutyStats[]>([]);
+  allStats  = signal<PlayerStats[]>([]);
+  loading   = signal(true);
+  minTurnsRecord     = signal<PlayerStats | null>(null);
+  highestFinishRecord = signal<PlayerStats | null>(null);
 
   matchCols = ['rank', 'nr', 'name', 'wins', 'losses', 'pf', 'pa', '180s', 'edit'];
   dutyCols  = ['rank', 'nr', 'name', 'count'];
@@ -344,18 +344,18 @@ export class StandingsComponent implements OnInit {
     // This avoids the race where the static "Schrijver / Teller" tab temporarily
     // occupies index 0 and then triggers selectedIndexChange when Klasse tabs are
     // prepended, causing the two-way binding to overwrite our desired index.
-    this.loading = true;
+    this.loading.set(true);
     this.scoreService.getStats(sid).subscribe((s) => {
-      this.allStats = s;
-      this.classes = this.buildClasses(s);
+      this.allStats.set(s);
+      this.classes.set(this.buildClasses(s));
       const withMinTurns = s.filter(x => x.minTurns > 0);
-      this.minTurnsRecord = withMinTurns.length ? withMinTurns.reduce((b, x) => x.minTurns < b.minTurns ? x : b) : null;
+      this.minTurnsRecord.set(withMinTurns.length ? withMinTurns.reduce((b, x) => x.minTurns < b.minTurns ? x : b) : null);
       const withHF = s.filter(x => x.highestFinish > 0);
-      this.highestFinishRecord = withHF.length ? withHF.reduce((b, x) => x.highestFinish > b.highestFinish ? x : b) : null;
-      this.loading = false;
+      this.highestFinishRecord.set(withHF.length ? withHF.reduce((b, x) => x.highestFinish > b.highestFinish ? x : b) : null);
+      this.loading.set(false);
     });
     this.scoreService.getDutyStats(sid).subscribe((d) => {
-      this.dutyStats = d.sort((a, b) => b.count - a.count);
+      this.dutyStats.set(d.sort((a, b) => b.count - a.count));
     });
   }
 

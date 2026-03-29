@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Inject, ElementRef, ChangeDetectorRef, viewChild } from '@angular/core';
+import { Component, inject, OnInit, Inject, ElementRef, ChangeDetectorRef, viewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -385,22 +385,23 @@ export class ImportSeasonDialogComponent {
 
           <mat-divider style="margin-bottom:16px"></mat-divider>
 
-          @if (seasons.length === 0) {
+          @if (seasons().length === 0) {
             <p style="color:#888;text-align:center;padding:16px 0;margin:0">Nog geen seizoenen aangemaakt.</p>
           }
 
           <div class="seasons-list">
-            @for (s of seasons; track s) {
+            @for (s of seasons(); track s) {
               <div class="season-row">
                 <div style="flex:1;min-width:0">
-                  @if (editingSeasonId !== s.id) {
+                  @if (editingSeasonId() !== s.id) {
                     <div class="season-name">{{ s.competitionName }}</div>
                   }
-                  @if (editingSeasonId === s.id) {
+                  @if (editingSeasonId() === s.id) {
                     <input
                       #renameInput
                       class="rename-input"
-                      [(ngModel)]="renameDraft"
+                      [ngModel]="renameDraft()"
+                      (ngModelChange)="renameDraft.set($event)"
                       (keydown.enter)="saveRename(s)"
                       (keydown.escape)="cancelRename()"
                       (blur)="saveRename(s)"
@@ -408,12 +409,12 @@ export class ImportSeasonDialogComponent {
                   }
                   <div class="season-meta">Seizoen {{ s.season }} · {{ s.eveningCount }} avonden</div>
                 </div>
-                @if (editingSeasonId !== s.id) {
+                @if (editingSeasonId() !== s.id) {
                   <button mat-icon-button (click)="startRename(s)" matTooltip="Naam aanpassen">
                     <mat-icon>edit</mat-icon>
                   </button>
                 }
-                @if (editingSeasonId !== s.id) {
+                @if (editingSeasonId() !== s.id) {
                   <button mat-icon-button color="warn" (click)="deleteSeason(s)" matTooltip="Seizoen verwijderen">
                     <mat-icon>delete</mat-icon>
                   </button>
@@ -439,8 +440,8 @@ export class ImportSeasonDialogComponent {
             @if (selectedFile) {
               <span style="color:#555">{{ selectedFile.name }}</span>
             }
-            <button mat-raised-button color="accent" [disabled]="!selectedFile || loading" (click)="upload()">
-              {{ loading ? 'Bezig…' : 'Importeren' }}
+            <button mat-raised-button color="accent" [disabled]="!selectedFile || loading()" (click)="upload()">
+              {{ loading() ? 'Bezig…' : 'Importeren' }}
             </button>
           </div>
         </mat-card-content>
@@ -456,16 +457,16 @@ export class ImportSeasonDialogComponent {
             <span class="version-chip">{{ version }}</span>
             <button mat-stroked-button (click)="refreshLogs()"><mat-icon>refresh</mat-icon> Vernieuwen</button>
           </div>
-          @if (logsLoading) {
+          @if (logsLoading()) {
             <div style="color:#9e9e9e;font-size:13px">Laden...</div>
           }
-          @if (!logsLoading && logs.length === 0) {
+          @if (!logsLoading() && logs().length === 0) {
             <div class="log-empty">Nog geen log regels.</div>
           }
-          @if (!logsLoading && logs.length > 0) {
+          @if (!logsLoading() && logs().length > 0) {
             <div class="log-box">
               {{
-                logs.join(
+                logs().join(
                   '
 '
                 )
@@ -490,15 +491,15 @@ export class BeheerComponent implements OnInit {
 
   readonly renameInputRef = viewChild<ElementRef<HTMLInputElement>>('renameInput');
 
-  seasons: SeasonSummary[] = [];
+  seasons         = signal<SeasonSummary[]>([]);
   selectedFile: File | null = null;
-  loading = false;
-  editingSeasonId = '';
-  renameDraft = '';
+  loading         = signal(false);
+  editingSeasonId = signal('');
+  renameDraft     = signal('');
 
   version = environment.version;
-  logs: string[] = [];
-  logsLoading = false;
+  logs        = signal<string[]>([]);
+  logsLoading = signal(false);
 
   ngOnInit(): void {
     this.loadSeasons();
@@ -506,14 +507,14 @@ export class BeheerComponent implements OnInit {
   }
 
   refreshLogs(): void {
-    this.logsLoading = true;
+    this.logsLoading.set(true);
     this.systemService.getLogs().subscribe({
       next: ({ logs }) => {
-        this.logs = logs;
-        this.logsLoading = false;
+        this.logs.set(logs);
+        this.logsLoading.set(false);
       },
       error: () => {
-        this.logsLoading = false;
+        this.logsLoading.set(false);
       },
     });
   }
@@ -521,7 +522,7 @@ export class BeheerComponent implements OnInit {
   loadSeasons(): void {
     this.scheduleService.listSeasons().subscribe({
       next: (s) => {
-        this.seasons = s;
+        this.seasons.set(s);
       },
       error: () => {},
     });
@@ -558,15 +559,15 @@ export class BeheerComponent implements OnInit {
   }
 
   startRename(s: SeasonSummary): void {
-    this.renameDraft = s.competitionName;
-    this.editingSeasonId = s.id;
+    this.renameDraft.set(s.competitionName);
+    this.editingSeasonId.set(s.id);
     setTimeout(() => this.renameInputRef()?.nativeElement.select());
   }
 
   saveRename(s: SeasonSummary): void {
-    if (this.editingSeasonId !== s.id) return;
-    this.editingSeasonId = '';
-    const name = this.renameDraft.trim();
+    if (this.editingSeasonId() !== s.id) return;
+    this.editingSeasonId.set('');
+    const name = this.renameDraft().trim();
     if (!name || name === s.competitionName) return;
     this.scheduleService.renameSchedule(s.id, name).subscribe({
       next: () => {
@@ -578,7 +579,7 @@ export class BeheerComponent implements OnInit {
   }
 
   cancelRename(): void {
-    this.editingSeasonId = '';
+    this.editingSeasonId.set('');
   }
 
   deleteSeason(s: SeasonSummary): void {
@@ -600,19 +601,19 @@ export class BeheerComponent implements OnInit {
 
   upload(): void {
     if (!this.selectedFile) return;
-    this.loading = true;
+    this.loading.set(true);
     this.playerService.import(this.selectedFile).subscribe({
       next: (res) => {
         this.snackBar.open(`${res.imported} spelers geïmporteerd`, 'OK', { duration: 3000 });
         this.selectedFile = null;
         this.fileInputRef().nativeElement.value = '';
-        this.loading = false;
+        this.loading.set(false);
       },
       error: (err) => {
         this.snackBar.open(`Fout: ${err.message ?? err.statusText}`, 'Sluiten', { duration: 5000 });
         this.selectedFile = null;
         this.fileInputRef().nativeElement.value = '';
-        this.loading = false;
+        this.loading.set(false);
       },
     });
   }

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Inject } from '@angular/core';
+import { Component, inject, OnInit, Inject, signal } from '@angular/core';
 
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -151,10 +151,10 @@ export class BuddyDialogComponent {
     }
   `],
     template: `
-    @if (players.length > 0) {
+    @if (players().length > 0) {
       <mat-card>
         <mat-card-header>
-          <mat-card-title>Spelers ({{ players.length }})</mat-card-title>
+          <mat-card-title>Spelers ({{ players().length }})</mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <!-- Batch action bar -->
@@ -163,7 +163,7 @@ export class BuddyDialogComponent {
               <span style="font-weight:500">{{ selection.size }} geselecteerd</span>
               <mat-form-field style="min-width:140px" subscriptSizing="dynamic">
                 <mat-label>Klasse instellen</mat-label>
-                <mat-select [(value)]="batchClass">
+                <mat-select [value]="batchClass()" (valueChange)="batchClass.set($event)">
                   <mat-option value="">— geen —</mat-option>
                   <mat-option value="1">Klasse 1</mat-option>
                   <mat-option value="2">Klasse 2</mat-option>
@@ -173,7 +173,7 @@ export class BuddyDialogComponent {
               <button mat-button (click)="selection.clear()">Deselecteer</button>
             </div>
           }
-          <table mat-table [dataSource]="players">
+          <table mat-table [dataSource]="players()">
             <!-- Checkbox column -->
             <ng-container matColumnDef="select">
               <th mat-header-cell *matHeaderCellDef style="width:40px">
@@ -213,16 +213,16 @@ export class BuddyDialogComponent {
             <ng-container matColumnDef="buddies">
               <th mat-header-cell *matHeaderCellDef>Speelpartners</th>
               <td mat-cell *matCellDef="let p">
-                @if (buddyMap[p.id] && buddyMap[p.id].length) {
+                @if (buddyMap()[p.id] && buddyMap()[p.id].length) {
                   <mat-chip-set>
-                    @for (bid of buddyMap[p.id]; track bid) {
+                    @for (bid of buddyMap()[p.id]; track bid) {
                       <mat-chip class="buddy-chip" disableRipple>
                         {{ playerName(bid) }}
                       </mat-chip>
                     }
                   </mat-chip-set>
                 }
-                @if (!buddyMap[p.id] || !buddyMap[p.id].length) {
+                @if (!buddyMap()[p.id] || !buddyMap()[p.id].length) {
                   <span style="color:#bbb">—</span>
                 }
               </td>
@@ -248,7 +248,7 @@ export class BuddyDialogComponent {
       </mat-card>
     }
     
-    @if (players.length === 0) {
+    @if (players().length === 0) {
       <p style="color:#888;text-align:center;padding:32px 0">
         Nog geen spelers geïmporteerd.
       </p>
@@ -260,10 +260,10 @@ export class SpelersComponent implements OnInit {
   private snackBar      = inject(MatSnackBar);
   private dialog        = inject(MatDialog);
 
-  players: Player[] = [];
-  buddyMap: Record<string, string[]> = {};
+  players   = signal<Player[]>([]);
+  buddyMap  = signal<Record<string, string[]>>({});
   selection = new Set<string>();
-  batchClass = '';
+  batchClass = signal('');
   cols = ['select', 'nr', 'name', 'class', 'city', 'buddies', 'actions'];
 
   ngOnInit(): void {
@@ -273,7 +273,7 @@ export class SpelersComponent implements OnInit {
   loadPlayers(): void {
     this.playerService.list().subscribe({
       next: (ps) => {
-        this.players = ps;
+        this.players.set(ps);
         this.loadAllBuddies();
       },
       error: () => {},
@@ -281,23 +281,23 @@ export class SpelersComponent implements OnInit {
   }
 
   loadAllBuddies(): void {
-    this.buddyMap = {};
-    for (const p of this.players) {
+    this.buddyMap.set({});
+    for (const p of this.players()) {
       this.playerService.getBuddies(p.id).subscribe({
-        next: (ids) => { this.buddyMap = { ...this.buddyMap, [p.id]: ids }; },
+        next: (ids) => { this.buddyMap.set({ ...this.buddyMap(), [p.id]: ids }); },
         error: () => {},
       });
     }
   }
 
   playerName(id: string): string {
-    return this.players.find(p => p.id === id)?.name ?? id.slice(0, 8);
+    return this.players().find(p => p.id === id)?.name ?? id.slice(0, 8);
   }
 
-  allSelected(): boolean { return this.players.length > 0 && this.selection.size === this.players.length; }
+  allSelected(): boolean { return this.players().length > 0 && this.selection.size === this.players().length; }
 
   toggleAll(checked: boolean): void {
-    if (checked) this.players.forEach(p => this.selection.add(p.id));
+    if (checked) this.players().forEach(p => this.selection.add(p.id));
     else this.selection.clear();
   }
 
@@ -308,7 +308,7 @@ export class SpelersComponent implements OnInit {
 
   updateClass(player: Player, cls: string): void {
     this.playerService.update({ ...player, class: cls }).subscribe({
-      next: (p) => { this.players = this.players.map(x => x.id === p.id ? p : x); },
+      next: (p) => { this.players.set(this.players().map(x => x.id === p.id ? p : x)); },
       error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
     });
   }
@@ -317,11 +317,11 @@ export class SpelersComponent implements OnInit {
     const ids = Array.from(this.selection);
     let done = 0;
     for (const id of ids) {
-      const player = this.players.find(p => p.id === id);
+      const player = this.players().find(p => p.id === id);
       if (!player) continue;
-      this.playerService.update({ ...player, class: this.batchClass }).subscribe({
+      this.playerService.update({ ...player, class: this.batchClass() }).subscribe({
         next: (p) => {
-          this.players = this.players.map(x => x.id === p.id ? p : x);
+          this.players.set(this.players().map(x => x.id === p.id ? p : x));
           if (++done === ids.length) {
             this.snackBar.open(`Klasse bijgewerkt voor ${done} spelers`, 'OK', { duration: 2000 });
             this.selection.clear();
@@ -336,7 +336,7 @@ export class SpelersComponent implements OnInit {
     if (!confirm(`Lid "${player.name}" verwijderen inclusief alle wedstrijden?`)) return;
     this.playerService.delete(player.id).subscribe({
       next: () => {
-        this.players = this.players.filter(p => p.id !== player.id);
+        this.players.set(this.players().filter(p => p.id !== player.id));
         this.selection.delete(player.id);
         this.snackBar.open('Lid verwijderd', 'OK', { duration: 2000 });
       },
@@ -350,7 +350,7 @@ export class SpelersComponent implements OnInit {
       if (!updated) return;
       this.playerService.update(updated).subscribe({
         next: (p) => {
-          this.players = this.players.map(x => x.id === p.id ? p : x);
+          this.players.set(this.players().map(x => x.id === p.id ? p : x));
           this.snackBar.open('Speler opgeslagen', 'OK', { duration: 2000 });
         },
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
@@ -359,11 +359,11 @@ export class SpelersComponent implements OnInit {
   }
 
   openBuddies(player: Player): void {
-    const currentBuddyIds = this.buddyMap[player.id] ?? [];
+    const currentBuddyIds = this.buddyMap()[player.id] ?? [];
     const ref = this.dialog.open(BuddyDialogComponent, {
       data: {
         player,
-        others: this.players.filter(p => p.id !== player.id),
+        others: this.players().filter(p => p.id !== player.id),
         currentBuddyIds,
       },
     });
@@ -371,7 +371,7 @@ export class SpelersComponent implements OnInit {
       if (buddyIds === undefined) return;
       this.playerService.setBuddies(player.id, buddyIds).subscribe({
         next: () => {
-          this.buddyMap = { ...this.buddyMap, [player.id]: buddyIds };
+          this.buddyMap.set({ ...this.buddyMap(), [player.id]: buddyIds });
           this.snackBar.open('Speelpartners opgeslagen', 'OK', { duration: 2000 });
         },
         error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),

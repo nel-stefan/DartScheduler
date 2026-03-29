@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, filter, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -101,11 +101,11 @@ interface MatchRow {
     <div class="page">
       <h2>Seizoen Info</h2>
     
-      @if (!info) {
+      @if (!info()) {
         <p style="color:#9e9e9e">Selecteer een seizoen om info te zien.</p>
       }
-    
-      @if (info) {
+
+      @if (info()) {
         <mat-tab-group animationDuration="150ms" color="primary">
           <!-- Tab 1: Verdeling per avond -->
           <mat-tab label="Verdeling">
@@ -126,7 +126,7 @@ interface MatchRow {
                       <thead>
                         <tr>
                           <th class="th-player">Speler</th>
-                          @for (ev of info.evenings; track ev) {
+                          @for (ev of info()!.evenings; track ev) {
                             <th style="text-align:center">
                               Av.{{ ev.number }}<br>
                               <span style="font-weight:400;font-size:10px;color:#757575">{{ ev.date | date:'d/M' }}</span>
@@ -136,7 +136,7 @@ interface MatchRow {
                         </tr>
                       </thead>
                       <tbody>
-                        @for (row of playerRows; track row) {
+                        @for (row of playerRows(); track row) {
                           <tr>
                             <td class="td-player">
                               <strong>{{ row.player.nr }}</strong>{{ row.player.name }}
@@ -164,7 +164,7 @@ interface MatchRow {
             <div style="padding-top:16px">
               <mat-card>
                 <mat-card-content>
-                  <table mat-table [dataSource]="playerRows" style="width:100%">
+                  <table mat-table [dataSource]="playerRows()" style="width:100%">
                     <ng-container matColumnDef="nr">
                       <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
                       <td mat-cell *matCellDef="let row">{{ row.player.nr }}</td>
@@ -223,11 +223,11 @@ interface MatchRow {
           <!-- Tab 3: Statistieken -->
           <mat-tab label="Statistieken">
             <div style="padding-top:16px">
-              @if (statRows.length > 0) {
+              @if (statRows().length > 0) {
                 <mat-card>
                   <mat-card-header><mat-card-title>Beurtstatistieken &amp; Records</mat-card-title></mat-card-header>
                   <mat-card-content>
-                    <table mat-table [dataSource]="statRows" style="width:100%">
+                    <table mat-table [dataSource]="statRows()" style="width:100%">
                       <ng-container matColumnDef="nr">
                         <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
                         <td mat-cell *matCellDef="let s">{{ s.player.nr }}</td>
@@ -270,7 +270,7 @@ interface MatchRow {
                   </mat-card-content>
                 </mat-card>
               }
-              @if (statRows.length === 0) {
+              @if (statRows().length === 0) {
                 <p style="color:#9e9e9e;padding-top:8px">
                   Nog geen gespeelde wedstrijden.
                 </p>
@@ -333,7 +333,7 @@ interface MatchRow {
             <div style="padding-top:16px">
               <mat-form-field style="min-width:280px;margin-bottom:16px" subscriptSizing="dynamic">
                 <mat-label>Speler</mat-label>
-                <mat-select [(value)]="selectedPlayerId">
+                <mat-select [value]="selectedPlayerId()" (valueChange)="selectedPlayerId.set($event)">
                   <mat-option value="">— Kies een speler —</mat-option>
                   @for (p of sortedPlayers; track p) {
                     <mat-option [value]="p.id">
@@ -342,7 +342,7 @@ interface MatchRow {
                   }
                 </mat-select>
               </mat-form-field>
-              @if (selectedPlayerId) {
+              @if (selectedPlayerId()) {
                 <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:8px">
                   <button mat-stroked-button (click)="printPendingMatches()">
                     <mat-icon>print</mat-icon> Nog te spelen
@@ -352,7 +352,7 @@ interface MatchRow {
                   </button>
                 </div>
               }
-              @if (selectedPlayerId) {
+              @if (selectedPlayerId()) {
                 <mat-card>
                   <mat-card-content>
                     <table mat-table [dataSource]="playerMatchRows" style="width:100%">
@@ -428,9 +428,9 @@ interface MatchRow {
             <div style="padding-top:16px">
               <mat-form-field class="duty-select" subscriptSizing="dynamic">
                 <mat-label>Speler</mat-label>
-                <mat-select [(value)]="selectedDutyPlayerId">
+                <mat-select [value]="selectedDutyPlayerId()" (valueChange)="selectedDutyPlayerId.set($event)">
                   <mat-option value="">— Kies een speler —</mat-option>
-                  @for (d of dutyStats; track d) {
+                  @for (d of dutyStats(); track d) {
                     <mat-option [value]="d.player.id">
                       {{ d.player.nr }} – {{ d.player.name }}
                     </mat-option>
@@ -516,17 +516,17 @@ export class InfoComponent implements OnInit {
   private scoreService    = inject(ScoreService);
   private destroyRef      = inject(DestroyRef);
 
-  info:     ScheduleInfo | null = null;
-  schedule: Schedule | null     = null;
-  playerRows: PlayerRow[]       = [];
-  statRows:   PlayerStats[]     = [];
-  selectedPlayerId              = '';
+  info        = signal<ScheduleInfo | null>(null);
+  schedule    = signal<Schedule | null>(null);
+  playerRows  = signal<PlayerRow[]>([]);
+  statRows    = signal<PlayerStats[]>([]);
+  selectedPlayerId = signal('');
 
-  dutyStats:          DutyStats[] = [];
-  selectedDutyPlayerId = '';
+  dutyStats           = signal<DutyStats[]>([]);
+  selectedDutyPlayerId = signal('');
 
   get selectedDutyPlayer(): DutyStats | null {
-    return this.dutyStats.find(d => d.player.id === this.selectedDutyPlayerId) ?? null;
+    return this.dutyStats().find(d => d.player.id === this.selectedDutyPlayerId()) ?? null;
   }
 
   get dutyByEvening(): { eveningNr: number; sec: number; cnt: number; total: number }[] {
@@ -564,21 +564,21 @@ export class InfoComponent implements OnInit {
   }
 
   get sortedPlayers(): PlayerInfoItem[] {
-    if (!this.info) return [];
-    return [...this.info.players].sort((a, b) => (parseInt(a.nr) || 9999) - (parseInt(b.nr) || 9999));
+    if (!this.info()) return [];
+    return [...this.info()!.players].sort((a, b) => (parseInt(a.nr) || 9999) - (parseInt(b.nr) || 9999));
   }
 
   get playerMatchRows(): MatchRow[] {
-    if (!this.schedule || !this.selectedPlayerId || !this.info) return [];
+    if (!this.schedule() || !this.selectedPlayerId() || !this.info()) return [];
     const rows: MatchRow[] = [];
-    const playerMap = new Map(this.info.players.map(p => [p.id, p]));
+    const playerMap = new Map(this.info()!.players.map(p => [p.id, p]));
 
-    for (const ev of this.schedule.evenings) {
+    for (const ev of this.schedule()!.evenings) {
       if (ev.isInhaalAvond) continue; // catch-up matches are the same objects as in their regular evening
 
       for (const m of ev.matches) {
-        const isA = m.playerA === this.selectedPlayerId;
-        const isB = m.playerB === this.selectedPlayerId;
+        const isA = m.playerA === this.selectedPlayerId();
+        const isB = m.playerB === this.selectedPlayerId();
         if (!isA && !isB) continue;
 
         const opponentId = isA ? m.playerB : m.playerA;
@@ -612,10 +612,10 @@ export class InfoComponent implements OnInit {
   }
 
   get openMatchRows(): { eveningNumber: number; eveningDate: string; playerAName: string; playerBName: string }[] {
-    if (!this.schedule || !this.info) return [];
-    const playerMap = new Map(this.info.players.map(p => [p.id, p]));
+    if (!this.schedule() || !this.info()) return [];
+    const playerMap = new Map(this.info()!.players.map(p => [p.id, p]));
     const rows: { eveningNumber: number; eveningDate: string; playerAName: string; playerBName: string }[] = [];
-    for (const ev of this.schedule.evenings) {
+    for (const ev of this.schedule()!.evenings) {
       if (ev.isInhaalAvond) continue;
       for (const m of ev.matches) {
         if (m.played || m.reportedBy) continue;
@@ -640,17 +640,17 @@ export class InfoComponent implements OnInit {
       duties:   this.scoreService.getDutyStats(scheduleId),
     }).subscribe({
       next: ({ info, schedule, stats, duties }) => {
-        this.info     = info;
-        this.schedule = schedule;
-        this.playerRows = this.buildPlayerRows(info);
-        this.statRows = stats
+        this.info.set(info);
+        this.schedule.set(schedule);
+        this.playerRows.set(this.buildPlayerRows(info));
+        this.statRows.set(stats
           .filter(s => s.played > 0)
-          .sort((a, b) => (parseInt(a.player.nr || '0')) - (parseInt(b.player.nr || '0')));
-        this.dutyStats = duties
+          .sort((a, b) => (parseInt(a.player.nr || '0')) - (parseInt(b.player.nr || '0'))));
+        this.dutyStats.set(duties
           .filter(d => d.count > 0)
-          .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999));
+          .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999)));
       },
-      error: () => { this.info = null; this.schedule = null; this.playerRows = []; this.statRows = []; this.dutyStats = []; },
+      error: () => { this.info.set(null); this.schedule.set(null); this.playerRows.set([]); this.statRows.set([]); this.dutyStats.set([]); },
     });
   }
 
@@ -679,10 +679,10 @@ export class InfoComponent implements OnInit {
   }
 
   printPendingMatches(): void {
-    const player = this.sortedPlayers.find(p => p.id === this.selectedPlayerId);
+    const player = this.sortedPlayers.find(p => p.id === this.selectedPlayerId());
     if (!player) return;
     const pending = this.playerMatchRows.filter(r => r.result === '—' || r.result === 'Afgemeld');
-    const compName = this.schedule?.competitionName ?? '';
+    const compName = this.schedule()?.competitionName ?? '';
     const rowsHtml = pending.map(r => `
       <tr>
         <td>${r.eveningNumber}</td>
@@ -712,9 +712,9 @@ export class InfoComponent implements OnInit {
   }
 
   exportCalendar(): void {
-    const player = this.sortedPlayers.find(p => p.id === this.selectedPlayerId);
+    const player = this.sortedPlayers.find(p => p.id === this.selectedPlayerId());
     if (!player) return;
-    const compName = this.schedule?.competitionName ?? 'Dartclub';
+    const compName = this.schedule()?.competitionName ?? 'Dartclub';
 
     const pad = (n: number) => String(n).padStart(2, '0');
     const toIcsDate = (iso: string) => {
@@ -722,7 +722,7 @@ export class InfoComponent implements OnInit {
       return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
     };
     // Simple UID generator
-    const uid = (i: number) => `dart-${this.selectedPlayerId.slice(0, 8)}-${i}@grolzicht`;
+    const uid = (i: number) => `dart-${this.selectedPlayerId().slice(0, 8)}-${i}@grolzicht`;
 
     const events = this.playerMatchRows.map((r, i) => [
       'BEGIN:VEVENT',
@@ -755,7 +755,7 @@ export class InfoComponent implements OnInit {
 
   printOpenMatches(): void {
     const rows = this.openMatchRows;
-    const name = this.schedule?.competitionName ?? '';
+    const name = this.schedule()?.competitionName ?? '';
     const rowsHtml = rows.map(r => `
       <tr>
         <td>${r.eveningNumber}</td>
@@ -784,8 +784,8 @@ export class InfoComponent implements OnInit {
   }
 
   getBuddy(playerId: string): { partnerNr: string; partnerName: string; eveningNrs: number[] } | null {
-    if (!this.info) return null;
-    const pair = this.info.buddyPairs.find(p => p.playerAId === playerId || p.playerBId === playerId);
+    if (!this.info()) return null;
+    const pair = this.info()!.buddyPairs.find(p => p.playerAId === playerId || p.playerBId === playerId);
     if (!pair) return null;
     const isA = pair.playerAId === playerId;
     return {
@@ -796,7 +796,7 @@ export class InfoComponent implements OnInit {
   }
 
   getStreaks(row: PlayerRow): number[][] {
-    const evenings = this.info ? [...this.info.evenings].sort((a, b) => a.number - b.number) : [];
+    const evenings = this.info() ? [...this.info()!.evenings].sort((a, b) => a.number - b.number) : [];
     const activeNrs: number[] = row.cells
       .map((cell, i) => cell.count > 0 ? evenings[i]?.number : null)
       .filter((n): n is number => n !== null);

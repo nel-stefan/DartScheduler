@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -29,7 +29,7 @@ export interface EveningStatDialogData {
       @if (!data.preselectedPlayerId) {
         <mat-form-field style="width:100%" subscriptSizing="dynamic">
           <mat-label>Speler</mat-label>
-          <mat-select [(ngModel)]="selectedPlayerId" (ngModelChange)="loadStat()">
+          <mat-select [ngModel]="selectedPlayerId()" (ngModelChange)="selectedPlayerId.set($event); loadStat()">
             @for (p of data.players; track p) {
               <mat-option [value]="p.id">
                 {{ fmt(p.name) }}
@@ -39,15 +39,15 @@ export interface EveningStatDialogData {
         </mat-form-field>
       }
     
-      @if (selectedPlayerId) {
+      @if (selectedPlayerId()) {
         <div class="fields">
           <mat-form-field subscriptSizing="dynamic">
             <mat-label>180s</mat-label>
-            <input matInput type="number" [(ngModel)]="oneEighties" min="0">
+            <input matInput type="number" [ngModel]="oneEighties()" (ngModelChange)="oneEighties.set($event)" min="0">
           </mat-form-field>
           <mat-form-field subscriptSizing="dynamic">
             <mat-label>Hoogste Finish</mat-label>
-            <input matInput type="number" [(ngModel)]="highestFinish" min="0" max="170">
+            <input matInput type="number" [ngModel]="highestFinish()" (ngModelChange)="highestFinish.set($event)" min="0" max="170">
           </mat-form-field>
         </div>
       }
@@ -56,9 +56,9 @@ export interface EveningStatDialogData {
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
       <button mat-flat-button color="primary"
-        [disabled]="saving || !selectedPlayerId"
+        [disabled]="saving() || !selectedPlayerId()"
         (click)="save()">
-        {{ saving ? 'Opslaan…' : 'Opslaan' }}
+        {{ saving() ? 'Opslaan…' : 'Opslaan' }}
       </button>
     </mat-dialog-actions>
     `
@@ -68,38 +68,38 @@ export class EveningStatDialogComponent implements OnInit {
   dialogRef   = inject(MatDialogRef<EveningStatDialogComponent>);
   private svc = inject(SeasonStatService);
 
-  selectedPlayerId = this.data.preselectedPlayerId ?? '';
-  oneEighties   = 0;
-  highestFinish = 0;
-  saving        = false;
+  selectedPlayerId = signal(this.data.preselectedPlayerId ?? '');
+  oneEighties   = signal(0);
+  highestFinish = signal(0);
+  saving        = signal(false);
 
   fmt = displayName;
 
   get playerLabel(): string {
-    if (!this.selectedPlayerId) return '';
-    const p = this.data.players.find(x => x.id === this.selectedPlayerId);
+    if (!this.selectedPlayerId()) return '';
+    const p = this.data.players.find(x => x.id === this.selectedPlayerId());
     return p ? displayName(p.name) : '';
   }
 
   ngOnInit(): void {
-    if (this.selectedPlayerId) this.loadStat();
+    if (this.selectedPlayerId()) this.loadStat();
   }
 
   loadStat(): void {
-    if (!this.selectedPlayerId) return;
+    if (!this.selectedPlayerId()) return;
     this.svc.getBySchedule(this.data.scheduleId).subscribe(stats => {
-      const s = stats.find(x => x.playerId === this.selectedPlayerId);
-      this.oneEighties   = s?.oneEighties   ?? 0;
-      this.highestFinish = s?.highestFinish ?? 0;
+      const s = stats.find(x => x.playerId === this.selectedPlayerId());
+      this.oneEighties.set(s?.oneEighties   ?? 0);
+      this.highestFinish.set(s?.highestFinish ?? 0);
     });
   }
 
   save(): void {
-    this.saving = true;
-    this.svc.upsert(this.data.scheduleId, this.selectedPlayerId, this.oneEighties, this.highestFinish)
+    this.saving.set(true);
+    this.svc.upsert(this.data.scheduleId, this.selectedPlayerId(), this.oneEighties(), this.highestFinish())
       .subscribe({
-        next:  () => { this.saving = false; this.dialogRef.close(true); },
-        error: () => { this.saving = false; },
+        next:  () => { this.saving.set(false); this.dialogRef.close(true); },
+        error: () => { this.saving.set(false); },
       });
   }
 }
