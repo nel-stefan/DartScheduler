@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Inject, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, Inject, ElementRef, ChangeDetectorRef, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -23,69 +23,97 @@ import { environment } from '../../../environments/environment';
 // ---------------------------------------------------------------------------
 
 @Component({
-    selector: 'app-generate-dialog',
-    imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-        MatFormFieldModule, MatInputModule, MatSelectModule],
-    styles: [`
-    .slot-row { display:flex; align-items:center; gap:12px; padding:4px 0; border-bottom:1px solid #f5f5f5; }
-    .slot-date { color:#555; min-width:180px; font-size:13px; }
-    .slot-nr   { min-width:64px; font-size:13px; font-weight:500; }
-  `],
-    template: `
+  selector: 'app-generate-dialog',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+  ],
+  styles: [
+    `
+      .slot-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 0;
+        border-bottom: 1px solid #f5f5f5;
+      }
+      .slot-date {
+        color: #555;
+        min-width: 180px;
+        font-size: 13px;
+      }
+      .slot-nr {
+        min-width: 64px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+    `,
+  ],
+  template: `
     <h2 mat-dialog-title>Schema genereren</h2>
     <mat-dialog-content style="min-width:480px">
       <form [formGroup]="form" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;padding-top:8px">
-        <mat-form-field style="grid-column:1/-1"><mat-label>Naam competitie</mat-label>
-        <input matInput formControlName="competitionName">
-      </mat-form-field>
-      <mat-form-field style="grid-column:1/-1"><mat-label>Seizoen (bijv. 2026)</mat-label>
-      <input matInput formControlName="season" placeholder="2026">
-    </mat-form-field>
-    <mat-form-field><mat-label>Aantal avonden (totaal)</mat-label>
-    <input matInput type="number" formControlName="numEvenings">
-    </mat-form-field>
-    <mat-form-field><mat-label>Interval (dagen)</mat-label>
-    <input matInput type="number" formControlName="intervalDays">
-    </mat-form-field>
-    <mat-form-field style="grid-column:1/-1"><mat-label>Startdatum (YYYY-MM-DD)</mat-label>
-    <input matInput formControlName="startDate" placeholder="2026-04-01">
-    </mat-form-field>
-    </form>
-    
-    <!-- Avondenlijst -->
-    @if (slots.length > 0) {
-      <div style="margin-top:16px">
-        <div style="font-weight:500;margin-bottom:8px;font-size:14px">
-          Avondtype instellen
-          <span style="color:#888;font-size:12px;font-weight:400;margin-left:8px">
-            {{ regularCount }} speelavonden · {{ inhaalCount }} inhaalavonden · {{ vrijCount }} vrij
-          </span>
+        <mat-form-field style="grid-column:1/-1"
+          ><mat-label>Naam competitie</mat-label>
+          <input matInput formControlName="competitionName" />
+        </mat-form-field>
+        <mat-form-field style="grid-column:1/-1"
+          ><mat-label>Seizoen (bijv. 2026)</mat-label>
+          <input matInput formControlName="season" placeholder="2026" />
+        </mat-form-field>
+        <mat-form-field
+          ><mat-label>Aantal avonden (totaal)</mat-label>
+          <input matInput type="number" formControlName="numEvenings" />
+        </mat-form-field>
+        <mat-form-field
+          ><mat-label>Interval (dagen)</mat-label>
+          <input matInput type="number" formControlName="intervalDays" />
+        </mat-form-field>
+        <mat-form-field style="grid-column:1/-1"
+          ><mat-label>Startdatum (YYYY-MM-DD)</mat-label>
+          <input matInput formControlName="startDate" placeholder="2026-04-01" />
+        </mat-form-field>
+      </form>
+
+      <!-- Avondenlijst -->
+      @if (slots.length > 0) {
+        <div style="margin-top:16px">
+          <div style="font-weight:500;margin-bottom:8px;font-size:14px">
+            Avondtype instellen
+            <span style="color:#888;font-size:12px;font-weight:400;margin-left:8px">
+              {{ regularCount }} speelavonden · {{ inhaalCount }} inhaalavonden · {{ vrijCount }} vrij
+            </span>
+          </div>
+          <div style="max-height:280px;overflow-y:auto">
+            @for (s of slots; track s) {
+              <div class="slot-row">
+                <span class="slot-nr">Avond {{ s.nr }}</span>
+                <span class="slot-date">{{ s.date | date: 'EEE d MMM yyyy' }}</span>
+                <mat-form-field style="min-width:130px" subscriptSizing="dynamic">
+                  <mat-select [(value)]="slotTypes[s.nr]">
+                    <mat-option value="normaal">Normaal</mat-option>
+                    <mat-option value="inhaal">Inhaalavond</mat-option>
+                    <mat-option value="vrij">Vrije avond</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            }
+          </div>
         </div>
-        <div style="max-height:280px;overflow-y:auto">
-          @for (s of slots; track s) {
-            <div class="slot-row">
-              <span class="slot-nr">Avond {{ s.nr }}</span>
-              <span class="slot-date">{{ s.date | date:'EEE d MMM yyyy' }}</span>
-              <mat-form-field style="min-width:130px" subscriptSizing="dynamic">
-                <mat-select [(value)]="slotTypes[s.nr]">
-                  <mat-option value="normaal">Normaal</mat-option>
-                  <mat-option value="inhaal">Inhaalavond</mat-option>
-                  <mat-option value="vrij">Vrije avond</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-          }
-        </div>
-      </div>
-    }
+      }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
-      <button mat-raised-button color="primary"
-        [disabled]="form.invalid || regularCount === 0"
-      (click)="submit()">Genereren</button>
+      <button mat-raised-button color="primary" [disabled]="form.invalid || regularCount === 0" (click)="submit()">
+        Genereren
+      </button>
     </mat-dialog-actions>
-    `
+  `,
 })
 export class GenerateDialogComponent implements OnInit {
   private dialogRef = inject(MatDialogRef<GenerateDialogComponent>);
@@ -95,10 +123,10 @@ export class GenerateDialogComponent implements OnInit {
 
   form = this.fb.group({
     competitionName: ['Liga 2026', Validators.required],
-    season:          ['2026', Validators.required],
-    numEvenings:  [20, [Validators.required, Validators.min(1)]],
-    startDate:    ['2026-04-01', Validators.required],
-    intervalDays: [7,  [Validators.required, Validators.min(1)]],
+    season: ['2026', Validators.required],
+    numEvenings: [20, [Validators.required, Validators.min(1)]],
+    startDate: ['2026-04-01', Validators.required],
+    intervalDays: [7, [Validators.required, Validators.min(1)]],
   });
 
   slotTypes: Record<number, string> = {};
@@ -109,9 +137,15 @@ export class GenerateDialogComponent implements OnInit {
     this.rebuildSlots();
   }
 
-  get regularCount(): number { return this.slots.filter(s => (this.slotTypes[s.nr] ?? 'normaal') === 'normaal').length; }
-  get inhaalCount():  number { return this.slots.filter(s => this.slotTypes[s.nr] === 'inhaal').length; }
-  get vrijCount():    number { return this.slots.filter(s => this.slotTypes[s.nr] === 'vrij').length; }
+  get regularCount(): number {
+    return this.slots.filter((s) => (this.slotTypes[s.nr] ?? 'normaal') === 'normaal').length;
+  }
+  get inhaalCount(): number {
+    return this.slots.filter((s) => this.slotTypes[s.nr] === 'inhaal').length;
+  }
+  get vrijCount(): number {
+    return this.slots.filter((s) => this.slotTypes[s.nr] === 'vrij').length;
+  }
 
   private rebuildSlots(): void {
     const v = this.form.value;
@@ -135,14 +169,14 @@ export class GenerateDialogComponent implements OnInit {
   submit(): void {
     if (!this.form.valid || this.regularCount === 0) return;
     const v = this.form.value;
-    const inhaalNrs = this.slots.filter(s => this.slotTypes[s.nr] === 'inhaal').map(s => s.nr);
-    const vrijeNrs  = this.slots.filter(s => this.slotTypes[s.nr] === 'vrij').map(s => s.nr);
+    const inhaalNrs = this.slots.filter((s) => this.slotTypes[s.nr] === 'inhaal').map((s) => s.nr);
+    const vrijeNrs = this.slots.filter((s) => this.slotTypes[s.nr] === 'vrij').map((s) => s.nr);
     this.dialogRef.close({
       competitionName: v.competitionName,
-      season:          v.season,
-      numEvenings:     v.numEvenings,
-      startDate:       v.startDate,
-      intervalDays:    v.intervalDays,
+      season: v.season,
+      numEvenings: v.numEvenings,
+      startDate: v.startDate,
+      intervalDays: v.intervalDays,
       inhaalNrs,
       vrijeNrs,
     } as GenerateScheduleRequest);
@@ -154,41 +188,52 @@ export class GenerateDialogComponent implements OnInit {
 // ---------------------------------------------------------------------------
 
 @Component({
-    selector: 'app-import-season-dialog',
-    imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-        MatFormFieldModule, MatInputModule, MatIconModule],
-    template: `
+  selector: 'app-import-season-dialog',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule,
+  ],
+  template: `
     <h2 mat-dialog-title>Oud seizoen importeren</h2>
     <mat-dialog-content>
       <form [formGroup]="form" style="display:flex;flex-direction:column;gap:12px;min-width:340px;padding-top:8px">
-        <mat-form-field><mat-label>Naam competitie</mat-label>
-        <input matInput formControlName="competitionName">
-      </mat-form-field>
-      <mat-form-field><mat-label>Seizoen (bijv. 2025)</mat-label>
-      <input matInput formControlName="season" placeholder="2025">
-    </mat-form-field>
-    <div>
-      <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="onFile($event)">
-      <button mat-stroked-button type="button" (click)="fileInput.click()">
-        <mat-icon>upload_file</mat-icon> Excel kiezen
-      </button>
-      @if (file) {
-        <span style="margin-left:8px;color:#555;font-size:13px">{{ file.name }}</span>
-      }
-    </div>
-    </form>
-    <p style="color:#757575;font-size:12px;margin-top:12px">
-      Ondersteunde formaten:<br>
-      • <strong>Speelschema matrix</strong>: rij 1 = datums, cellen = "nr - nr" of "nr (naam) - nr (naam)".
-      Kolommen met "INHAAL" worden als inhaalavonden geïmporteerd.<br>
-      • <strong>Platte tabel</strong>: kolommen avond, datum, nr a, naam a, nr b, naam b, leg1, beurten1, …
-    </p>
+        <mat-form-field
+          ><mat-label>Naam competitie</mat-label>
+          <input matInput formControlName="competitionName" />
+        </mat-form-field>
+        <mat-form-field
+          ><mat-label>Seizoen (bijv. 2025)</mat-label>
+          <input matInput formControlName="season" placeholder="2025" />
+        </mat-form-field>
+        <div>
+          <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="onFile($event)" />
+          <button mat-stroked-button type="button" (click)="fileInput.click()">
+            <mat-icon>upload_file</mat-icon> Excel kiezen
+          </button>
+          @if (file) {
+            <span style="margin-left:8px;color:#555;font-size:13px">{{ file.name }}</span>
+          }
+        </div>
+      </form>
+      <p style="color:#757575;font-size:12px;margin-top:12px">
+        Ondersteunde formaten:<br />
+        • <strong>Speelschema matrix</strong>: rij 1 = datums, cellen = "nr - nr" of "nr (naam) - nr (naam)". Kolommen
+        met "INHAAL" worden als inhaalavonden geïmporteerd.<br />
+        • <strong>Platte tabel</strong>: kolommen avond, datum, nr a, naam a, nr b, naam b, leg1, beurten1, …
+      </p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
-      <button mat-raised-button color="primary" [disabled]="form.invalid || !file" (click)="submit()">Importeren</button>
+      <button mat-raised-button color="primary" [disabled]="form.invalid || !file" (click)="submit()">
+        Importeren
+      </button>
     </mat-dialog-actions>
-    `
+  `,
 })
 export class ImportSeasonDialogComponent {
   private dialogRef = inject(MatDialogRef<ImportSeasonDialogComponent>);
@@ -197,7 +242,7 @@ export class ImportSeasonDialogComponent {
 
   form = this.fb.group({
     competitionName: ['', Validators.required],
-    season:          ['', Validators.required],
+    season: ['', Validators.required],
   });
 
   onFile(e: Event): void {
@@ -220,38 +265,109 @@ export class ImportSeasonDialogComponent {
 // ---------------------------------------------------------------------------
 
 @Component({
-    selector: 'app-beheer',
-    imports: [
-        CommonModule, FormsModule, ReactiveFormsModule,
-        MatSnackBarModule, MatButtonModule, MatIconModule,
-        MatCardModule, MatDialogModule, MatDividerModule, MatTooltipModule,
-        MatFormFieldModule, MatInputModule,
-    ],
-    styles: [`
-    .section-title { font-size: 18px; font-weight: 500; margin: 0 0 16px; }
-    .seasons-list { display: flex; flex-direction: column; gap: 8px; }
-    .season-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px; background: #fafafa; border: 1px solid #e0e0e0;
-      border-radius: 6px;
-    }
-    .season-name { font-weight: 500; }
-    .season-meta { font-size: 12px; color: #757575; margin-top: 2px; }
-    .rename-input {
-      font-size: 14px; font-weight: 500; font-family: inherit;
-      border: none; border-bottom: 2px solid #795548; outline: none;
-      background: transparent; padding: 2px 0; min-width: 180px;
-    }
-    .import-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .action-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-    .server-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
-    .version-chip { background: #e8f5e9; color: #2e7d32; border-radius: 12px; padding: 4px 12px; font-size: 13px; font-weight: 500; }
-    .log-box { background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 12px; line-height: 1.5; padding: 12px 16px; border-radius: 6px; max-height: 480px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
-    .log-empty { color: #9e9e9e; font-style: italic; font-size: 13px; }
-  `],
-    template: `
+  selector: 'app-beheer',
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatSnackBarModule,
+    MatButtonModule,
+    MatIconModule,
+    MatCardModule,
+    MatDialogModule,
+    MatDividerModule,
+    MatTooltipModule,
+    MatFormFieldModule,
+    MatInputModule,
+  ],
+  styles: [
+    `
+      .section-title {
+        font-size: 18px;
+        font-weight: 500;
+        margin: 0 0 16px;
+      }
+      .seasons-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .season-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        background: #fafafa;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+      }
+      .season-name {
+        font-weight: 500;
+      }
+      .season-meta {
+        font-size: 12px;
+        color: #757575;
+        margin-top: 2px;
+      }
+      .rename-input {
+        font-size: 14px;
+        font-weight: 500;
+        font-family: inherit;
+        border: none;
+        border-bottom: 2px solid #795548;
+        outline: none;
+        background: transparent;
+        padding: 2px 0;
+        min-width: 180px;
+      }
+      .import-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .action-bar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .server-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+      .version-chip {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border-radius: 12px;
+        padding: 4px 12px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .log-box {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        font-family: monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        padding: 12px 16px;
+        border-radius: 6px;
+        max-height: 480px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      .log-empty {
+        color: #9e9e9e;
+        font-style: italic;
+        font-size: 13px;
+      }
+    `,
+  ],
+  template: `
     <div style="max-width:700px">
-    
       <!-- Seizoenen -->
       <mat-card style="margin-bottom:24px">
         <mat-card-header>
@@ -266,15 +382,13 @@ export class ImportSeasonDialogComponent {
               <mat-icon>history</mat-icon> Oud seizoen importeren
             </button>
           </div>
-    
+
           <mat-divider style="margin-bottom:16px"></mat-divider>
-    
+
           @if (seasons.length === 0) {
-            <p style="color:#888;text-align:center;padding:16px 0;margin:0">
-              Nog geen seizoenen aangemaakt.
-            </p>
+            <p style="color:#888;text-align:center;padding:16px 0;margin:0">Nog geen seizoenen aangemaakt.</p>
           }
-    
+
           <div class="seasons-list">
             @for (s of seasons; track s) {
               <div class="season-row">
@@ -283,22 +397,24 @@ export class ImportSeasonDialogComponent {
                     <div class="season-name">{{ s.competitionName }}</div>
                   }
                   @if (editingSeasonId === s.id) {
-                    <input #renameInput class="rename-input" [(ngModel)]="renameDraft"
-                      (keydown.enter)="saveRename(s)" (keydown.escape)="cancelRename()"
-                      (blur)="saveRename(s)">
+                    <input
+                      #renameInput
+                      class="rename-input"
+                      [(ngModel)]="renameDraft"
+                      (keydown.enter)="saveRename(s)"
+                      (keydown.escape)="cancelRename()"
+                      (blur)="saveRename(s)"
+                    />
                   }
                   <div class="season-meta">Seizoen {{ s.season }} · {{ s.eveningCount }} avonden</div>
                 </div>
                 @if (editingSeasonId !== s.id) {
-                  <button mat-icon-button (click)="startRename(s)" matTooltip="Naam aanpassen"
-                    >
+                  <button mat-icon-button (click)="startRename(s)" matTooltip="Naam aanpassen">
                     <mat-icon>edit</mat-icon>
                   </button>
                 }
                 @if (editingSeasonId !== s.id) {
-                  <button mat-icon-button color="warn" (click)="deleteSeason(s)"
-                    matTooltip="Seizoen verwijderen"
-                    >
+                  <button mat-icon-button color="warn" (click)="deleteSeason(s)" matTooltip="Seizoen verwijderen">
                     <mat-icon>delete</mat-icon>
                   </button>
                 }
@@ -307,7 +423,7 @@ export class ImportSeasonDialogComponent {
           </div>
         </mat-card-content>
       </mat-card>
-    
+
       <!-- Spelers importeren -->
       <mat-card>
         <mat-card-header>
@@ -316,7 +432,7 @@ export class ImportSeasonDialogComponent {
         </mat-card-header>
         <mat-card-content style="padding-top:16px">
           <div class="import-row">
-            <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="onFileSelected($event)">
+            <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="onFileSelected($event)" />
             <button mat-raised-button color="primary" (click)="fileInput.click()">
               <mat-icon>upload_file</mat-icon> Excel-bestand kiezen
             </button>
@@ -329,7 +445,7 @@ export class ImportSeasonDialogComponent {
           </div>
         </mat-card-content>
       </mat-card>
-    
+
       <!-- Server -->
       <mat-card style="margin-top:24px">
         <mat-card-header>
@@ -338,48 +454,50 @@ export class ImportSeasonDialogComponent {
         <mat-card-content style="padding-top:16px">
           <div class="server-meta">
             <span class="version-chip">{{ version }}</span>
-            <button mat-stroked-button (click)="refreshLogs()">
-              <mat-icon>refresh</mat-icon> Vernieuwen
-            </button>
+            <button mat-stroked-button (click)="refreshLogs()"><mat-icon>refresh</mat-icon> Vernieuwen</button>
           </div>
           @if (logsLoading) {
             <div style="color:#9e9e9e;font-size:13px">Laden...</div>
           }
           @if (!logsLoading && logs.length === 0) {
-            <div class="log-empty">
-              Nog geen log regels.
-            </div>
+            <div class="log-empty">Nog geen log regels.</div>
           }
           @if (!logsLoading && logs.length > 0) {
-            <div class="log-box">{{ logs.join('\n') }}</div>
+            <div class="log-box">
+              {{
+                logs.join(
+                  '
+'
+                )
+              }}
+            </div>
           }
         </mat-card-content>
       </mat-card>
-    
     </div>
-    `
+  `,
 })
 export class BeheerComponent implements OnInit {
   private scheduleService = inject(ScheduleService);
-  private playerService   = inject(PlayerService);
-  private seasonService   = inject(SeasonService);
-  private systemService   = inject(SystemService);
-  private snackBar        = inject(MatSnackBar);
-  private dialog          = inject(MatDialog);
-  private cdr             = inject(ChangeDetectorRef);
+  private playerService = inject(PlayerService);
+  private seasonService = inject(SeasonService);
+  private systemService = inject(SystemService);
+  private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
+  private cdr = inject(ChangeDetectorRef);
 
-  @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
+  readonly fileInputRef = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
 
-  @ViewChild('renameInput') renameInputRef?: ElementRef<HTMLInputElement>;
+  readonly renameInputRef = viewChild<ElementRef<HTMLInputElement>>('renameInput');
 
   seasons: SeasonSummary[] = [];
   selectedFile: File | null = null;
   loading = false;
   editingSeasonId = '';
-  renameDraft     = '';
+  renameDraft = '';
 
-  version     = environment.version;
-  logs:        string[] = [];
+  version = environment.version;
+  logs: string[] = [];
   logsLoading = false;
 
   ngOnInit(): void {
@@ -390,14 +508,21 @@ export class BeheerComponent implements OnInit {
   refreshLogs(): void {
     this.logsLoading = true;
     this.systemService.getLogs().subscribe({
-      next: ({ logs }) => { this.logs = logs; this.logsLoading = false; },
-      error: ()        => { this.logsLoading = false; },
+      next: ({ logs }) => {
+        this.logs = logs;
+        this.logsLoading = false;
+      },
+      error: () => {
+        this.logsLoading = false;
+      },
     });
   }
 
   loadSeasons(): void {
     this.scheduleService.listSeasons().subscribe({
-      next: (s) => { this.seasons = s; },
+      next: (s) => {
+        this.seasons = s;
+      },
       error: () => {},
     });
   }
@@ -433,9 +558,9 @@ export class BeheerComponent implements OnInit {
   }
 
   startRename(s: SeasonSummary): void {
-    this.renameDraft     = s.competitionName;
+    this.renameDraft = s.competitionName;
     this.editingSeasonId = s.id;
-    setTimeout(() => this.renameInputRef?.nativeElement.select());
+    setTimeout(() => this.renameInputRef()?.nativeElement.select());
   }
 
   saveRename(s: SeasonSummary): void {
@@ -480,13 +605,13 @@ export class BeheerComponent implements OnInit {
       next: (res) => {
         this.snackBar.open(`${res.imported} spelers geïmporteerd`, 'OK', { duration: 3000 });
         this.selectedFile = null;
-        this.fileInputRef.nativeElement.value = '';
+        this.fileInputRef().nativeElement.value = '';
         this.loading = false;
       },
       error: (err) => {
         this.snackBar.open(`Fout: ${err.message ?? err.statusText}`, 'Sluiten', { duration: 5000 });
         this.selectedFile = null;
-        this.fileInputRef.nativeElement.value = '';
+        this.fileInputRef().nativeElement.value = '';
         this.loading = false;
       },
     });
