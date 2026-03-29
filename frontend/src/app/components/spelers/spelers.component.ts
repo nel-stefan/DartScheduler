@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, Inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -20,8 +20,7 @@ import { Player } from '../../models';
 
 @Component({
     selector: 'app-player-edit-dialog',
-    imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-        MatFormFieldModule, MatInputModule, MatSelectModule],
+    imports: [ReactiveFormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
     template: `
     <h2 mat-dialog-title>Speler bewerken</h2>
     <mat-dialog-content>
@@ -83,7 +82,7 @@ export class PlayerEditDialogComponent {
 
 @Component({
     selector: 'app-buddy-dialog',
-    imports: [CommonModule, MatDialogModule, MatButtonModule, MatCheckboxModule, MatDividerModule],
+    imports: [MatDialogModule, MatButtonModule, MatCheckboxModule, MatDividerModule],
     template: `
     <h2 mat-dialog-title>Voorkeur speelpartners voor {{ data.player.name }}</h2>
     <mat-dialog-content style="max-height:420px;overflow-y:auto;min-width:320px">
@@ -91,21 +90,23 @@ export class PlayerEditDialogComponent {
         Geselecteerde spelers worden bij voorkeur op dezelfde avond ingepland.
       </p>
       <mat-divider style="margin-bottom:12px"></mat-divider>
-      <div *ngFor="let p of data.others" style="padding:4px 0">
-        <mat-checkbox
-          [checked]="selected.has(p.id)"
-          (change)="toggle(p.id)">
-          <span style="margin-left:4px">
-            <strong>{{ p.nr ? ('#' + p.nr + ' ') : '' }}</strong>{{ p.name }}
-          </span>
-        </mat-checkbox>
-      </div>
+      @for (p of data.others; track p) {
+        <div style="padding:4px 0">
+          <mat-checkbox
+            [checked]="selected.has(p.id)"
+            (change)="toggle(p.id)">
+            <span style="margin-left:4px">
+              <strong>{{ p.nr ? ('#' + p.nr + ' ') : '' }}</strong>{{ p.name }}
+            </span>
+          </mat-checkbox>
+        </div>
+      }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
       <button mat-raised-button color="primary" (click)="submit()">Opslaan</button>
     </mat-dialog-actions>
-  `
+    `
 })
 export class BuddyDialogComponent {
   private dialogRef = inject(MatDialogRef<BuddyDialogComponent>);
@@ -129,10 +130,17 @@ export class BuddyDialogComponent {
 @Component({
     selector: 'app-spelers',
     imports: [
-        CommonModule, MatSnackBarModule, MatButtonModule, MatIconModule,
-        MatCardModule, MatTableModule, MatDialogModule, MatChipsModule,
-        MatCheckboxModule, MatSelectModule, MatFormFieldModule,
-    ],
+    MatSnackBarModule,
+    MatButtonModule,
+    MatIconModule,
+    MatCardModule,
+    MatTableModule,
+    MatDialogModule,
+    MatChipsModule,
+    MatCheckboxModule,
+    MatSelectModule,
+    MatFormFieldModule
+],
     styles: [`
     table { width: 100%; }
     .actions-cell { text-align: right; white-space: nowrap; }
@@ -143,101 +151,109 @@ export class BuddyDialogComponent {
     }
   `],
     template: `
-    <mat-card *ngIf="players.length > 0">
-      <mat-card-header>
-        <mat-card-title>Spelers ({{ players.length }})</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-
-        <!-- Batch action bar -->
-        <div class="batch-bar" *ngIf="selection.size > 0">
-          <span style="font-weight:500">{{ selection.size }} geselecteerd</span>
-          <mat-form-field style="min-width:140px" subscriptSizing="dynamic">
-            <mat-label>Klasse instellen</mat-label>
-            <mat-select [(value)]="batchClass">
-              <mat-option value="">— geen —</mat-option>
-              <mat-option value="1">Klasse 1</mat-option>
-              <mat-option value="2">Klasse 2</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <button mat-raised-button color="primary" (click)="applyBatchClass()">Toepassen</button>
-          <button mat-button (click)="selection.clear()">Deselecteer</button>
-        </div>
-
-        <table mat-table [dataSource]="players">
-
-          <!-- Checkbox column -->
-          <ng-container matColumnDef="select">
-            <th mat-header-cell *matHeaderCellDef style="width:40px">
-              <mat-checkbox
-                [checked]="allSelected()"
-                [indeterminate]="selection.size > 0 && !allSelected()"
-                (change)="toggleAll($event.checked)">
-              </mat-checkbox>
-            </th>
-            <td mat-cell *matCellDef="let p" style="width:40px">
-              <mat-checkbox [checked]="selection.has(p.id)" (change)="toggleOne(p.id)"></mat-checkbox>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="nr">
-            <th mat-header-cell *matHeaderCellDef style="width:48px">#</th>
-            <td mat-cell *matCellDef="let p">{{ p.nr }}</td>
-          </ng-container>
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef>Naam</th>
-            <td mat-cell *matCellDef="let p"><strong>{{ p.name }}</strong></td>
-          </ng-container>
-          <ng-container matColumnDef="city">
-            <th mat-header-cell *matHeaderCellDef>Woonplaats</th>
-            <td mat-cell *matCellDef="let p">{{ p.city }}</td>
-          </ng-container>
-          <ng-container matColumnDef="class">
-            <th mat-header-cell *matHeaderCellDef style="width:110px">Klasse</th>
-            <td mat-cell *matCellDef="let p">
-              <mat-select [value]="p.class" (selectionChange)="updateClass(p, $event.value)"
-                          style="font-size:14px" panelWidth="">
-                <mat-option value="">—</mat-option>
-                <mat-option value="1">Klasse 1</mat-option>
-                <mat-option value="2">Klasse 2</mat-option>
-              </mat-select>
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="buddies">
-            <th mat-header-cell *matHeaderCellDef>Speelpartners</th>
-            <td mat-cell *matCellDef="let p">
-              <mat-chip-set *ngIf="buddyMap[p.id]?.length">
-                <mat-chip *ngFor="let bid of buddyMap[p.id]" class="buddy-chip" disableRipple>
-                  {{ playerName(bid) }}
-                </mat-chip>
-              </mat-chip-set>
-              <span *ngIf="!buddyMap[p.id]?.length" style="color:#bbb">—</span>
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let p" class="actions-cell">
-              <button mat-icon-button color="primary" (click)="openEdit(p)" matTooltip="Bewerken">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button color="accent" (click)="openBuddies(p)" matTooltip="Speelpartners instellen">
-                <mat-icon>group</mat-icon>
-              </button>
-              <button mat-icon-button color="warn" (click)="deletePlayer(p)" matTooltip="Lid verwijderen">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="cols"></tr>
-          <tr mat-row *matRowDef="let row; columns: cols;"></tr>
-        </table>
-      </mat-card-content>
-    </mat-card>
-
-    <p *ngIf="players.length === 0" style="color:#888;text-align:center;padding:32px 0">
-      Nog geen spelers geïmporteerd.
-    </p>
-  `
+    @if (players.length > 0) {
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Spelers ({{ players.length }})</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <!-- Batch action bar -->
+          @if (selection.size > 0) {
+            <div class="batch-bar">
+              <span style="font-weight:500">{{ selection.size }} geselecteerd</span>
+              <mat-form-field style="min-width:140px" subscriptSizing="dynamic">
+                <mat-label>Klasse instellen</mat-label>
+                <mat-select [(value)]="batchClass">
+                  <mat-option value="">— geen —</mat-option>
+                  <mat-option value="1">Klasse 1</mat-option>
+                  <mat-option value="2">Klasse 2</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <button mat-raised-button color="primary" (click)="applyBatchClass()">Toepassen</button>
+              <button mat-button (click)="selection.clear()">Deselecteer</button>
+            </div>
+          }
+          <table mat-table [dataSource]="players">
+            <!-- Checkbox column -->
+            <ng-container matColumnDef="select">
+              <th mat-header-cell *matHeaderCellDef style="width:40px">
+                <mat-checkbox
+                  [checked]="allSelected()"
+                  [indeterminate]="selection.size > 0 && !allSelected()"
+                  (change)="toggleAll($event.checked)">
+                </mat-checkbox>
+              </th>
+              <td mat-cell *matCellDef="let p" style="width:40px">
+                <mat-checkbox [checked]="selection.has(p.id)" (change)="toggleOne(p.id)"></mat-checkbox>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="nr">
+              <th mat-header-cell *matHeaderCellDef style="width:48px">#</th>
+              <td mat-cell *matCellDef="let p">{{ p.nr }}</td>
+            </ng-container>
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Naam</th>
+              <td mat-cell *matCellDef="let p"><strong>{{ p.name }}</strong></td>
+            </ng-container>
+            <ng-container matColumnDef="city">
+              <th mat-header-cell *matHeaderCellDef>Woonplaats</th>
+              <td mat-cell *matCellDef="let p">{{ p.city }}</td>
+            </ng-container>
+            <ng-container matColumnDef="class">
+              <th mat-header-cell *matHeaderCellDef style="width:110px">Klasse</th>
+              <td mat-cell *matCellDef="let p">
+                <mat-select [value]="p.class" (selectionChange)="updateClass(p, $event.value)"
+                  style="font-size:14px" panelWidth="">
+                  <mat-option value="">—</mat-option>
+                  <mat-option value="1">Klasse 1</mat-option>
+                  <mat-option value="2">Klasse 2</mat-option>
+                </mat-select>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="buddies">
+              <th mat-header-cell *matHeaderCellDef>Speelpartners</th>
+              <td mat-cell *matCellDef="let p">
+                @if (buddyMap[p.id] && buddyMap[p.id].length) {
+                  <mat-chip-set>
+                    @for (bid of buddyMap[p.id]; track bid) {
+                      <mat-chip class="buddy-chip" disableRipple>
+                        {{ playerName(bid) }}
+                      </mat-chip>
+                    }
+                  </mat-chip-set>
+                }
+                @if (!buddyMap[p.id] || !buddyMap[p.id].length) {
+                  <span style="color:#bbb">—</span>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let p" class="actions-cell">
+                <button mat-icon-button color="primary" (click)="openEdit(p)" matTooltip="Bewerken">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="accent" (click)="openBuddies(p)" matTooltip="Speelpartners instellen">
+                  <mat-icon>group</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="deletePlayer(p)" matTooltip="Lid verwijderen">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="cols"></tr>
+            <tr mat-row *matRowDef="let row; columns: cols;"></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+    }
+    
+    @if (players.length === 0) {
+      <p style="color:#888;text-align:center;padding:32px 0">
+        Nog geen spelers geïmporteerd.
+      </p>
+    }
+    `
 })
 export class SpelersComponent implements OnInit {
   private playerService = inject(PlayerService);

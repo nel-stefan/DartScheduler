@@ -88,7 +88,9 @@ export interface ScoreDialogData {
           <mat-form-field class="turns-field" subscriptSizing="dynamic">
             <mat-select formControlName="leg1Turns">
               <mat-option [value]="null">—</mat-option>
-              <mat-option *ngFor="let n of turnsOptions" [value]="n">{{ n }}</mat-option>
+              @for (n of turnsOptions; track n) {
+                <mat-option [value]="n">{{ n }}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
           <!-- Partij 2 -->
@@ -100,7 +102,9 @@ export interface ScoreDialogData {
           <mat-form-field class="turns-field" subscriptSizing="dynamic">
             <mat-select formControlName="leg2Turns">
               <mat-option [value]="null">—</mat-option>
-              <mat-option *ngFor="let n of turnsOptions" [value]="n">{{ n }}</mat-option>
+              @for (n of turnsOptions; track n) {
+                <mat-option [value]="n">{{ n }}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
           <!-- Partij 3 -->
@@ -112,7 +116,9 @@ export interface ScoreDialogData {
           <mat-form-field class="turns-field" subscriptSizing="dynamic">
             <mat-select formControlName="leg3Turns">
               <mat-option [value]="null">—</mat-option>
-              <mat-option *ngFor="let n of turnsOptions" [value]="n">{{ n }}</mat-option>
+              @for (n of turnsOptions; track n) {
+                <mat-option [value]="n">{{ n }}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
         </div>
@@ -123,35 +129,43 @@ export interface ScoreDialogData {
             <mat-label>Schrijver</mat-label>
             <mat-select formControlName="secretaryNr">
               <mat-option value="">—</mat-option>
-              <mat-option *ngFor="let p of data.players" [value]="p.nr">{{ p.nr }} – {{ p.name }}</mat-option>
+              @for (p of data.players; track p) {
+                <mat-option [value]="p.nr">{{ p.nr }} – {{ p.name }}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
           <mat-form-field style="flex:1;min-width:130px" subscriptSizing="dynamic">
             <mat-label>Teller</mat-label>
             <mat-select formControlName="counterNr">
               <mat-option value="">—</mat-option>
-              <mat-option *ngFor="let p of data.players" [value]="p.nr">{{ p.nr }} – {{ p.name }}</mat-option>
+              @for (p of data.players; track p) {
+                <mat-option [value]="p.nr">{{ p.nr }} – {{ p.name }}</mat-option>
+              }
             </mat-select>
           </mat-form-field>
         </div>
-        <div *ngIf="data.isInhaalAvond" style="margin-top:8px">
-          <mat-form-field style="width:100%" subscriptSizing="dynamic">
-            <mat-label>Datum gespeeld</mat-label>
-            <mat-select formControlName="playedDate">
-              <mat-option value="">— kies avond —</mat-option>
-              <mat-option *ngFor="let ev of data.evenings" [value]="ev.date">
-                {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
+        @if (data.isInhaalAvond) {
+          <div style="margin-top:8px">
+            <mat-form-field style="width:100%" subscriptSizing="dynamic">
+              <mat-label>Datum gespeeld</mat-label>
+              <mat-select formControlName="playedDate">
+                <mat-option value="">— kies avond —</mat-option>
+                @for (ev of data.evenings; track ev) {
+                  <mat-option [value]="ev.date">
+                    {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+        }
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button (click)="dialogRef.close()">Annuleren</button>
       <button mat-raised-button color="primary" [disabled]="!isValid()" (click)="submit()">Opslaan</button>
     </mat-dialog-actions>
-  `
+    `
 })
 export class ScoreDialogComponent {
   dialogRef = inject(MatDialogRef<ScoreDialogComponent>);
@@ -214,46 +228,54 @@ interface AbsentDialogData { evening: Evening; players: Player[]; }
     template: `
     <h2 mat-dialog-title>Speler afmelden — avond {{ data.evening.number }}</h2>
     <mat-dialog-content style="min-width:420px;padding-top:8px">
-
+    
       <mat-form-field style="width:100%">
         <mat-label>Afwezige speler</mat-label>
         <mat-select [(ngModel)]="selectedPlayerId" (ngModelChange)="onPlayerChange()">
-          <mat-option *ngFor="let p of selectablePlayers" [value]="p.id">
-            {{ p.nr }} — {{ p.name }}
-          </mat-option>
+          @for (p of selectablePlayers; track p) {
+            <mat-option [value]="p.id">
+              {{ p.nr }} — {{ p.name }}
+            </mat-option>
+          }
         </mat-select>
       </mat-form-field>
-
+    
       <mat-form-field style="width:100%;margin-top:4px">
         <mat-label>Afgemeld door</mat-label>
         <input matInput [(ngModel)]="reportedBy" placeholder="naam of nr">
       </mat-form-field>
-
-      <div *ngIf="selectedPlayerId" style="margin-top:12px">
-        <div style="font-size:13px;font-weight:500;margin-bottom:6px;color:#333">
-          Wedstrijden die als afgemeld worden gemarkeerd:
+    
+      @if (selectedPlayerId) {
+        <div style="margin-top:12px">
+          <div style="font-size:13px;font-weight:500;margin-bottom:6px;color:#333">
+            Wedstrijden die als afgemeld worden gemarkeerd:
+          </div>
+          @if (affectedMatches.length === 0) {
+            <div style="color:#9e9e9e;font-size:13px">
+              Geen openstaande wedstrijden gevonden.
+            </div>
+          }
+          @for (m of affectedMatches; track m) {
+            <div
+              style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:#fff3e0;border-radius:4px;margin-bottom:4px;font-size:13px">
+              <mat-icon style="font-size:16px;width:16px;height:16px;color:#e65100">warning</mat-icon>
+              <strong>{{ playerLabel(m.playerA) }}</strong>
+              <span style="color:#999">vs</span>
+              <strong>{{ playerLabel(m.playerB) }}</strong>
+            </div>
+          }
         </div>
-        <div *ngIf="affectedMatches.length === 0" style="color:#9e9e9e;font-size:13px">
-          Geen openstaande wedstrijden gevonden.
-        </div>
-        <div *ngFor="let m of affectedMatches"
-             style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:#fff3e0;border-radius:4px;margin-bottom:4px;font-size:13px">
-          <mat-icon style="font-size:16px;width:16px;height:16px;color:#e65100">warning</mat-icon>
-          <strong>{{ playerLabel(m.playerA) }}</strong>
-          <span style="color:#999">vs</span>
-          <strong>{{ playerLabel(m.playerB) }}</strong>
-        </div>
-      </div>
+      }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
       <button mat-raised-button color="warn"
-              [disabled]="!selectedPlayerId || affectedMatches.length === 0"
-              (click)="confirm()">
+        [disabled]="!selectedPlayerId || affectedMatches.length === 0"
+        (click)="confirm()">
         <mat-icon>person_off</mat-icon> Afmelden
       </button>
     </mat-dialog-actions>
-  `
+    `
 })
 export class AbsentDialogComponent {
   data      = inject<AbsentDialogData>(MAT_DIALOG_DATA);
@@ -357,208 +379,267 @@ export class AbsentDialogComponent {
     template: `
     <div class="schedule-header">
       <h2 class="schedule-title">{{ schedule?.competitionName ?? 'DartScheduler' }}</h2>
-
-      <button mat-stroked-button *ngIf="schedule" (click)="printSchedule()">
-        <mat-icon>print</mat-icon> Afdrukken
-      </button>
-      <mat-form-field *ngIf="schedule" style="min-width:320px" subscriptSizing="dynamic">
-        <mat-label>Avond</mat-label>
-        <mat-select [(ngModel)]="activeTab">
-          <mat-select-trigger>
-            <ng-container *ngIf="schedule.evenings[activeTab] as ev">
-              <span [style.background]="eveningColor(ev)"
-                    style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle;flex-shrink:0"></span>
-              {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }}
-              <span style="color:#9e9e9e;margin-left:4px">— {{ ev.date | date:'d MMM' }}</span>
-            </ng-container>
-          </mat-select-trigger>
-          <mat-option *ngFor="let ev of schedule.evenings; let i = index" [value]="i">
-            <span style="display:flex;align-items:center;gap:8px;width:100%">
-              <span [style.background]="eveningColor(ev)"
-                    style="width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block"></span>
-              <span style="flex:1">{{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }}</span>
-              <span style="color:#9e9e9e;font-size:12px">{{ ev.date | date:'d MMM' }}</span>
-              <span [style.color]="eveningColor(ev)" style="font-size:12px;min-width:32px;text-align:right;font-weight:500">
-                {{ eveningCountLabel(ev) }}
-              </span>
-            </span>
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    <div *ngIf="!schedule" class="empty-state">
-      <mat-icon>sports_bar</mat-icon>
-      <p>Nog geen schema. Ga naar <strong>Beheer</strong> om spelers te importeren en een schema te genereren.</p>
-    </div>
-
-    <mat-tab-group *ngIf="schedule" animationDuration="150ms" [selectedIndex]="activeTab"
-                   (selectedIndexChange)="activeTab = $event">
-      <mat-tab *ngFor="let ev of schedule.evenings">
-
-        <!-- Tab-inhoud -->
-        <mat-card style="border-radius:8px;">
-          <mat-card-header style="padding-bottom:0">
-            <div class="card-header-row" style="width:100%">
-              <div>
-                <mat-card-title>
-                  <span *ngIf="ev.isInhaalAvond" style="color:#7b1fa2;margin-right:6px">
-                    <mat-icon style="vertical-align:middle;font-size:18px">replay</mat-icon>
-                    Inhaalavond
+    
+      @if (schedule) {
+        <button mat-stroked-button (click)="printSchedule()">
+          <mat-icon>print</mat-icon> Afdrukken
+        </button>
+      }
+      @if (schedule) {
+        <mat-form-field style="min-width:320px" subscriptSizing="dynamic">
+          <mat-label>Avond</mat-label>
+          <mat-select [(ngModel)]="activeTab">
+            <mat-select-trigger>
+              @if (schedule.evenings[activeTab]; as ev) {
+                <span [style.background]="eveningColor(ev)"
+                style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle;flex-shrink:0"></span>
+                {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }}
+                <span style="color:#9e9e9e;margin-left:4px">— {{ ev.date | date:'d MMM' }}</span>
+              }
+            </mat-select-trigger>
+            @for (ev of schedule.evenings; track ev; let i = $index) {
+              <mat-option [value]="i">
+                <span style="display:flex;align-items:center;gap:8px;width:100%">
+                  <span [style.background]="eveningColor(ev)"
+                  style="width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block"></span>
+                  <span style="flex:1">{{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }}</span>
+                  <span style="color:#9e9e9e;font-size:12px">{{ ev.date | date:'d MMM' }}</span>
+                  <span [style.color]="eveningColor(ev)" style="font-size:12px;min-width:32px;text-align:right;font-weight:500">
+                    {{ eveningCountLabel(ev) }}
                   </span>
-                  <span *ngIf="!ev.isInhaalAvond">Avond {{ ev.number }}</span>
-                  &mdash; {{ ev.date | date:'EEEE d MMMM yyyy' }}
-                </mat-card-title>
-                <mat-card-subtitle *ngIf="!ev.isInhaalAvond">
-                  {{ playedCount(ev) }} / {{ ev.matches.length }} wedstrijden gespeeld
-                </mat-card-subtitle>
-                <mat-card-subtitle *ngIf="ev.isInhaalAvond" style="color:#7b1fa2">
-                  {{ openCount(ev) }} openstaande wedstrijden
-                </mat-card-subtitle>
-              </div>
-              <div style="display:flex;gap:4px;align-items:center">
-                <button mat-stroked-button (click)="openAbsentDialog(ev)" matTooltip="Speler afmelden"
-                        *ngIf="ev.matches.length > 0">
-                  <mat-icon>person_off</mat-icon> Afmelden
-                </button>
-                <button mat-stroked-button (click)="openStatDialog(ev)" matTooltip="180s / Hoge Finish invoeren"
-                        *ngIf="ev.matches.length > 0">
-                  <mat-icon>emoji_events</mat-icon> 180 / HF
-                </button>
-                <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel">
-                  <mat-icon>file_download</mat-icon>
-                </button>
-                <button mat-icon-button (click)="exportEveningPdf(ev.id)" matTooltip="Exporteren naar PDF">
-                  <mat-icon>picture_as_pdf</mat-icon>
-                </button>
-                <button mat-icon-button (click)="printEvening(ev.id)" matTooltip="Afdrukken">
-                  <mat-icon>print</mat-icon>
-                </button>
-                <button mat-icon-button color="warn" (click)="deleteEvening(ev)" matTooltip="Avond verwijderen"
-                        *ngIf="ev.isInhaalAvond">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
-            </div>
-          </mat-card-header>
-          <mat-card-content>
-            <p *ngIf="ev.isInhaalAvond && ev.matches.length === 0"
-               style="color:#757575;text-align:center;padding:24px 0;margin:0">
-              Geen uitgestelde wedstrijden gevonden voor deze inhaalavond.
-            </p>
-            <mat-form-field *ngIf="ev.isInhaalAvond && ev.matches.length > 0"
-                            style="width:100%;margin-bottom:8px" subscriptSizing="dynamic">
-              <mat-label>Zoek op nr (bijv. 12 of 12 34)</mat-label>
-              <input matInput [(ngModel)]="catchUpSearch" placeholder="nr A   nr B">
-              <button matSuffix mat-icon-button *ngIf="catchUpSearch" (click)="catchUpSearch=''">
-                <mat-icon>close</mat-icon>
-              </button>
-              <mat-icon matPrefix style="margin-right:4px">search</mat-icon>
-            </mat-form-field>
-            <table mat-table [dataSource]="ev.isInhaalAvond ? filteredMatches(ev) : ev.matches" *ngIf="ev.matches.length > 0">
-              <ng-container matColumnDef="playerA">
-                <th mat-header-cell *matHeaderCellDef>Speler A</th>
-                <td mat-cell *matCellDef="let m">{{ playerName(m.playerA) }}</td>
-              </ng-container>
-              <ng-container matColumnDef="vs">
-                <th mat-header-cell *matHeaderCellDef></th>
-                <td mat-cell *matCellDef="let m" class="vs-cell">vs</td>
-              </ng-container>
-              <ng-container matColumnDef="playerB">
-                <th mat-header-cell *matHeaderCellDef>Speler B</th>
-                <td mat-cell *matCellDef="let m">{{ playerName(m.playerB) }}</td>
-              </ng-container>
-              <ng-container matColumnDef="score">
-                <th mat-header-cell *matHeaderCellDef>Score</th>
-                <td mat-cell *matCellDef="let m" class="score-cell">
-                  <span *ngIf="m.played">{{ m.scoreA }} – {{ m.scoreB }}</span>
-                  <span *ngIf="!m.played && m.reportedBy"
-                        style="color:#e65100;font-size:12px;font-weight:500">
-                    <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">schedule</mat-icon>
-                    Afgemeld: {{ m.reportedBy }}
-                  </span>
-                  <span *ngIf="!m.played && !m.reportedBy" style="color:#bdbdbd">—</span>
-                </td>
-              </ng-container>
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef></th>
-                <td mat-cell *matCellDef="let m" style="text-align:right">
-                  <button mat-stroked-button color="primary" *ngIf="!m.played"
-                    (click)="openScore(m, ev.isInhaalAvond)">
-                    <mat-icon>edit</mat-icon> Score
-                  </button>
-                  <button mat-button color="accent" *ngIf="m.played"
-                    (click)="openScore(m, ev.isInhaalAvond)" matTooltip="Score wijzigen">
-                    <mat-icon>check_circle</mat-icon> Wijzigen
-                  </button>
-                </td>
-              </ng-container>
-              <tr mat-header-row *matHeaderRowDef="matchCols"></tr>
-              <tr mat-row *matRowDef="let row; columns: matchCols;"
-                  [class.match-played]="row.played"></tr>
-            </table>
-          </mat-card-content>
-        </mat-card>
-      </mat-tab>
-    </mat-tab-group>
-
+                </span>
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    </div>
+    
+    @if (!schedule) {
+      <div class="empty-state">
+        <mat-icon>sports_bar</mat-icon>
+        <p>Nog geen schema. Ga naar <strong>Beheer</strong> om spelers te importeren en een schema te genereren.</p>
+      </div>
+    }
+    
+    @if (schedule) {
+      <mat-tab-group animationDuration="150ms" [selectedIndex]="activeTab"
+        (selectedIndexChange)="activeTab = $event">
+        @for (ev of schedule.evenings; track ev) {
+          <mat-tab>
+            <!-- Tab-inhoud -->
+            <mat-card style="border-radius:8px;">
+              <mat-card-header style="padding-bottom:0">
+                <div class="card-header-row" style="width:100%">
+                  <div>
+                    <mat-card-title>
+                      @if (ev.isInhaalAvond) {
+                        <span style="color:#7b1fa2;margin-right:6px">
+                          <mat-icon style="vertical-align:middle;font-size:18px">replay</mat-icon>
+                          Inhaalavond
+                        </span>
+                      }
+                      @if (!ev.isInhaalAvond) {
+                        <span>Avond {{ ev.number }}</span>
+                      }
+                      &mdash; {{ ev.date | date:'EEEE d MMMM yyyy' }}
+                    </mat-card-title>
+                    @if (!ev.isInhaalAvond) {
+                      <mat-card-subtitle>
+                        {{ playedCount(ev) }} / {{ ev.matches.length }} wedstrijden gespeeld
+                      </mat-card-subtitle>
+                    }
+                    @if (ev.isInhaalAvond) {
+                      <mat-card-subtitle style="color:#7b1fa2">
+                        {{ openCount(ev) }} openstaande wedstrijden
+                      </mat-card-subtitle>
+                    }
+                  </div>
+                  <div style="display:flex;gap:4px;align-items:center">
+                    @if (ev.matches.length > 0) {
+                      <button mat-stroked-button (click)="openAbsentDialog(ev)" matTooltip="Speler afmelden"
+                        >
+                        <mat-icon>person_off</mat-icon> Afmelden
+                      </button>
+                    }
+                    @if (ev.matches.length > 0) {
+                      <button mat-stroked-button (click)="openStatDialog(ev)" matTooltip="180s / Hoge Finish invoeren"
+                        >
+                        <mat-icon>emoji_events</mat-icon> 180 / HF
+                      </button>
+                    }
+                    <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel">
+                      <mat-icon>file_download</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="exportEveningPdf(ev.id)" matTooltip="Exporteren naar PDF">
+                      <mat-icon>picture_as_pdf</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="printEvening(ev.id)" matTooltip="Afdrukken">
+                      <mat-icon>print</mat-icon>
+                    </button>
+                    @if (ev.isInhaalAvond) {
+                      <button mat-icon-button color="warn" (click)="deleteEvening(ev)" matTooltip="Avond verwijderen"
+                        >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    }
+                  </div>
+                </div>
+              </mat-card-header>
+              <mat-card-content>
+                @if (ev.isInhaalAvond && ev.matches.length === 0) {
+                  <p
+                    style="color:#757575;text-align:center;padding:24px 0;margin:0">
+                    Geen uitgestelde wedstrijden gevonden voor deze inhaalavond.
+                  </p>
+                }
+                @if (ev.isInhaalAvond && ev.matches.length > 0) {
+                  <mat-form-field
+                    style="width:100%;margin-bottom:8px" subscriptSizing="dynamic">
+                    <mat-label>Zoek op nr (bijv. 12 of 12 34)</mat-label>
+                    <input matInput [(ngModel)]="catchUpSearch" placeholder="nr A   nr B">
+                    @if (catchUpSearch) {
+                      <button matSuffix mat-icon-button (click)="catchUpSearch=''">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    }
+                    <mat-icon matPrefix style="margin-right:4px">search</mat-icon>
+                  </mat-form-field>
+                }
+                @if (ev.matches.length > 0) {
+                  <table mat-table [dataSource]="ev.isInhaalAvond ? filteredMatches(ev) : ev.matches">
+                    <ng-container matColumnDef="playerA">
+                      <th mat-header-cell *matHeaderCellDef>Speler A</th>
+                      <td mat-cell *matCellDef="let m">{{ playerName(m.playerA) }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="vs">
+                      <th mat-header-cell *matHeaderCellDef></th>
+                      <td mat-cell *matCellDef="let m" class="vs-cell">vs</td>
+                    </ng-container>
+                    <ng-container matColumnDef="playerB">
+                      <th mat-header-cell *matHeaderCellDef>Speler B</th>
+                      <td mat-cell *matCellDef="let m">{{ playerName(m.playerB) }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="score">
+                      <th mat-header-cell *matHeaderCellDef>Score</th>
+                      <td mat-cell *matCellDef="let m" class="score-cell">
+                        @if (m.played) {
+                          <span>{{ m.scoreA }} – {{ m.scoreB }}</span>
+                        }
+                        @if (!m.played && m.reportedBy) {
+                          <span
+                            style="color:#e65100;font-size:12px;font-weight:500">
+                            <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">schedule</mat-icon>
+                            Afgemeld: {{ m.reportedBy }}
+                          </span>
+                        }
+                        @if (!m.played && !m.reportedBy) {
+                          <span style="color:#bdbdbd">—</span>
+                        }
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef></th>
+                      <td mat-cell *matCellDef="let m" style="text-align:right">
+                        @if (!m.played) {
+                          <button mat-stroked-button color="primary"
+                            (click)="openScore(m, ev.isInhaalAvond)">
+                            <mat-icon>edit</mat-icon> Score
+                          </button>
+                        }
+                        @if (m.played) {
+                          <button mat-button color="accent"
+                            (click)="openScore(m, ev.isInhaalAvond)" matTooltip="Score wijzigen">
+                            <mat-icon>check_circle</mat-icon> Wijzigen
+                          </button>
+                        }
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="matchCols"></tr>
+                    <tr mat-row *matRowDef="let row; columns: matchCols;"
+                    [class.match-played]="row.played"></tr>
+                  </table>
+                }
+              </mat-card-content>
+            </mat-card>
+          </mat-tab>
+        }
+      </mat-tab-group>
+    }
+    
     <!-- Print-only schedule matrix -->
-    <div class="print-only" *ngIf="schedule && printData">
-      <p class="print-schedule-title">{{ schedule.competitionName }} — {{ schedule.season }}</p>
-
-      <!-- Page 1: first half of evenings -->
-      <table class="print-schedule-table">
-        <thead>
-          <tr>
-            <th class="row-nr">#</th>
-            <th *ngFor="let ev of printData.half1">
-              {{ ev.number }}<br><span style="font-weight:400">{{ ev.date | date:'d MMM' }}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of printData.rows1; let i = index">
-            <td class="row-nr">{{ i + 1 }}</td>
-            <ng-container *ngFor="let col of printData.half1; let ci = index">
-              <td *ngIf="col.isCatchUp && i === 0"
-                  [attr.rowspan]="printData.rowCount"
-                  style="writing-mode:vertical-lr;text-align:center;vertical-align:middle;font-weight:600;letter-spacing:3px;color:#7b1fa2;font-size:7pt">
-                INHAALAVOND
-              </td>
-              <td *ngIf="!col.isCatchUp">{{ row[ci] }}</td>
-            </ng-container>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Page 2: second half of evenings -->
-      <div style="page-break-before:always"></div>
-      <p class="print-schedule-title">{{ schedule.competitionName }} — {{ schedule.season }}</p>
-      <table class="print-schedule-table">
-        <thead>
-          <tr>
-            <th class="row-nr">#</th>
-            <th *ngFor="let ev of printData.half2">
-              {{ ev.number }}<br><span style="font-weight:400">{{ ev.date | date:'d MMM' }}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of printData.rows2; let i = index">
-            <td class="row-nr">{{ i + 1 }}</td>
-            <ng-container *ngFor="let col of printData.half2; let ci = index">
-              <td *ngIf="col.isCatchUp && i === 0"
-                  [attr.rowspan]="printData.rowCount"
-                  style="writing-mode:vertical-lr;text-align:center;vertical-align:middle;font-weight:600;letter-spacing:3px;color:#7b1fa2;font-size:7pt">
-                INHAALAVOND
-              </td>
-              <td *ngIf="!col.isCatchUp">{{ row[ci] }}</td>
-            </ng-container>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  `
+    @if (schedule && printData) {
+      <div class="print-only">
+        <p class="print-schedule-title">{{ schedule.competitionName }} — {{ schedule.season }}</p>
+        <!-- Page 1: first half of evenings -->
+        <table class="print-schedule-table">
+          <thead>
+            <tr>
+              <th class="row-nr">#</th>
+              @for (ev of printData.half1; track ev) {
+                <th>
+                  {{ ev.number }}<br><span style="font-weight:400">{{ ev.date | date:'d MMM' }}</span>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of printData.rows1; track row; let i = $index) {
+              <tr>
+                <td class="row-nr">{{ i + 1 }}</td>
+                @for (col of printData.half1; track col; let ci = $index) {
+                  @if (col.isCatchUp && i === 0) {
+                    <td
+                      [attr.rowspan]="printData.rowCount"
+                      style="writing-mode:vertical-lr;text-align:center;vertical-align:middle;font-weight:600;letter-spacing:3px;color:#7b1fa2;font-size:7pt">
+                      INHAALAVOND
+                    </td>
+                  }
+                  @if (!col.isCatchUp) {
+                    <td>{{ row[ci] }}</td>
+                  }
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+        <!-- Page 2: second half of evenings -->
+        <div style="page-break-before:always"></div>
+        <p class="print-schedule-title">{{ schedule.competitionName }} — {{ schedule.season }}</p>
+        <table class="print-schedule-table">
+          <thead>
+            <tr>
+              <th class="row-nr">#</th>
+              @for (ev of printData.half2; track ev) {
+                <th>
+                  {{ ev.number }}<br><span style="font-weight:400">{{ ev.date | date:'d MMM' }}</span>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of printData.rows2; track row; let i = $index) {
+              <tr>
+                <td class="row-nr">{{ i + 1 }}</td>
+                @for (col of printData.half2; track col; let ci = $index) {
+                  @if (col.isCatchUp && i === 0) {
+                    <td
+                      [attr.rowspan]="printData.rowCount"
+                      style="writing-mode:vertical-lr;text-align:center;vertical-align:middle;font-weight:600;letter-spacing:3px;color:#7b1fa2;font-size:7pt">
+                      INHAALAVOND
+                    </td>
+                  }
+                  @if (!col.isCatchUp) {
+                    <td>{{ row[ci] }}</td>
+                  }
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    `
 })
 export class OverviewComponent implements OnInit {
   private scheduleService  = inject(ScheduleService);
@@ -592,12 +673,6 @@ export class OverviewComponent implements OnInit {
       next: (s) => {
         this.schedule = s;
         if (!preserveTab) this.activeTab = this.firstUpcomingTab(s.evenings);
-        console.log('[overview] schedule loaded', s.id, `evenings: ${s.evenings.length}`);
-        s.evenings.forEach(ev => {
-          if (ev.isInhaalAvond) {
-            console.log(`[overview] inhaalavond ev#${ev.number} (${ev.date}) matches:`, ev.matches);
-          }
-        });
       },
       error: () => {},
     });
@@ -677,7 +752,6 @@ export class OverviewComponent implements OnInit {
       playedDate: string;
     } | undefined) => {
       if (!result) return;
-      console.log('[openScore] submitting result', match.id, result);
       this.scoreService.submitResult(match.id, { ...result, playedDate: result.playedDate ?? '' }).subscribe({
         next: () => {
           if (isInhaalAvond && result.playedDate) this.lastCatchUpPlayedDate = result.playedDate;

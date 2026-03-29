@@ -17,11 +17,6 @@ export const routes: Routes = [
       import('./components/evening-view/evening-view.component').then((m) => m.EveningViewComponent),
   },
   {
-    path: 'score/:id',
-    loadComponent: () =>
-      import('./components/score-entry/score-entry.component').then((m) => m.ScoreEntryComponent),
-  },
-  {
     path: 'standings',
     loadComponent: () =>
       import('./components/standings/standings.component').then((m) => m.StandingsComponent),

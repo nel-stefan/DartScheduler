@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { filter, distinctUntilChanged } from 'rxjs';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -22,7 +22,7 @@ interface StatRow {
 @Component({
   selector: 'app-mobile-stats',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatSnackBarModule],
+  imports: [FormsModule, MatSnackBarModule],
   styles: [`
     :host { display: block; }
 
@@ -104,58 +104,61 @@ interface StatRow {
     <div class="header">
       <h2>180s & Hoge Finish</h2>
       <div class="chips">
+        @for (ev of evenings; track ev) {
+          <button
+            class="chip"
+            [class.active]="ev.id === selectedEveningId"
+            [class.inhaal]="ev.isInhaalAvond"
+            (click)="selectEvening(ev.id)">
+            {{ ev.isInhaalAvond ? 'Inhaal' : 'Avond ' + ev.number }}
+          </button>
+        }
+      </div>
+    </div>
+    
+    @if (loading) {
+      <div class="loader">Laden…</div>
+    }
+    
+    @if (!loading) {
+      <div class="body">
+        <p class="info">Voer per speler de 180s en hoogste finish in voor de geselecteerde avond.</p>
+        @for (row of rows; track row) {
+          <div
+            class="card"
+            [class.dirty]="row.dirty"
+            >
+            <div class="player-name">{{ row.name }}</div>
+            <div class="stat-group">
+              <span class="stat-label">180s</span>
+              <div class="stepper">
+                <button class="step-btn" type="button" (click)="dec180(row)">−</button>
+                <div class="step-val">{{ row.oneEighties }}</div>
+                <button class="step-btn" type="button" (click)="inc180(row)">+</button>
+              </div>
+            </div>
+            <div class="stat-group">
+              <span class="stat-label">Hoge Finish</span>
+              <input
+                class="finish-input"
+                type="number"
+                min="0"
+                max="170"
+                [(ngModel)]="row.highestFinish"
+                (ngModelChange)="markDirty(row)"
+                placeholder="0">
+            </div>
+          </div>
+        }
         <button
-          *ngFor="let ev of evenings"
-          class="chip"
-          [class.active]="ev.id === selectedEveningId"
-          [class.inhaal]="ev.isInhaalAvond"
-          (click)="selectEvening(ev.id)">
-          {{ ev.isInhaalAvond ? 'Inhaal' : 'Avond ' + ev.number }}
+          class="save-btn"
+          [disabled]="saving || !hasDirty"
+          (click)="saveAll()">
+          {{ saving ? 'Opslaan…' : 'Opslaan' }}
         </button>
       </div>
-    </div>
-
-    <div class="loader" *ngIf="loading">Laden…</div>
-
-    <div class="body" *ngIf="!loading">
-      <p class="info">Voer per speler de 180s en hoogste finish in voor de geselecteerde avond.</p>
-
-      <div
-        class="card"
-        [class.dirty]="row.dirty"
-        *ngFor="let row of rows">
-        <div class="player-name">{{ row.name }}</div>
-
-        <div class="stat-group">
-          <span class="stat-label">180s</span>
-          <div class="stepper">
-            <button class="step-btn" type="button" (click)="dec180(row)">−</button>
-            <div class="step-val">{{ row.oneEighties }}</div>
-            <button class="step-btn" type="button" (click)="inc180(row)">+</button>
-          </div>
-        </div>
-
-        <div class="stat-group">
-          <span class="stat-label">Hoge Finish</span>
-          <input
-            class="finish-input"
-            type="number"
-            min="0"
-            max="170"
-            [(ngModel)]="row.highestFinish"
-            (ngModelChange)="markDirty(row)"
-            placeholder="0">
-        </div>
-      </div>
-
-      <button
-        class="save-btn"
-        [disabled]="saving || !hasDirty"
-        (click)="saveAll()">
-        {{ saving ? 'Opslaan…' : 'Opslaan' }}
-      </button>
-    </div>
-  `,
+    }
+    `,
 })
 export class MobileStatsComponent implements OnInit {
   private scheduleService  = inject(ScheduleService);

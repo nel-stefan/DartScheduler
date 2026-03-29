@@ -36,24 +36,25 @@ import { environment } from '../../../environments/environment';
     <mat-dialog-content style="min-width:480px">
       <form [formGroup]="form" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;padding-top:8px">
         <mat-form-field style="grid-column:1/-1"><mat-label>Naam competitie</mat-label>
-          <input matInput formControlName="competitionName">
-        </mat-form-field>
-        <mat-form-field style="grid-column:1/-1"><mat-label>Seizoen (bijv. 2026)</mat-label>
-          <input matInput formControlName="season" placeholder="2026">
-        </mat-form-field>
-        <mat-form-field><mat-label>Aantal avonden (totaal)</mat-label>
-          <input matInput type="number" formControlName="numEvenings">
-        </mat-form-field>
-        <mat-form-field><mat-label>Interval (dagen)</mat-label>
-          <input matInput type="number" formControlName="intervalDays">
-        </mat-form-field>
-        <mat-form-field style="grid-column:1/-1"><mat-label>Startdatum (YYYY-MM-DD)</mat-label>
-          <input matInput formControlName="startDate" placeholder="2026-04-01">
-        </mat-form-field>
-      </form>
-
-      <!-- Avondenlijst -->
-      <div *ngIf="slots.length > 0" style="margin-top:16px">
+        <input matInput formControlName="competitionName">
+      </mat-form-field>
+      <mat-form-field style="grid-column:1/-1"><mat-label>Seizoen (bijv. 2026)</mat-label>
+      <input matInput formControlName="season" placeholder="2026">
+    </mat-form-field>
+    <mat-form-field><mat-label>Aantal avonden (totaal)</mat-label>
+    <input matInput type="number" formControlName="numEvenings">
+    </mat-form-field>
+    <mat-form-field><mat-label>Interval (dagen)</mat-label>
+    <input matInput type="number" formControlName="intervalDays">
+    </mat-form-field>
+    <mat-form-field style="grid-column:1/-1"><mat-label>Startdatum (YYYY-MM-DD)</mat-label>
+    <input matInput formControlName="startDate" placeholder="2026-04-01">
+    </mat-form-field>
+    </form>
+    
+    <!-- Avondenlijst -->
+    @if (slots.length > 0) {
+      <div style="margin-top:16px">
         <div style="font-weight:500;margin-bottom:8px;font-size:14px">
           Avondtype instellen
           <span style="color:#888;font-size:12px;font-weight:400;margin-left:8px">
@@ -61,27 +62,30 @@ import { environment } from '../../../environments/environment';
           </span>
         </div>
         <div style="max-height:280px;overflow-y:auto">
-          <div class="slot-row" *ngFor="let s of slots">
-            <span class="slot-nr">Avond {{ s.nr }}</span>
-            <span class="slot-date">{{ s.date | date:'EEE d MMM yyyy' }}</span>
-            <mat-form-field style="min-width:130px" subscriptSizing="dynamic">
-              <mat-select [(value)]="slotTypes[s.nr]">
-                <mat-option value="normaal">Normaal</mat-option>
-                <mat-option value="inhaal">Inhaalavond</mat-option>
-                <mat-option value="vrij">Vrije avond</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
+          @for (s of slots; track s) {
+            <div class="slot-row">
+              <span class="slot-nr">Avond {{ s.nr }}</span>
+              <span class="slot-date">{{ s.date | date:'EEE d MMM yyyy' }}</span>
+              <mat-form-field style="min-width:130px" subscriptSizing="dynamic">
+                <mat-select [(value)]="slotTypes[s.nr]">
+                  <mat-option value="normaal">Normaal</mat-option>
+                  <mat-option value="inhaal">Inhaalavond</mat-option>
+                  <mat-option value="vrij">Vrije avond</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          }
         </div>
       </div>
+    }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
       <button mat-raised-button color="primary"
-              [disabled]="form.invalid || regularCount === 0"
-              (click)="submit()">Genereren</button>
+        [disabled]="form.invalid || regularCount === 0"
+      (click)="submit()">Genereren</button>
     </mat-dialog-actions>
-  `
+    `
 })
 export class GenerateDialogComponent implements OnInit {
   private dialogRef = inject(MatDialogRef<GenerateDialogComponent>);
@@ -158,31 +162,33 @@ export class GenerateDialogComponent implements OnInit {
     <mat-dialog-content>
       <form [formGroup]="form" style="display:flex;flex-direction:column;gap:12px;min-width:340px;padding-top:8px">
         <mat-form-field><mat-label>Naam competitie</mat-label>
-          <input matInput formControlName="competitionName">
-        </mat-form-field>
-        <mat-form-field><mat-label>Seizoen (bijv. 2025)</mat-label>
-          <input matInput formControlName="season" placeholder="2025">
-        </mat-form-field>
-        <div>
-          <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="onFile($event)">
-          <button mat-stroked-button type="button" (click)="fileInput.click()">
-            <mat-icon>upload_file</mat-icon> Excel kiezen
-          </button>
-          <span *ngIf="file" style="margin-left:8px;color:#555;font-size:13px">{{ file.name }}</span>
-        </div>
-      </form>
-      <p style="color:#757575;font-size:12px;margin-top:12px">
-        Ondersteunde formaten:<br>
-        • <strong>Speelschema matrix</strong>: rij 1 = datums, cellen = "nr - nr" of "nr (naam) - nr (naam)".
-        Kolommen met "INHAAL" worden als inhaalavonden geïmporteerd.<br>
-        • <strong>Platte tabel</strong>: kolommen avond, datum, nr a, naam a, nr b, naam b, leg1, beurten1, …
-      </p>
+        <input matInput formControlName="competitionName">
+      </mat-form-field>
+      <mat-form-field><mat-label>Seizoen (bijv. 2025)</mat-label>
+      <input matInput formControlName="season" placeholder="2025">
+    </mat-form-field>
+    <div>
+      <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="onFile($event)">
+      <button mat-stroked-button type="button" (click)="fileInput.click()">
+        <mat-icon>upload_file</mat-icon> Excel kiezen
+      </button>
+      @if (file) {
+        <span style="margin-left:8px;color:#555;font-size:13px">{{ file.name }}</span>
+      }
+    </div>
+    </form>
+    <p style="color:#757575;font-size:12px;margin-top:12px">
+      Ondersteunde formaten:<br>
+      • <strong>Speelschema matrix</strong>: rij 1 = datums, cellen = "nr - nr" of "nr (naam) - nr (naam)".
+      Kolommen met "INHAAL" worden als inhaalavonden geïmporteerd.<br>
+      • <strong>Platte tabel</strong>: kolommen avond, datum, nr a, naam a, nr b, naam b, leg1, beurten1, …
+    </p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
       <button mat-raised-button color="primary" [disabled]="form.invalid || !file" (click)="submit()">Importeren</button>
     </mat-dialog-actions>
-  `
+    `
 })
 export class ImportSeasonDialogComponent {
   private dialogRef = inject(MatDialogRef<ImportSeasonDialogComponent>);
@@ -245,7 +251,7 @@ export class ImportSeasonDialogComponent {
   `],
     template: `
     <div style="max-width:700px">
-
+    
       <!-- Seizoenen -->
       <mat-card style="margin-bottom:24px">
         <mat-card-header>
@@ -260,40 +266,48 @@ export class ImportSeasonDialogComponent {
               <mat-icon>history</mat-icon> Oud seizoen importeren
             </button>
           </div>
-
+    
           <mat-divider style="margin-bottom:16px"></mat-divider>
-
-          <p *ngIf="seasons.length === 0" style="color:#888;text-align:center;padding:16px 0;margin:0">
-            Nog geen seizoenen aangemaakt.
-          </p>
-
+    
+          @if (seasons.length === 0) {
+            <p style="color:#888;text-align:center;padding:16px 0;margin:0">
+              Nog geen seizoenen aangemaakt.
+            </p>
+          }
+    
           <div class="seasons-list">
-            <div class="season-row" *ngFor="let s of seasons">
-              <div style="flex:1;min-width:0">
-                <ng-container *ngIf="editingSeasonId !== s.id">
-                  <div class="season-name">{{ s.competitionName }}</div>
-                </ng-container>
-                <ng-container *ngIf="editingSeasonId === s.id">
-                  <input #renameInput class="rename-input" [(ngModel)]="renameDraft"
-                         (keydown.enter)="saveRename(s)" (keydown.escape)="cancelRename()"
-                         (blur)="saveRename(s)">
-                </ng-container>
-                <div class="season-meta">Seizoen {{ s.season }} · {{ s.eveningCount }} avonden</div>
+            @for (s of seasons; track s) {
+              <div class="season-row">
+                <div style="flex:1;min-width:0">
+                  @if (editingSeasonId !== s.id) {
+                    <div class="season-name">{{ s.competitionName }}</div>
+                  }
+                  @if (editingSeasonId === s.id) {
+                    <input #renameInput class="rename-input" [(ngModel)]="renameDraft"
+                      (keydown.enter)="saveRename(s)" (keydown.escape)="cancelRename()"
+                      (blur)="saveRename(s)">
+                  }
+                  <div class="season-meta">Seizoen {{ s.season }} · {{ s.eveningCount }} avonden</div>
+                </div>
+                @if (editingSeasonId !== s.id) {
+                  <button mat-icon-button (click)="startRename(s)" matTooltip="Naam aanpassen"
+                    >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                }
+                @if (editingSeasonId !== s.id) {
+                  <button mat-icon-button color="warn" (click)="deleteSeason(s)"
+                    matTooltip="Seizoen verwijderen"
+                    >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                }
               </div>
-              <button mat-icon-button (click)="startRename(s)" matTooltip="Naam aanpassen"
-                      *ngIf="editingSeasonId !== s.id">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button color="warn" (click)="deleteSeason(s)"
-                      matTooltip="Seizoen verwijderen"
-                      *ngIf="editingSeasonId !== s.id">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </div>
+            }
           </div>
         </mat-card-content>
       </mat-card>
-
+    
       <!-- Spelers importeren -->
       <mat-card>
         <mat-card-header>
@@ -306,14 +320,16 @@ export class ImportSeasonDialogComponent {
             <button mat-raised-button color="primary" (click)="fileInput.click()">
               <mat-icon>upload_file</mat-icon> Excel-bestand kiezen
             </button>
-            <span *ngIf="selectedFile" style="color:#555">{{ selectedFile.name }}</span>
+            @if (selectedFile) {
+              <span style="color:#555">{{ selectedFile.name }}</span>
+            }
             <button mat-raised-button color="accent" [disabled]="!selectedFile || loading" (click)="upload()">
               {{ loading ? 'Bezig…' : 'Importeren' }}
             </button>
           </div>
         </mat-card-content>
       </mat-card>
-
+    
       <!-- Server -->
       <mat-card style="margin-top:24px">
         <mat-card-header>
@@ -326,16 +342,22 @@ export class ImportSeasonDialogComponent {
               <mat-icon>refresh</mat-icon> Vernieuwen
             </button>
           </div>
-          <div *ngIf="logsLoading" style="color:#9e9e9e;font-size:13px">Laden...</div>
-          <div *ngIf="!logsLoading && logs.length === 0" class="log-empty">
-            Nog geen log regels.
-          </div>
-          <div *ngIf="!logsLoading && logs.length > 0" class="log-box">{{ logs.join('\n') }}</div>
+          @if (logsLoading) {
+            <div style="color:#9e9e9e;font-size:13px">Laden...</div>
+          }
+          @if (!logsLoading && logs.length === 0) {
+            <div class="log-empty">
+              Nog geen log regels.
+            </div>
+          }
+          @if (!logsLoading && logs.length > 0) {
+            <div class="log-box">{{ logs.join('\n') }}</div>
+          }
         </mat-card-content>
       </mat-card>
-
+    
     </div>
-  `
+    `
 })
 export class BeheerComponent implements OnInit {
   private scheduleService = inject(ScheduleService);

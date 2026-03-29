@@ -1,14 +1,14 @@
 import { Component, inject, OnInit, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged } from 'rxjs';
-import { CommonModule } from '@angular/common';
+
 import { ScoreService } from '../services/score.service';
 import { SeasonService } from '../services/season.service';
 import { PlayerStats, DutyStats } from '../models';
 
 @Component({
     selector: 'app-mobile-stand',
-    imports: [CommonModule],
+    imports: [],
     styles: [`
     :host { display: block; }
 
@@ -83,70 +83,80 @@ import { PlayerStats, DutyStats } from '../models';
     <div class="header">
       <h2>Stand</h2>
     </div>
-
+    
     <div class="section-tabs">
       <div class="tab" [class.active]="tab === 'stand'" (click)="tab = 'stand'">Klassement</div>
       <div class="tab" [class.active]="tab === 'duty'"  (click)="tab = 'duty'">Schrijver / Teller</div>
     </div>
-
-    <div class="loader" *ngIf="loading">Laden…</div>
-
+    
+    @if (loading) {
+      <div class="loader">Laden…</div>
+    }
+    
     <!-- Klassement -->
-    <div class="body" *ngIf="!loading && tab === 'stand'">
-      <div class="class-card" *ngFor="let cls of classes">
-        <div class="class-title">{{ cls.label }}</div>
-
-        <div class="row head">
-          <span class="c-rank">#</span>
-          <span class="c-nr">Nr</span>
-          <span class="c-name">Naam</span>
-          <span class="c-num c-win">W</span>
-          <span class="c-num c-lose">V</span>
-          <span class="c-pts">+pnt</span>
-          <span class="c-pts">-pnt</span>
-          <span class="c-180">180</span>
-          <span class="c-hf">HF</span>
-        </div>
-
-        <div class="row" *ngFor="let s of cls.stats; let i = index">
-          <span class="c-rank">{{ i + 1 }}</span>
-          <span class="c-nr">{{ s.player.nr }}</span>
-          <span class="c-name">{{ s.player.name }}</span>
-          <span class="c-num c-win">{{ s.wins }}</span>
-          <span class="c-num c-lose">{{ s.losses }}</span>
-          <span class="c-pts">{{ s.pointsFor }}</span>
-          <span class="c-pts">{{ s.pointsAgainst }}</span>
-          <span class="c-180">{{ s.oneEighties || '—' }}</span>
-          <span class="c-hf">{{ s.highestFinish || '—' }}</span>
-        </div>
-
-        <div class="empty" *ngIf="cls.stats.length === 0">Nog geen gespeelde wedstrijden.</div>
+    @if (!loading && tab === 'stand') {
+      <div class="body">
+        @for (cls of classes; track cls) {
+          <div class="class-card">
+            <div class="class-title">{{ cls.label }}</div>
+            <div class="row head">
+              <span class="c-rank">#</span>
+              <span class="c-nr">Nr</span>
+              <span class="c-name">Naam</span>
+              <span class="c-num c-win">W</span>
+              <span class="c-num c-lose">V</span>
+              <span class="c-pts">+pnt</span>
+              <span class="c-pts">-pnt</span>
+              <span class="c-180">180</span>
+              <span class="c-hf">HF</span>
+            </div>
+            @for (s of cls.stats; track s; let i = $index) {
+              <div class="row">
+                <span class="c-rank">{{ i + 1 }}</span>
+                <span class="c-nr">{{ s.player.nr }}</span>
+                <span class="c-name">{{ s.player.name }}</span>
+                <span class="c-num c-win">{{ s.wins }}</span>
+                <span class="c-num c-lose">{{ s.losses }}</span>
+                <span class="c-pts">{{ s.pointsFor }}</span>
+                <span class="c-pts">{{ s.pointsAgainst }}</span>
+                <span class="c-180">{{ s.oneEighties || '—' }}</span>
+                <span class="c-hf">{{ s.highestFinish || '—' }}</span>
+              </div>
+            }
+            @if (cls.stats.length === 0) {
+              <div class="empty">Nog geen gespeelde wedstrijden.</div>
+            }
+          </div>
+        }
       </div>
-    </div>
-
+    }
+    
     <!-- Schrijver / Teller -->
-    <div class="body" *ngIf="!loading && tab === 'duty'">
-      <div class="class-card">
-        <div class="class-title">Schrijver / Teller</div>
-
-        <div class="duty-row head">
-          <span class="c-rank">#</span>
-          <span class="c-nr">Nr</span>
-          <span class="c-name">Naam</span>
-          <span class="c-num">Keer</span>
+    @if (!loading && tab === 'duty') {
+      <div class="body">
+        <div class="class-card">
+          <div class="class-title">Schrijver / Teller</div>
+          <div class="duty-row head">
+            <span class="c-rank">#</span>
+            <span class="c-nr">Nr</span>
+            <span class="c-name">Naam</span>
+            <span class="c-num">Keer</span>
+          </div>
+          @for (s of dutyStats; track s; let i = $index) {
+            <div class="duty-row">
+              <span class="c-rank">{{ i + 1 }}</span>
+              <span class="c-nr">{{ s.player.nr }}</span>
+              <span class="c-name">{{ s.player.name }}</span>
+              <span class="c-num" style="font-weight:600">{{ s.count }}</span>
+            </div>
+          }
+          @if (dutyStats.length === 0) {
+            <div class="empty">Nog geen schrijvers of tellers geregistreerd.</div>
+          }
         </div>
-
-        <div class="duty-row" *ngFor="let s of dutyStats; let i = index">
-          <span class="c-rank">{{ i + 1 }}</span>
-          <span class="c-nr">{{ s.player.nr }}</span>
-          <span class="c-name">{{ s.player.name }}</span>
-          <span class="c-num" style="font-weight:600">{{ s.count }}</span>
-        </div>
-
-        <div class="empty" *ngIf="dutyStats.length === 0">Nog geen schrijvers of tellers geregistreerd.</div>
       </div>
-    </div>
-  `
+    }
+    `
 })
 export class MobileStandComponent implements OnInit {
   private scoreService  = inject(ScoreService);

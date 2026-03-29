@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,45 +18,50 @@ export interface EveningStatDialogData {
 
 @Component({
     selector: 'app-evening-stat-dialog',
-    imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule,
-        MatFormFieldModule, MatSelectModule, MatInputModule],
+    imports: [FormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatSelectModule, MatInputModule],
     styles: [`
     .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   `],
     template: `
     <h2 mat-dialog-title>180s / Hoge Finish — {{ playerLabel }}</h2>
     <mat-dialog-content style="min-width:320px;padding-top:8px">
-
-      <mat-form-field style="width:100%" subscriptSizing="dynamic" *ngIf="!data.preselectedPlayerId">
-        <mat-label>Speler</mat-label>
-        <mat-select [(ngModel)]="selectedPlayerId" (ngModelChange)="loadStat()">
-          <mat-option *ngFor="let p of data.players" [value]="p.id">
-            {{ fmt(p.name) }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <div class="fields" *ngIf="selectedPlayerId">
-        <mat-form-field subscriptSizing="dynamic">
-          <mat-label>180s</mat-label>
-          <input matInput type="number" [(ngModel)]="oneEighties" min="0">
+    
+      @if (!data.preselectedPlayerId) {
+        <mat-form-field style="width:100%" subscriptSizing="dynamic">
+          <mat-label>Speler</mat-label>
+          <mat-select [(ngModel)]="selectedPlayerId" (ngModelChange)="loadStat()">
+            @for (p of data.players; track p) {
+              <mat-option [value]="p.id">
+                {{ fmt(p.name) }}
+              </mat-option>
+            }
+          </mat-select>
         </mat-form-field>
-        <mat-form-field subscriptSizing="dynamic">
-          <mat-label>Hoogste Finish</mat-label>
-          <input matInput type="number" [(ngModel)]="highestFinish" min="0" max="170">
-        </mat-form-field>
-      </div>
-
+      }
+    
+      @if (selectedPlayerId) {
+        <div class="fields">
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>180s</mat-label>
+            <input matInput type="number" [(ngModel)]="oneEighties" min="0">
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Hoogste Finish</mat-label>
+            <input matInput type="number" [(ngModel)]="highestFinish" min="0" max="170">
+          </mat-form-field>
+        </div>
+      }
+    
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
       <button mat-flat-button color="primary"
-              [disabled]="saving || !selectedPlayerId"
-              (click)="save()">
+        [disabled]="saving || !selectedPlayerId"
+        (click)="save()">
         {{ saving ? 'Opslaan…' : 'Opslaan' }}
       </button>
     </mat-dialog-actions>
-  `
+    `
 })
 export class EveningStatDialogComponent implements OnInit {
   data        = inject<EveningStatDialogData>(MAT_DIALOG_DATA);

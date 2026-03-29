@@ -8,6 +8,7 @@ export const mobileRoutes: Routes = [
       { path: '', redirectTo: 'avond', pathMatch: 'full' },
       { path: 'avond', loadComponent: () => import('./mobile-avond.component').then(m => m.MobileAvondComponent) },
       { path: 'stand', loadComponent: () => import('./mobile-stand.component').then(m => m.MobileStandComponent) },
+      { path: 'stats', loadComponent: () => import('./mobile-stats.component').then(m => m.MobileStatsComponent) },
     ],
   },
   { path: 'score/:id', loadComponent: () => import('./mobile-score.component').then(m => m.MobileScoreComponent) },

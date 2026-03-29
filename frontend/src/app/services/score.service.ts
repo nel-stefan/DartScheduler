@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PlayerStats, DutyStats } from '../models';
 import { environment } from '../../environments/environment';
@@ -27,12 +27,12 @@ export class ScoreService {
   }
 
   getStats(scheduleId?: string): Observable<PlayerStats[]> {
-    const params = scheduleId ? `?scheduleId=${scheduleId}` : '';
-    return this.http.get<PlayerStats[]>(`${this.base}/stats${params}`);
+    const params = scheduleId ? new HttpParams().set('scheduleId', scheduleId) : {};
+    return this.http.get<PlayerStats[]>(`${this.base}/stats`, { params });
   }
 
   getDutyStats(scheduleId?: string): Observable<DutyStats[]> {
-    const params = scheduleId ? `?scheduleId=${scheduleId}` : '';
-    return this.http.get<DutyStats[]>(`${this.base}/stats/duties${params}`);
+    const params = scheduleId ? new HttpParams().set('scheduleId', scheduleId) : {};
+    return this.http.get<DutyStats[]>(`${this.base}/stats/duties`, { params });
   }
 }

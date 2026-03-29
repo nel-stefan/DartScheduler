@@ -1,38 +1,41 @@
-<mat-toolbar color="primary" class="app-toolbar" *ngIf="!isMobile">
-  <img src="assets/logo.svg" alt="dart" class="toolbar-logo">
-  <span class="toolbar-title">{{ configService.appTitle$ | async }}</span>
-  <span class="toolbar-spacer"></span>
-
-  <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                  *ngIf="(seasonService.seasons$ | async)?.length"
-                  class="toolbar-season-select">
-    <mat-label>Seizoen</mat-label>
-    <mat-select [value]="seasonService.selectedId$ | async"
-                (selectionChange)="seasonService.select($event.value)">
-      <mat-option *ngFor="let s of seasonService.seasons$ | async" [value]="s.id">
-        {{ s.season || s.competitionName }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
-
-  <nav class="toolbar-nav">
-    <a mat-button routerLink="/"          routerLinkActive="nav-active" [routerLinkActiveOptions]="{exact:true}">
-      <mat-icon>event_note</mat-icon> Schema
-    </a>
-    <a mat-button routerLink="/spelers" routerLinkActive="nav-active">
-      <mat-icon>people</mat-icon> Spelers
-    </a>
-    <a mat-button routerLink="/standings" routerLinkActive="nav-active">
-      <mat-icon>leaderboard</mat-icon> Klassement
-    </a>
-    <a mat-button routerLink="/info" routerLinkActive="nav-active">
-      <mat-icon>insights</mat-icon> Info
-    </a>
-    <a mat-button routerLink="/beheer" routerLinkActive="nav-active">
-      <mat-icon>settings</mat-icon> Beheer
-    </a>
-  </nav>
-</mat-toolbar>
+@if (!isMobile) {
+  <mat-toolbar color="primary" class="app-toolbar">
+    <img src="assets/logo.svg" alt="dart" class="toolbar-logo">
+    <span class="toolbar-title">{{ configService.appTitle$ | async }}</span>
+    <span class="toolbar-spacer"></span>
+    @if ((seasonService.seasons$ | async)?.length) {
+      <mat-form-field appearance="outline" subscriptSizing="dynamic"
+        class="toolbar-season-select">
+        <mat-label>Seizoen</mat-label>
+        <mat-select [value]="seasonService.selectedId$ | async"
+          (selectionChange)="seasonService.select($event.value)">
+          @for (s of seasonService.seasons$ | async; track s) {
+            <mat-option [value]="s.id">
+              {{ s.season || s.competitionName }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+    <nav class="toolbar-nav">
+      <a mat-button routerLink="/"          routerLinkActive="nav-active" [routerLinkActiveOptions]="{exact:true}">
+        <mat-icon>event_note</mat-icon> Schema
+      </a>
+      <a mat-button routerLink="/spelers" routerLinkActive="nav-active">
+        <mat-icon>people</mat-icon> Spelers
+      </a>
+      <a mat-button routerLink="/standings" routerLinkActive="nav-active">
+        <mat-icon>leaderboard</mat-icon> Klassement
+      </a>
+      <a mat-button routerLink="/info" routerLinkActive="nav-active">
+        <mat-icon>insights</mat-icon> Info
+      </a>
+      <a mat-button routerLink="/beheer" routerLinkActive="nav-active">
+        <mat-icon>settings</mat-icon> Beheer
+      </a>
+    </nav>
+  </mat-toolbar>
+}
 
 <main [class.app-content]="!isMobile">
   <router-outlet />

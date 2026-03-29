@@ -1,4 +1,7 @@
 dartscheduler
+.env
+.env.development
+.env.production
 cmd/server/server
 *.db
 *.db-shm

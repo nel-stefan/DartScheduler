@@ -73,35 +73,45 @@ import { displayName } from '../utils/display-name';
     <div class="header">
       <p class="header-title">Avond</p>
       <select class="evening-select" [(ngModel)]="selectedEveningId" (ngModelChange)="onSelectChange($event)">
-        <option *ngFor="let ev of evenings" [value]="ev.id">
-          {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM' }}
-        </option>
+        @for (ev of evenings; track ev) {
+          <option [value]="ev.id">
+            {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM' }}
+          </option>
+        }
       </select>
     </div>
-
-    <div class="loader" *ngIf="loading">Laden…</div>
-
-    <div class="body" *ngIf="!loading && selectedEvening">
-      <div class="empty" *ngIf="selectedEvening.matches.length === 0">
-        Geen wedstrijden gevonden.
+    
+    @if (loading) {
+      <div class="loader">Laden…</div>
+    }
+    
+    @if (!loading && selectedEvening) {
+      <div class="body">
+        @if (selectedEvening.matches.length === 0) {
+          <div class="empty">
+            Geen wedstrijden gevonden.
+          </div>
+        }
+        @for (m of selectedEvening.matches; track m) {
+          <div class="card">
+            <div class="players">
+              <div class="player-a">{{ playerName(m.playerA) }}</div>
+              <div class="score-badge">{{ matchScore(m) }}</div>
+              <div class="player-b">{{ playerName(m.playerB) }}</div>
+            </div>
+            <div class="card-footer">
+              <span class="status" [class.played]="m.played" [class.open]="!m.played">
+                {{ m.played ? 'Gespeeld' : 'Open' }}
+              </span>
+              <button class="btn-score" [class.edit]="m.played" (click)="enterScore(m)">
+                {{ m.played ? 'Wijzigen' : 'Score invoeren' }}
+              </button>
+            </div>
+          </div>
+        }
       </div>
-      <div class="card" *ngFor="let m of selectedEvening.matches">
-        <div class="players">
-          <div class="player-a">{{ playerName(m.playerA) }}</div>
-          <div class="score-badge">{{ matchScore(m) }}</div>
-          <div class="player-b">{{ playerName(m.playerB) }}</div>
-        </div>
-        <div class="card-footer">
-          <span class="status" [class.played]="m.played" [class.open]="!m.played">
-            {{ m.played ? 'Gespeeld' : 'Open' }}
-          </span>
-          <button class="btn-score" [class.edit]="m.played" (click)="enterScore(m)">
-            {{ m.played ? 'Wijzigen' : 'Score invoeren' }}
-          </button>
-        </div>
-      </div>
-    </div>
-  `
+    }
+    `
 })
 export class MobileAvondComponent implements OnInit {
   private scheduleService = inject(ScheduleService);

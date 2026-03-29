@@ -1,4 +1,5 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule, AsyncPipe } from '@angular/common';
 import { Title } from '@angular/platform-browser';
@@ -28,14 +29,15 @@ export class AppComponent implements OnInit {
   protected version = environment.version;
   private router = inject(Router);
   private titleService = inject(Title);
+  private destroyRef = inject(DestroyRef);
 
   isMobile = false;
 
   ngOnInit(): void {
     this.seasonService.load();
     this.configService.load();
-    this.configService.appTitle$.subscribe(title => this.titleService.setTitle(title));
-    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
+    this.configService.appTitle$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(title => this.titleService.setTitle(title));
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.isMobile = this.router.url.startsWith('/m');
     });
   }

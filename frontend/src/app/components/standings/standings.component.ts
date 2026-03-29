@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, DestroyRef, Injector, afterNextRender } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged } from 'rxjs';
-import { CommonModule } from '@angular/common';
+
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -16,8 +16,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
 
 @Component({
     selector: 'app-standings',
-    imports: [CommonModule, MatButtonModule, MatCardModule, MatDialogModule,
-        MatTableModule, MatTabsModule, MatIconModule, MatTooltipModule],
+    imports: [MatButtonModule, MatCardModule, MatDialogModule, MatTableModule, MatTabsModule, MatIconModule, MatTooltipModule],
     styles: [`
     .section-title {
       font-size: 18px;
@@ -82,195 +81,206 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
           <mat-icon>print</mat-icon> Afdrukken
         </button>
       </div>
-
+    
       <!-- Records: minste beurten + hoogste finish (overkoepelend) -->
-      <div class="records-row screen-only" *ngIf="minTurnsRecord || highestFinishRecord">
-        <div class="record-card" *ngIf="minTurnsRecord">
-          <mat-icon class="record-icon" style="color:#0277bd">speed</mat-icon>
-          <div class="record-body">
-            <div class="record-label">Minste beurten</div>
-            <div class="record-name">{{ minTurnsRecord.player.name }}</div>
-            <div class="record-value" style="color:#0277bd">{{ minTurnsRecord.minTurns }}</div>
-          </div>
+      @if (minTurnsRecord || highestFinishRecord) {
+        <div class="records-row screen-only">
+          @if (minTurnsRecord) {
+            <div class="record-card">
+              <mat-icon class="record-icon" style="color:#0277bd">speed</mat-icon>
+              <div class="record-body">
+                <div class="record-label">Minste beurten</div>
+                <div class="record-name">{{ minTurnsRecord.player.name }}</div>
+                <div class="record-value" style="color:#0277bd">{{ minTurnsRecord.minTurns }}</div>
+              </div>
+            </div>
+          }
+          @if (highestFinishRecord) {
+            <div class="record-card">
+              <mat-icon class="record-icon" style="color:#e65100">star</mat-icon>
+              <div class="record-body">
+                <div class="record-label">Hoogste finish</div>
+                <div class="record-name">{{ highestFinishRecord.player.name }}</div>
+                <div class="record-value" style="color:#e65100">{{ highestFinishRecord.highestFinish }}</div>
+              </div>
+            </div>
+          }
         </div>
-        <div class="record-card" *ngIf="highestFinishRecord">
-          <mat-icon class="record-icon" style="color:#e65100">star</mat-icon>
-          <div class="record-body">
-            <div class="record-label">Hoogste finish</div>
-            <div class="record-name">{{ highestFinishRecord.player.name }}</div>
-            <div class="record-value" style="color:#e65100">{{ highestFinishRecord.highestFinish }}</div>
-          </div>
-        </div>
-      </div>
-
+      }
+    
       <!-- Screen: tabs -->
       <div class="screen-only">
-      <mat-tab-group animationDuration="150ms" color="primary" [(selectedIndex)]="selectedTabIndex">
-
-        <mat-tab *ngFor="let cls of classes" [label]="cls.label">
-          <mat-card style="border-radius:0 0 8px 8px;border-top:none">
-            <mat-card-content>
-              <table mat-table [dataSource]="cls.stats" style="width:100%">
-
-                <ng-container matColumnDef="rank">
-                  <th mat-header-cell *matHeaderCellDef class="rank-col">#</th>
-                  <td mat-cell *matCellDef="let s; let i = index" class="rank-col">{{ i + 1 }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="nr">
-                  <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
-                  <td mat-cell *matCellDef="let s">{{ s.player.nr }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="name">
-                  <th mat-header-cell *matHeaderCellDef>Naam</th>
-                  <td mat-cell *matCellDef="let s"><strong>{{ s.player.name }}</strong></td>
-                </ng-container>
-
-<ng-container matColumnDef="wins">
-                  <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center">
-                    <mat-icon style="color:#2e7d32;vertical-align:middle;font-size:18px">emoji_events</mat-icon>
-                  </th>
-                  <td mat-cell *matCellDef="let s" style="text-align:center" class="pts-col">{{ s.wins }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="losses">
-                  <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center">
-                    <mat-icon style="color:#c62828;vertical-align:middle;font-size:18px">cancel</mat-icon>
-                  </th>
-                  <td mat-cell *matCellDef="let s" style="text-align:center;color:#c62828">{{ s.losses }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="pf">
-                  <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center"
+        <mat-tab-group animationDuration="150ms" color="primary" [(selectedIndex)]="selectedTabIndex">
+    
+          @for (cls of classes; track cls) {
+            <mat-tab [label]="cls.label">
+              <mat-card style="border-radius:0 0 8px 8px;border-top:none">
+                <mat-card-content>
+                  <table mat-table [dataSource]="cls.stats" style="width:100%">
+                    <ng-container matColumnDef="rank">
+                      <th mat-header-cell *matHeaderCellDef class="rank-col">#</th>
+                      <td mat-cell *matCellDef="let s; let i = index" class="rank-col">{{ i + 1 }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="nr">
+                      <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
+                      <td mat-cell *matCellDef="let s">{{ s.player.nr }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="name">
+                      <th mat-header-cell *matHeaderCellDef>Naam</th>
+                      <td mat-cell *matCellDef="let s"><strong>{{ s.player.name }}</strong></td>
+                    </ng-container>
+                    <ng-container matColumnDef="wins">
+                      <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center">
+                        <mat-icon style="color:#2e7d32;vertical-align:middle;font-size:18px">emoji_events</mat-icon>
+                      </th>
+                      <td mat-cell *matCellDef="let s" style="text-align:center" class="pts-col">{{ s.wins }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="losses">
+                      <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center">
+                        <mat-icon style="color:#c62828;vertical-align:middle;font-size:18px">cancel</mat-icon>
+                      </th>
+                      <td mat-cell *matCellDef="let s" style="text-align:center;color:#c62828">{{ s.losses }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="pf">
+                      <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center"
                       title="Gewonnen legs">+ punten</th>
-                  <td mat-cell *matCellDef="let s" style="text-align:center">{{ s.pointsFor }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="pa">
-                  <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center"
+                      <td mat-cell *matCellDef="let s" style="text-align:center">{{ s.pointsFor }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="pa">
+                      <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center"
                       title="Verloren legs">- punten</th>
-                  <td mat-cell *matCellDef="let s" style="text-align:center">{{ s.pointsAgainst }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="180s">
-                  <th mat-header-cell *matHeaderCellDef style="width:52px;text-align:center" title="Aantal 180's">180</th>
-                  <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600;color:#7b1fa2">
-                    {{ s.oneEighties || '—' }}
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="edit">
-                  <th mat-header-cell *matHeaderCellDef style="width:40px"></th>
-                  <td mat-cell *matCellDef="let s">
-                    <button mat-icon-button (click)="openStatDialog(s)" matTooltip="180s / HF aanpassen"
-                            style="width:32px;height:32px;font-size:18px" class="screen-only">
-                      <mat-icon style="font-size:18px;width:18px;height:18px">edit</mat-icon>
-                    </button>
-                  </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="matchCols"></tr>
-                <tr mat-row *matRowDef="let row; columns: matchCols;"></tr>
-              </table>
-
-              <p *ngIf="cls.stats.length === 0" style="color:#9e9e9e;text-align:center;padding:24px 0">
-                Nog geen gespeelde wedstrijden in deze klasse.
-              </p>
-            </mat-card-content>
-          </mat-card>
-        </mat-tab>
-
-        <!-- Duty stats tab -->
-        <mat-tab label="Schrijver / Teller">
-          <mat-card style="border-radius:0 0 8px 8px;border-top:none">
-            <mat-card-content>
-              <p style="color:#616161;font-size:13px;margin:12px 0 8px 0">
-                Totaal aantal keer als schrijver of teller ingezet (gecombineerd).
-              </p>
-              <table mat-table [dataSource]="dutyStats" style="width:100%">
-
-                <ng-container matColumnDef="rank">
-                  <th mat-header-cell *matHeaderCellDef class="rank-col">#</th>
-                  <td mat-cell *matCellDef="let s; let i = index" class="rank-col">{{ i + 1 }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="nr">
-                  <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
-                  <td mat-cell *matCellDef="let s">{{ s.player.nr }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="name">
-                  <th mat-header-cell *matHeaderCellDef>Naam</th>
-                  <td mat-cell *matCellDef="let s"><strong>{{ s.player.name }}</strong></td>
-                </ng-container>
-
-                <ng-container matColumnDef="count">
-                  <th mat-header-cell *matHeaderCellDef style="width:80px;text-align:center">Keer</th>
-                  <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600">{{ s.count }}</td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="dutyCols"></tr>
-                <tr mat-row *matRowDef="let row; columns: dutyCols;"></tr>
-              </table>
-
-              <p *ngIf="dutyStats.length === 0" style="color:#9e9e9e;text-align:center;padding:24px 0">
-                Nog geen schrijvers of tellers geregistreerd.
-              </p>
-            </mat-card-content>
-          </mat-card>
-        </mat-tab>
-
-      </mat-tab-group>
+                      <td mat-cell *matCellDef="let s" style="text-align:center">{{ s.pointsAgainst }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="180s">
+                      <th mat-header-cell *matHeaderCellDef style="width:52px;text-align:center" title="Aantal 180's">180</th>
+                      <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600;color:#7b1fa2">
+                        {{ s.oneEighties || '—' }}
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="edit">
+                      <th mat-header-cell *matHeaderCellDef style="width:40px"></th>
+                      <td mat-cell *matCellDef="let s">
+                        <button mat-icon-button (click)="openStatDialog(s)" matTooltip="180s / HF aanpassen"
+                          style="width:32px;height:32px;font-size:18px" class="screen-only">
+                          <mat-icon style="font-size:18px;width:18px;height:18px">edit</mat-icon>
+                        </button>
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="matchCols"></tr>
+                    <tr mat-row *matRowDef="let row; columns: matchCols;"></tr>
+                  </table>
+                  @if (cls.stats.length === 0) {
+                    <p style="color:#9e9e9e;text-align:center;padding:24px 0">
+                      Nog geen gespeelde wedstrijden in deze klasse.
+                    </p>
+                  }
+                </mat-card-content>
+              </mat-card>
+            </mat-tab>
+          }
+    
+          <!-- Duty stats tab -->
+          <mat-tab label="Schrijver / Teller">
+            <mat-card style="border-radius:0 0 8px 8px;border-top:none">
+              <mat-card-content>
+                <p style="color:#616161;font-size:13px;margin:12px 0 8px 0">
+                  Totaal aantal keer als schrijver of teller ingezet (gecombineerd).
+                </p>
+                <table mat-table [dataSource]="dutyStats" style="width:100%">
+    
+                  <ng-container matColumnDef="rank">
+                    <th mat-header-cell *matHeaderCellDef class="rank-col">#</th>
+                    <td mat-cell *matCellDef="let s; let i = index" class="rank-col">{{ i + 1 }}</td>
+                  </ng-container>
+    
+                  <ng-container matColumnDef="nr">
+                    <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
+                    <td mat-cell *matCellDef="let s">{{ s.player.nr }}</td>
+                  </ng-container>
+    
+                  <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef>Naam</th>
+                    <td mat-cell *matCellDef="let s"><strong>{{ s.player.name }}</strong></td>
+                  </ng-container>
+    
+                  <ng-container matColumnDef="count">
+                    <th mat-header-cell *matHeaderCellDef style="width:80px;text-align:center">Keer</th>
+                    <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600">{{ s.count }}</td>
+                  </ng-container>
+    
+                  <tr mat-header-row *matHeaderRowDef="dutyCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: dutyCols;"></tr>
+                </table>
+    
+                @if (dutyStats.length === 0) {
+                  <p style="color:#9e9e9e;text-align:center;padding:24px 0">
+                    Nog geen schrijvers of tellers geregistreerd.
+                  </p>
+                }
+              </mat-card-content>
+            </mat-card>
+          </mat-tab>
+    
+        </mat-tab-group>
       </div><!-- /screen-only -->
-
+    
       <!-- Print: flat sections -->
       <div class="print-only">
         <!-- Records -->
-        <div *ngIf="minTurnsRecord || highestFinishRecord" style="display:flex;gap:24px;margin-bottom:12px">
-          <div *ngIf="minTurnsRecord">
-            <span style="font-size:9pt;color:#757575">Minste beurten: </span>
-            <strong>{{ minTurnsRecord.player.name }}</strong>
-            <span style="font-size:9pt"> ({{ minTurnsRecord.minTurns }})</span>
+        @if (minTurnsRecord || highestFinishRecord) {
+          <div style="display:flex;gap:24px;margin-bottom:12px">
+            @if (minTurnsRecord) {
+              <div>
+                <span style="font-size:9pt;color:#757575">Minste beurten: </span>
+                <strong>{{ minTurnsRecord.player.name }}</strong>
+                <span style="font-size:9pt"> ({{ minTurnsRecord.minTurns }})</span>
+              </div>
+            }
+            @if (highestFinishRecord) {
+              <div>
+                <span style="font-size:9pt;color:#757575">Hoogste finish: </span>
+                <strong>{{ highestFinishRecord.player.name }}</strong>
+                <span style="font-size:9pt"> ({{ highestFinishRecord.highestFinish }})</span>
+              </div>
+            }
           </div>
-          <div *ngIf="highestFinishRecord">
-            <span style="font-size:9pt;color:#757575">Hoogste finish: </span>
-            <strong>{{ highestFinishRecord.player.name }}</strong>
-            <span style="font-size:9pt"> ({{ highestFinishRecord.highestFinish }})</span>
-          </div>
-        </div>
-
+        }
+    
         <!-- Page 1: all class standings -->
-        <div *ngFor="let cls of classes">
-          <h3 class="print-section-title">{{ cls.label }}</h3>
-          <table class="print-table">
-            <thead>
-              <tr>
-                <th style="width:32px">#</th>
-                <th style="width:40px">Nr</th>
-                <th>Naam</th>
-                <th class="center" style="width:64px">Gewonnen</th>
-                <th class="center" style="width:64px">Verloren</th>
-                <th class="center" style="width:60px">+ punten</th>
-                <th class="center" style="width:60px">- punten</th>
-                <th class="center" style="width:44px">180</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let s of cls.stats; let i = index">
-                <td>{{ i + 1 }}</td>
-                <td>{{ s.player.nr }}</td>
-                <td><strong>{{ s.player.name }}</strong></td>
-                <td class="center" style="font-weight:600">{{ s.wins }}</td>
-                <td class="center">{{ s.losses }}</td>
-                <td class="center">{{ s.pointsFor }}</td>
-                <td class="center">{{ s.pointsAgainst }}</td>
-                <td class="center" style="font-weight:600">{{ s.oneEighties || '—' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
+        @for (cls of classes; track cls) {
+          <div>
+            <h3 class="print-section-title">{{ cls.label }}</h3>
+            <table class="print-table">
+              <thead>
+                <tr>
+                  <th style="width:32px">#</th>
+                  <th style="width:40px">Nr</th>
+                  <th>Naam</th>
+                  <th class="center" style="width:64px">Gewonnen</th>
+                  <th class="center" style="width:64px">Verloren</th>
+                  <th class="center" style="width:60px">+ punten</th>
+                  <th class="center" style="width:60px">- punten</th>
+                  <th class="center" style="width:44px">180</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of cls.stats; track s; let i = $index) {
+                  <tr>
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ s.player.nr }}</td>
+                    <td><strong>{{ s.player.name }}</strong></td>
+                    <td class="center" style="font-weight:600">{{ s.wins }}</td>
+                    <td class="center">{{ s.losses }}</td>
+                    <td class="center">{{ s.pointsFor }}</td>
+                    <td class="center">{{ s.pointsAgainst }}</td>
+                    <td class="center" style="font-weight:600">{{ s.oneEighties || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+    
         <!-- Page 2: duty stats -->
         <div style="page-break-before:always"></div>
         <h3 class="print-section-title">Schrijver / Teller</h3>
@@ -287,18 +297,20 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let s of dutyStats; let i = index">
-              <td>{{ i + 1 }}</td>
-              <td>{{ s.player.nr }}</td>
-              <td><strong>{{ s.player.name }}</strong></td>
-              <td class="center" style="font-weight:600">{{ s.count }}</td>
-            </tr>
+            @for (s of dutyStats; track s; let i = $index) {
+              <tr>
+                <td>{{ i + 1 }}</td>
+                <td>{{ s.player.nr }}</td>
+                <td><strong>{{ s.player.name }}</strong></td>
+                <td class="center" style="font-weight:600">{{ s.count }}</td>
+              </tr>
+            }
           </tbody>
         </table>
       </div><!-- /print-only -->
-
+    
     </div>
-  `
+    `
 })
 export class StandingsComponent implements OnInit {
   private scoreService  = inject(ScoreService);

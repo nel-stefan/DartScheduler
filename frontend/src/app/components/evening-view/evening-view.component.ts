@@ -16,38 +16,42 @@ import { environment } from '../../../environments/environment';
     <div style="padding:24px">
       <button mat-button routerLink="/">← Back</button>
       <h2>Evening {{ evening?.number }} – {{ evening?.date | date:'mediumDate' }}</h2>
-
-      <mat-card *ngIf="evening">
-        <mat-card-content>
-          <table mat-table [dataSource]="evening.matches" style="width:100%">
-            <ng-container matColumnDef="playerA">
-              <th mat-header-cell *matHeaderCellDef>Player A</th>
-              <td mat-cell *matCellDef="let m">{{ playerName(m.playerA) }}</td>
-            </ng-container>
-            <ng-container matColumnDef="playerB">
-              <th mat-header-cell *matHeaderCellDef>Player B</th>
-              <td mat-cell *matCellDef="let m">{{ playerName(m.playerB) }}</td>
-            </ng-container>
-            <ng-container matColumnDef="score">
-              <th mat-header-cell *matHeaderCellDef>Score</th>
-              <td mat-cell *matCellDef="let m">
-                {{ m.played ? (m.scoreA + ' – ' + m.scoreB) : '—' }}
-              </td>
-            </ng-container>
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let m">
-                <button mat-button color="primary" *ngIf="!m.played"
-                  [routerLink]="['/score', m.id]">Enter Score</button>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="cols"></tr>
-            <tr mat-row *matRowDef="let row; columns: cols;"></tr>
-          </table>
-        </mat-card-content>
-      </mat-card>
+    
+      @if (evening) {
+        <mat-card>
+          <mat-card-content>
+            <table mat-table [dataSource]="evening.matches" style="width:100%">
+              <ng-container matColumnDef="playerA">
+                <th mat-header-cell *matHeaderCellDef>Player A</th>
+                <td mat-cell *matCellDef="let m">{{ playerName(m.playerA) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="playerB">
+                <th mat-header-cell *matHeaderCellDef>Player B</th>
+                <td mat-cell *matCellDef="let m">{{ playerName(m.playerB) }}</td>
+              </ng-container>
+              <ng-container matColumnDef="score">
+                <th mat-header-cell *matHeaderCellDef>Score</th>
+                <td mat-cell *matCellDef="let m">
+                  {{ m.played ? (m.scoreA + ' – ' + m.scoreB) : '—' }}
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let m">
+                  @if (!m.played) {
+                    <button mat-button color="primary"
+                    [routerLink]="['/score', m.id]">Enter Score</button>
+                  }
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="cols"></tr>
+              <tr mat-row *matRowDef="let row; columns: cols;"></tr>
+            </table>
+          </mat-card-content>
+        </mat-card>
+      }
     </div>
-  `
+    `
 })
 export class EveningViewComponent implements OnInit {
   private route = inject(ActivatedRoute);

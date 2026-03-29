@@ -1,0 +1,404 @@
+================================================================================
+DARTSCHEDULER API DOCUMENTATION RESEARCH - MANIFEST
+================================================================================
+
+Date: March 29, 2026
+Status: RESEARCH ONLY - NO CODE CHANGES MADE
+Prepared by: API Documentation Specialist
+
+================================================================================
+OBJECTIVE
+================================================================================
+
+Investigate the DartScheduler REST API and create a comprehensive documentation
+plan including:
+1. Complete inventory of all API endpoints
+2. Assessment of current documentation state
+3. Recommended documentation approach
+4. Concrete implementation plan with specific steps and tooling
+
+================================================================================
+DELIVERABLES
+================================================================================
+
+Three comprehensive documentation planning documents have been created:
+
+1. API_DOCUMENTATION_PLAN.md
+   Location: /Users/marchal/GIT/personal/DartScheduler/API_DOCUMENTATION_PLAN.md
+   Size: ~18,000 words
+   Content:
+   - Section 1: Complete API Endpoint Inventory (27 endpoints catalogued)
+   - Section 2: Current Documentation State Assessment
+   - Section 3: Recommended Documentation Approach
+   - Section 4: Concrete Implementation Plan (8 detailed phases)
+   - Section 5: Step-by-Step Implementation with deliverables
+   - Section 6: Effort & Timeline Estimate (6-week plan)
+   - Section 7: Tooling Recommendations
+   - Section 8: Maintenance Guidelines
+   - Section 9: Glossary
+   - Section 10: Success Metrics
+
+2. API_TECHNICAL_REFERENCE.md
+   Location: /Users/marchal/GIT/personal/DartScheduler/API_TECHNICAL_REFERENCE.md
+   Size: ~10,000 words
+   Content:
+   - Section 1: Request/Response Schema Reference (all data structures)
+   - Section 2: HTTP Status Codes & Error Responses
+   - Section 3: Content Type Specifications
+   - Section 4: Path Parameter Formats
+   - Section 5: Query Parameter Formats
+   - Section 6: Date/Time Formats
+   - Section 7: Integer Field Constraints
+   - Section 8: Array Field Constraints
+   - Section 9: Type Compatibility Matrix
+   - Section 10: Common Integration Patterns
+   - Section 11-20: Technical implementation details
+
+3. API_DOCUMENTATION_SUMMARY.md
+   Location: /Users/marchal/GIT/personal/DartScheduler/API_DOCUMENTATION_SUMMARY.md
+   Size: ~3,000 words
+   Content:
+   - Executive Summary
+   - Quick Facts (endpoints, gaps, effort, timeline)
+   - What We Found (complete inventory + gaps)
+   - Recommended Solution (hybrid documentation stack)
+   - Implementation Roadmap (8 phases)
+   - Quick-Win MVP Option (2 weeks)
+   - Key Deliverables
+   - Success Criteria
+   - Tool Recommendations
+   - Timeline & Effort Summary
+   - Risk Assessment
+   - Next Steps
+   - FAQ
+   - Conclusion
+
+================================================================================
+RESEARCH FINDINGS SUMMARY
+================================================================================
+
+API ENDPOINTS DISCOVERED: 27 Total
+
+Players Management (6 endpoints):
+  - POST   /api/import                       (bulk import from Excel)
+  - GET    /api/players                      (list all)
+  - PUT    /api/players/{id}                 (update)
+  - DELETE /api/players/{id}                 (delete)
+  - GET    /api/players/{id}/buddies         (get buddy preferences)
+  - PUT    /api/players/{id}/buddies         (set buddy preferences)
+
+Schedule Management (9 endpoints):
+  - POST   /api/schedule/generate            (generate new schedule)
+  - GET    /api/schedule                     (get latest/active)
+  - GET    /api/schedules                    (list all schedules)
+  - GET    /api/schedules/{id}               (get by ID with matches)
+  - GET    /api/schedule/evening/{id}        (get single evening)
+  - GET    /api/schedules/{id}/info          (schedule metadata)
+  - PATCH  /api/schedules/{id}               (rename)
+  - DELETE /api/schedules/{id}               (delete)
+  - POST   /api/schedules/{id}/inhaal-avond  (add catch-up evening)
+  - DELETE /api/schedules/{id}/evenings/{id} (delete evening)
+  - POST   /api/schedules/import-season      (import historical data)
+
+Scoring & Matches (2 endpoints):
+  - PUT    /api/matches/{id}/score           (submit match result)
+  - POST   /evenings/{id}/report-absent      (report player absent)
+
+Statistics (2 endpoints):
+  - GET    /api/stats                        (player standings)
+  - GET    /api/stats/duties                 (duty assignments)
+
+Evening Statistics (2 endpoints):
+  - GET    /api/evenings/{id}/player-stats   (per-evening stats)
+  - PUT    /api/evenings/{id}/player-stats/{playerId} (upsert)
+
+Season Statistics (2 endpoints):
+  - GET    /api/schedules/{id}/player-stats  (per-season stats)
+  - PUT    /api/schedules/{id}/player-stats/{playerId} (upsert)
+
+Export/Download (5 endpoints):
+  - GET    /api/export/excel                 (full schedule as .xlsx)
+  - GET    /api/export/pdf                   (full schedule as .pdf)
+  - GET    /api/export/evening/{id}/excel    (evening form as .xlsx)
+  - GET    /api/export/evening/{id}/pdf      (evening form as .pdf)
+  - GET    /api/export/evening/{id}/print    (evening form as HTML)
+
+System (1 endpoint):
+  - GET    /api/system/logs                  (server logs)
+  - GET    /health                           (health check)
+  - GET    /api/config                       (app configuration)
+
+DATA SCHEMAS IDENTIFIED: 12 Main Types
+
+1. Player               - Member information
+2. Schedule            - Competition schedule
+3. Evening            - Single playing evening
+4. Match              - Match between two players
+5. PlayerStats        - Standings per player
+6. DutyStats          - Secretary/counter assignments
+7. EveningPlayerStat  - Per-evening statistics
+8. SeasonPlayerStat   - Per-season statistics
+9. ScheduleInfoResult - Schedule metadata for info page
+10. SeasonSummary     - Lightweight schedule list item
+11. GenerateScheduleRequest - Input for schedule generation
+12. SubmitScoreRequest - Input for match result submission
+
+CURRENT DOCUMENTATION STATE:
+  ✅ Strengths:
+     - Basic endpoint listing in README
+     - Good architectural overview
+     - Clear scheduler algorithm explanation
+     - Decent godoc in domain layer
+     - Correct route definitions
+
+  ❌ Critical Gaps:
+     - No OpenAPI/Swagger specification
+     - No interactive try-it-out functionality
+     - Error codes not documented
+     - Field-level documentation missing
+     - No code examples (except brief snippets)
+     - No multi-language examples
+     - Frontend types not synchronized with backend
+     - CORS policy not documented
+     - No API versioning documentation
+
+RECOMMENDED APPROACH:
+
+Hybrid Documentation Stack:
+  1. OpenAPI 3.1 specification (machine-readable contract)
+  2. Swagger UI embedded (interactive try-it-out)
+  3. ReDoc embedded (beautiful offline reference)
+  4. Markdown guides (integration, error handling, examples)
+  5. Code examples in 4 languages (Go, TypeScript, Python, Shell)
+  6. CI/CD validation (automated spec checking)
+
+All embedded in single Go binary - no external dependencies, works offline.
+
+IMPLEMENTATION TIMELINE:
+
+MVP (Quick-Win): 2 weeks, 54 hours
+  - OpenAPI spec
+  - Swagger UI embedding
+  - Quick-start guide
+  - Curl examples
+
+Full Implementation: 6 weeks, 132 hours
+  - All of MVP plus:
+  - Code annotations
+  - Multiple guides
+  - Language-specific examples
+  - CI/CD automation
+  - Maintenance setup
+
+Can be compressed to 4 weeks with parallel efforts.
+
+================================================================================
+FILES ANALYZED
+================================================================================
+
+Go Handler Files (9):
+  - /infra/http/handler/player_handler.go
+  - /infra/http/handler/schedule_handler.go
+  - /infra/http/handler/score_handler.go
+  - /infra/http/handler/stats_handler.go
+  - /infra/http/handler/export_handler.go
+  - /infra/http/handler/evening_stat_handler.go
+  - /infra/http/handler/season_stat_handler.go
+  - /infra/http/handler/config_handler.go
+  - /infra/http/handler/system_handler.go
+  - /infra/http/handler/helpers.go
+
+Go Router & Configuration:
+  - /infra/http/server.go
+  - /infra/http/middleware/cors.go
+  - /infra/http/middleware/logger.go
+
+Go Domain Layer:
+  - /domain/player.go
+  - /domain/schedule.go
+  - /domain/evening.go
+  - /domain/match.go
+  - /domain/evening_player_stat.go
+  - /domain/season_player_stat.go
+  - /domain/repository.go
+  - /domain/errors.go
+
+Go Use Cases:
+  - /usecase/dto.go
+
+Existing Documentation:
+  - /README.md
+  - /CLAUDE.md
+
+================================================================================
+KEY INSIGHTS
+================================================================================
+
+1. API is well-designed and RESTful
+   - Follows HTTP method conventions
+   - Proper status code usage
+   - Clear resource hierarchy
+   - Good error handling with sentinel errors
+
+2. Data model is sophisticated
+   - Supports complex match tracking (leg-by-leg)
+   - Buddy preference management
+   - Per-evening and per-season statistics
+   - Catch-up evening mechanics
+
+3. Documentation is basic but not bad
+   - README covers main endpoints
+   - Handler comments are minimal
+   - No interactive features
+   - No code examples beyond snippets
+   - No error documentation
+
+4. Architecture is clean
+   - Clear separation of concerns
+   - Well-organized packages
+   - Good use of Go conventions
+   - Repository pattern for data access
+
+5. Security considerations
+   - CORS is permissive (good for dev, needs tightening for prod)
+   - No authentication required (good for closed LAN, needs API key for prod)
+   - No rate limiting (needs for production)
+
+================================================================================
+RECOMMENDATIONS FOR IMPLEMENTATION
+================================================================================
+
+PHASE 1 (WEEKS 1-2): OpenAPI Specification
+  Effort: 40 hours
+  Deliverable: Complete openapi.yaml file
+  - Document all 27 endpoints
+  - Define all 12+ data schemas
+  - Add example requests/responses
+  - Document all error codes
+  - Add security/CORS info
+
+PHASE 2 (WEEK 2-3): Assets & Embedding
+  Effort: 8 hours
+  Deliverable: Swagger UI + ReDoc embedded in app
+  - Download Swagger UI v5.x
+  - Download ReDoc v2.x
+  - Create HTML wrappers
+  - Embed spec as JSON
+  - Test in /docs endpoint
+
+PHASE 3 (WEEK 3): Code Annotations
+  Effort: 12 hours
+  Deliverable: Godoc comments in all handlers
+  - Package-level API overview
+  - Handler documentation
+  - Struct field comments
+  - Repository documentation
+
+PHASE 4 (WEEK 4): Guides & Integrations
+  Effort: 20 hours
+  Deliverable: 5 markdown guides
+  - Quick Start (10 minutes to first request)
+  - Error Handling (all codes + recovery)
+  - Authentication & CORS
+  - Webhook Events/Catch-up Mechanics
+  - API Changelog & Versioning
+
+PHASE 5 (WEEKS 4-5): Code Examples
+  Effort: 16 hours
+  Deliverable: 16+ examples in 4 languages
+  - Go: 3 examples (client, schedule, scoring)
+  - TypeScript: 3 examples (models, service, component)
+  - Python: 3 examples (client, import, standings)
+  - Shell: 7+ examples (curl for all common ops)
+
+PHASE 6 (WEEK 5): Integration & Testing
+  Effort: 8 hours
+  Deliverable: Fully functional /docs endpoint
+  - Update router with /docs routes
+  - Embed assets in Go binary
+  - Test all UI functionality
+  - Verify try-it-out works end-to-end
+
+PHASE 7 (WEEK 6): CI/CD Automation
+  Effort: 12 hours
+  Deliverable: Automated validation pipeline
+  - GitHub Actions workflow
+  - OpenAPI spec validation
+  - Broken link detection
+  - Client code generation (dry-run)
+  - Spec drift detection
+
+PHASE 8 (WEEK 6+): Maintenance Setup
+  Effort: 16 hours
+  Deliverable: Long-term documentation quality
+  - Versioning strategy
+  - CHANGELOG template
+  - Theme customization
+  - Monitoring dashboard
+
+TOOLING RECOMMENDATIONS:
+
+Essential (Free):
+  - swag - Generate OpenAPI from godoc
+  - openapi-generator - Multi-language clients
+  - swagger-cli - Spec validation
+
+Optional (Free):
+  - Dredd - Integration testing against spec
+  - Postman - Manual testing & examples
+  - openapi-diff - Breaking change detection
+
+NOT RECOMMENDED:
+  - Swagger Hub ($50+/month) - Use embedded instead
+  - Stoplight ($300+/month) - Use embedded instead
+  - Cloud hosting - Keep single binary approach
+
+HOSTING:
+  - Embed everything in Go binary
+  - Zero external dependencies
+  - Works offline
+  - No cloud costs
+  - Single deployment artifact
+
+================================================================================
+IMPORTANT NOTES
+================================================================================
+
+✓ Research ONLY - No code changes have been made
+✓ All findings based on static code analysis
+✓ No breaking changes to API required
+✓ Documentation is additive, non-breaking
+✓ Can be implemented incrementally
+✓ MVP available in 2 weeks if needed
+✓ Full implementation in 6 weeks
+✓ Fully reversible - pure documentation
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Share these documents with the development team
+2. Get stakeholder buy-in on recommended approach
+3. Assign documentation project owner
+4. Set up project board with phases
+5. Create GitHub issues for each phase
+6. Begin Phase 1: OpenAPI specification writing
+7. Run CI/CD validation on completed spec
+8. Present MVP to stakeholders (weeks 1-2)
+9. Continue with phases 3-8 as time permits
+
+================================================================================
+CONTACT & QUESTIONS
+================================================================================
+
+For questions about this research or the implementation plan:
+1. Refer to detailed sections in API_DOCUMENTATION_PLAN.md
+2. Check technical details in API_TECHNICAL_REFERENCE.md
+3. Review executive summary in API_DOCUMENTATION_SUMMARY.md
+4. Consult FAQ section in API_DOCUMENTATION_SUMMARY.md
+
+================================================================================
+Document Version: 1.0
+Research Date: March 29, 2026
+Status: COMPLETE - READY FOR IMPLEMENTATION REVIEW
+================================================================================

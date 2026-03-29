@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Match, Player, Evening } from '../models';
 import { ScoreService } from '../services/score.service';
@@ -95,130 +95,142 @@ import { displayName } from '../utils/display-name';
       <button class="back-btn" (click)="goBack()">&#8592;</button>
       <h2>Score invoeren</h2>
     </div>
-
-    <div class="match-players" *ngIf="match">
-      <div class="match-player">{{ nameA }}</div>
-      <div class="match-vs">vs</div>
-      <div class="match-player b">{{ nameB }}</div>
-    </div>
-
-    <form [formGroup]="form" (ngSubmit)="submit()" class="body" *ngIf="match">
-
-      <!-- Leg 1 -->
-      <div class="card">
-        <p class="card-title">Leg 1</p>
-        <div class="winner-row">
-          <button type="button" class="winner-btn"
-            [class.selected]="form.get('leg1Winner')?.value === match.playerA"
-            (click)="setWinner('leg1Winner', match.playerA)">
-            {{ nameA }}
-          </button>
-          <button type="button" class="winner-btn"
-            [class.selected]="form.get('leg1Winner')?.value === match.playerB"
-            (click)="setWinner('leg1Winner', match.playerB)">
-            {{ nameB }}
-          </button>
-        </div>
-        <div class="field-row">
-          <span class="field-label">Beurten</span>
-          <select class="field-select" formControlName="leg1Turns">
-            <option [ngValue]="null">—</option>
-            <option *ngFor="let n of turnsOptions" [ngValue]="n">{{ n }}</option>
-          </select>
-        </div>
+    
+    @if (match) {
+      <div class="match-players">
+        <div class="match-player">{{ nameA }}</div>
+        <div class="match-vs">vs</div>
+        <div class="match-player b">{{ nameB }}</div>
       </div>
-
-      <!-- Leg 2 -->
-      <div class="card">
-        <p class="card-title">Leg 2</p>
-        <div class="winner-row">
-          <button type="button" class="winner-btn"
-            [class.selected]="form.get('leg2Winner')?.value === match.playerA"
-            (click)="setWinner('leg2Winner', match.playerA)">
-            {{ nameA }}
-          </button>
-          <button type="button" class="winner-btn"
-            [class.selected]="form.get('leg2Winner')?.value === match.playerB"
-            (click)="setWinner('leg2Winner', match.playerB)">
-            {{ nameB }}
-          </button>
-        </div>
-        <div class="field-row">
-          <span class="field-label">Beurten</span>
-          <select class="field-select" formControlName="leg2Turns">
-            <option [ngValue]="null">—</option>
-            <option *ngFor="let n of turnsOptions" [ngValue]="n">{{ n }}</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Leg 3 -->
-      <div class="card">
-        <p class="card-title">Leg 3</p>
-        <div class="winner-row">
-          <button type="button" class="winner-btn"
-            [class.selected]="form.get('leg3Winner')?.value === match.playerA"
-            (click)="setWinner('leg3Winner', match.playerA)">
-            {{ nameA }}
-          </button>
-          <button type="button" class="winner-btn"
-            [class.selected]="form.get('leg3Winner')?.value === match.playerB"
-            (click)="setWinner('leg3Winner', match.playerB)">
-            {{ nameB }}
-          </button>
-        </div>
-        <div class="field-row">
-          <span class="field-label">Beurten</span>
-          <select class="field-select" formControlName="leg3Turns">
-            <option [ngValue]="null">—</option>
-            <option *ngFor="let n of turnsOptions" [ngValue]="n">{{ n }}</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Schrijver / Teller -->
-      <div class="card">
-        <p class="card-title">Dienst</p>
-        <div class="duty-grid">
-          <div class="duty-field">
-            <label>Schrijver</label>
-            <select class="duty-select" formControlName="secretaryNr">
-              <option value="">—</option>
-              <option *ngFor="let p of sortedPlayers" [value]="p.nr">{{ p.nr }} – {{ playerName(p.id) }}</option>
-            </select>
+    }
+    
+    @if (match) {
+      <form [formGroup]="form" (ngSubmit)="submit()" class="body">
+        <!-- Leg 1 -->
+        <div class="card">
+          <p class="card-title">Leg 1</p>
+          <div class="winner-row">
+            <button type="button" class="winner-btn"
+              [class.selected]="form.get('leg1Winner')?.value === match.playerA"
+              (click)="setWinner('leg1Winner', match.playerA)">
+              {{ nameA }}
+            </button>
+            <button type="button" class="winner-btn"
+              [class.selected]="form.get('leg1Winner')?.value === match.playerB"
+              (click)="setWinner('leg1Winner', match.playerB)">
+              {{ nameB }}
+            </button>
           </div>
-          <div class="duty-field">
-            <label>Teller</label>
-            <select class="duty-select" formControlName="counterNr">
-              <option value="">—</option>
-              <option *ngFor="let p of sortedPlayers" [value]="p.nr">{{ p.nr }} – {{ playerName(p.id) }}</option>
+          <div class="field-row">
+            <span class="field-label">Beurten</span>
+            <select class="field-select" formControlName="leg1Turns">
+              <option [ngValue]="null">—</option>
+              @for (n of turnsOptions; track n) {
+                <option [ngValue]="n">{{ n }}</option>
+              }
             </select>
           </div>
         </div>
-      </div>
-
-      <!-- Datum gespeeld (alleen voor inhaalwedstrijden) -->
-      <div class="card" *ngIf="isInhaalAvond">
-        <p class="card-title">Inhaalwedstrijd</p>
-        <div class="field-row">
-          <span class="field-label">Datum</span>
-          <select class="field-select" formControlName="playedDate">
-            <option value="">— kies avond —</option>
-            <option *ngFor="let ev of evenings" [value]="ev.date">
-              {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
-            </option>
-          </select>
+        <!-- Leg 2 -->
+        <div class="card">
+          <p class="card-title">Leg 2</p>
+          <div class="winner-row">
+            <button type="button" class="winner-btn"
+              [class.selected]="form.get('leg2Winner')?.value === match.playerA"
+              (click)="setWinner('leg2Winner', match.playerA)">
+              {{ nameA }}
+            </button>
+            <button type="button" class="winner-btn"
+              [class.selected]="form.get('leg2Winner')?.value === match.playerB"
+              (click)="setWinner('leg2Winner', match.playerB)">
+              {{ nameB }}
+            </button>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Beurten</span>
+            <select class="field-select" formControlName="leg2Turns">
+              <option [ngValue]="null">—</option>
+              @for (n of turnsOptions; track n) {
+                <option [ngValue]="n">{{ n }}</option>
+              }
+            </select>
+          </div>
         </div>
-      </div>
-
-      <p class="error" *ngIf="errorMsg">{{ errorMsg }}</p>
-
-      <button type="submit" class="submit-btn" [disabled]="submitting || !formValid()">
-        {{ submitting ? 'Opslaan…' : 'Opslaan' }}
-      </button>
-
-    </form>
-  `
+        <!-- Leg 3 -->
+        <div class="card">
+          <p class="card-title">Leg 3</p>
+          <div class="winner-row">
+            <button type="button" class="winner-btn"
+              [class.selected]="form.get('leg3Winner')?.value === match.playerA"
+              (click)="setWinner('leg3Winner', match.playerA)">
+              {{ nameA }}
+            </button>
+            <button type="button" class="winner-btn"
+              [class.selected]="form.get('leg3Winner')?.value === match.playerB"
+              (click)="setWinner('leg3Winner', match.playerB)">
+              {{ nameB }}
+            </button>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Beurten</span>
+            <select class="field-select" formControlName="leg3Turns">
+              <option [ngValue]="null">—</option>
+              @for (n of turnsOptions; track n) {
+                <option [ngValue]="n">{{ n }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <!-- Schrijver / Teller -->
+        <div class="card">
+          <p class="card-title">Dienst</p>
+          <div class="duty-grid">
+            <div class="duty-field">
+              <label>Schrijver</label>
+              <select class="duty-select" formControlName="secretaryNr">
+                <option value="">—</option>
+                @for (p of sortedPlayers; track p) {
+                  <option [value]="p.nr">{{ p.nr }} – {{ playerName(p.id) }}</option>
+                }
+              </select>
+            </div>
+            <div class="duty-field">
+              <label>Teller</label>
+              <select class="duty-select" formControlName="counterNr">
+                <option value="">—</option>
+                @for (p of sortedPlayers; track p) {
+                  <option [value]="p.nr">{{ p.nr }} – {{ playerName(p.id) }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+        <!-- Datum gespeeld (alleen voor inhaalwedstrijden) -->
+        @if (isInhaalAvond) {
+          <div class="card">
+            <p class="card-title">Inhaalwedstrijd</p>
+            <div class="field-row">
+              <span class="field-label">Datum</span>
+              <select class="field-select" formControlName="playedDate">
+                <option value="">— kies avond —</option>
+                @for (ev of evenings; track ev) {
+                  <option [value]="ev.date">
+                    {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+        }
+        @if (errorMsg) {
+          <p class="error">{{ errorMsg }}</p>
+        }
+        <button type="submit" class="submit-btn" [disabled]="submitting || !formValid()">
+          {{ submitting ? 'Opslaan…' : 'Opslaan' }}
+        </button>
+      </form>
+    }
+    `
 })
 export class MobileScoreComponent implements OnInit {
   private route        = inject(ActivatedRoute);
