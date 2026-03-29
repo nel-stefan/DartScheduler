@@ -58,12 +58,12 @@ type hydrateMatchRepo struct {
 	// cancelled is returned from FindCancelledBySchedule.
 	cancelled []domain.Match
 
-	findByScheduleCalls   int
-	findCancelledCalls    int
+	findByScheduleCalls int
+	findCancelledCalls  int
 }
 
-func (r *hydrateMatchRepo) Save(_ context.Context, _ domain.Match) error              { return nil }
-func (r *hydrateMatchRepo) SaveBatch(_ context.Context, _ []domain.Match) error       { return nil }
+func (r *hydrateMatchRepo) Save(_ context.Context, _ domain.Match) error        { return nil }
+func (r *hydrateMatchRepo) SaveBatch(_ context.Context, _ []domain.Match) error { return nil }
 func (r *hydrateMatchRepo) FindByID(_ context.Context, _ domain.MatchID) (domain.Match, error) {
 	return domain.Match{}, domain.ErrNotFound
 }
@@ -98,14 +98,14 @@ func (r *hydrateMatchRepo) FindCancelledBySchedule(_ context.Context, _ domain.S
 // stubPlayerRepo satisfies domain.PlayerRepository with no-ops.
 type stubPlayerRepo struct{}
 
-func (r *stubPlayerRepo) Save(_ context.Context, _ domain.Player) error         { return nil }
-func (r *stubPlayerRepo) SaveBatch(_ context.Context, _ []domain.Player) error  { return nil }
+func (r *stubPlayerRepo) Save(_ context.Context, _ domain.Player) error        { return nil }
+func (r *stubPlayerRepo) SaveBatch(_ context.Context, _ []domain.Player) error { return nil }
 func (r *stubPlayerRepo) FindByID(_ context.Context, _ domain.PlayerID) (domain.Player, error) {
 	return domain.Player{}, domain.ErrNotFound
 }
 func (r *stubPlayerRepo) FindAll(_ context.Context) ([]domain.Player, error) { return nil, nil }
-func (r *stubPlayerRepo) Delete(_ context.Context, _ domain.PlayerID) error   { return nil }
-func (r *stubPlayerRepo) DeleteAll(_ context.Context) error                   { return nil }
+func (r *stubPlayerRepo) Delete(_ context.Context, _ domain.PlayerID) error  { return nil }
+func (r *stubPlayerRepo) DeleteAll(_ context.Context) error                  { return nil }
 func (r *stubPlayerRepo) SaveBuddyPreference(_ context.Context, _ domain.BuddyPreference) error {
 	return nil
 }
@@ -304,9 +304,9 @@ func TestHydrate_CatchUpEveningGetsCancelledMatches(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 type trackingScheduleRepo struct {
-	sched          domain.Schedule
-	deleteCalls    int
-	findLatestErr  error
+	sched         domain.Schedule
+	deleteCalls   int
+	findLatestErr error
 }
 
 func (r *trackingScheduleRepo) Save(_ context.Context, _ domain.Schedule) error { return nil }
@@ -558,7 +558,7 @@ func TestImportSeason_CreatesMatchesFromRows(t *testing.T) {
 
 	rows := []usecase.SeasonMatchRow{
 		{EveningNr: 1, Date: time.Now(), NrA: "1", NrB: "2", ScoreA: 2, ScoreB: 0},
-		{EveningNr: 1, Date: time.Now(), NrA: "1", NrB: "99"},  // player 99 not found → skipped
+		{EveningNr: 1, Date: time.Now(), NrA: "1", NrB: "99"}, // player 99 not found → skipped
 		{EveningNr: 2, Date: time.Now(), NrA: "2", NrB: "1", ScoreA: 1, ScoreB: 2},
 	}
 

@@ -101,14 +101,14 @@ func ExportEvening(sched domain.Schedule, ev domain.Evening, players []domain.Pl
 
 	// Build row data.
 	type rowData struct {
-		nrA, nameA                string
-		nrB, nameB                string
-		leg1Winner, leg1Turns     string
-		leg2Winner, leg2Turns     string
-		leg3Winner, leg3Turns     string
-		totalWinner, eindstand    string
-		reportedBy, reschedDate   string
-		secretaryNr, counterNr    string
+		nrA, nameA              string
+		nrB, nameB              string
+		leg1Winner, leg1Turns   string
+		leg2Winner, leg2Turns   string
+		leg3Winner, leg3Turns   string
+		totalWinner, eindstand  string
+		reportedBy, reschedDate string
+		secretaryNr, counterNr  string
 	}
 
 	rows := make([]rowData, totalRows)
@@ -306,14 +306,14 @@ func emptyExport(
 	tableW := totalWidth()
 
 	type rowData struct {
-		nrA, nameA                string
-		nrB, nameB                string
-		leg1Winner, leg1Turns     string
-		leg2Winner, leg2Turns     string
-		leg3Winner, leg3Turns     string
-		totalWinner, eindstand    string
-		reportedBy, reschedDate   string
-		secretaryNr, counterNr    string
+		nrA, nameA              string
+		nrB, nameB              string
+		leg1Winner, leg1Turns   string
+		leg2Winner, leg2Turns   string
+		leg3Winner, leg3Turns   string
+		totalWinner, eindstand  string
+		reportedBy, reschedDate string
+		secretaryNr, counterNr  string
 	}
 
 	rows := make([]rowData, totalRows)

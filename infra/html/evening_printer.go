@@ -28,14 +28,14 @@ func (e EveningPrinter) ExportEvening(ctx context.Context, sched domain.Schedule
 }
 
 type printRow struct {
-	NrA, NameA                string
-	NrB, NameB                string
-	Leg1Winner, Leg1Turns     string
-	Leg2Winner, Leg2Turns     string
-	Leg3Winner, Leg3Turns     string
-	TotalWinner, Eindstand    string
+	NrA, NameA                 string
+	NrB, NameB                 string
+	Leg1Winner, Leg1Turns      string
+	Leg2Winner, Leg2Turns      string
+	Leg3Winner, Leg3Turns      string
+	TotalWinner, Eindstand     string
 	ReportedBy, RescheduleDate string
-	SecretaryNr, CounterNr    string
+	SecretaryNr, CounterNr     string
 }
 
 type printData struct {

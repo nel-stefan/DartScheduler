@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, DestroyRef, Injector, afterNextRender } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged } from 'rxjs';
 
@@ -110,7 +110,8 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
     
       <!-- Screen: tabs -->
       <div class="screen-only">
-        <mat-tab-group animationDuration="150ms" color="primary" [(selectedIndex)]="selectedTabIndex">
+        @if (!loading) {
+        <mat-tab-group animationDuration="150ms" color="primary" [selectedIndex]="0">
     
           @for (cls of classes; track cls) {
             <mat-tab [label]="cls.label">
@@ -222,6 +223,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
           </mat-tab>
     
         </mat-tab-group>
+        } <!-- /if !loading -->
       </div><!-- /screen-only -->
     
       <!-- Print: flat sections -->
@@ -317,12 +319,11 @@ export class StandingsComponent implements OnInit {
   private seasonService = inject(SeasonService);
   private dialog        = inject(MatDialog);
   private destroyRef    = inject(DestroyRef);
-  private injector      = inject(Injector);
 
   classes:   { label: string; stats: PlayerStats[] }[] = [];
   dutyStats: DutyStats[] = [];
   allStats:  PlayerStats[] = [];
-  selectedTabIndex = 0;
+  loading = true;
   minTurnsRecord:     PlayerStats | null = null;
   highestFinishRecord: PlayerStats | null = null;
 
@@ -338,6 +339,12 @@ export class StandingsComponent implements OnInit {
 
   private loadStats(): void {
     const sid = this.seasonService.selectedId$.value || undefined;
+    // Hide the tab group while data is in flight so that MatTabGroup is only
+    // instantiated once the full tab list (Klasse tabs + static tab) is ready.
+    // This avoids the race where the static "Schrijver / Teller" tab temporarily
+    // occupies index 0 and then triggers selectedIndexChange when Klasse tabs are
+    // prepended, causing the two-way binding to overwrite our desired index.
+    this.loading = true;
     this.scoreService.getStats(sid).subscribe((s) => {
       this.allStats = s;
       this.classes = this.buildClasses(s);
@@ -345,11 +352,7 @@ export class StandingsComponent implements OnInit {
       this.minTurnsRecord = withMinTurns.length ? withMinTurns.reduce((b, x) => x.minTurns < b.minTurns ? x : b) : null;
       const withHF = s.filter(x => x.highestFinish > 0);
       this.highestFinishRecord = withHF.length ? withHF.reduce((b, x) => x.highestFinish > b.highestFinish ? x : b) : null;
-      // Defer reset to after MatTabGroup has processed the new @ContentChildren tabs.
-      // Setting the index synchronously causes a race: MatTabGroup fires selectedIndexChange
-      // while rebuilding its tab list, which overwrites our value via the two-way binding.
-      // afterNextRender guarantees execution after Angular has finished rendering the new tabs.
-      afterNextRender(() => { this.selectedTabIndex = 0; }, { injector: this.injector });
+      this.loading = false;
     });
     this.scoreService.getDutyStats(sid).subscribe((d) => {
       this.dutyStats = d.sort((a, b) => b.count - a.count);

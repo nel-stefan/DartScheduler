@@ -87,7 +87,7 @@ jobs:
 
       - name: Check Go formatting
         run: |
-          UNFORMATTED=$(gofmt -l ./...)
+          UNFORMATTED=$(gofmt -l .)
           if [ -n "$UNFORMATTED" ]; then
             echo "Unformatted Go files:"
             echo "$UNFORMATTED"
