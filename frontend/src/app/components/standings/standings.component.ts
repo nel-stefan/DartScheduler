@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef, Injector, afterNextRender } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -305,6 +305,7 @@ export class StandingsComponent implements OnInit {
   private seasonService = inject(SeasonService);
   private dialog        = inject(MatDialog);
   private destroyRef    = inject(DestroyRef);
+  private injector      = inject(Injector);
 
   classes:   { label: string; stats: PlayerStats[] }[] = [];
   dutyStats: DutyStats[] = [];
@@ -335,7 +336,8 @@ export class StandingsComponent implements OnInit {
       // Defer reset to after MatTabGroup has processed the new @ContentChildren tabs.
       // Setting the index synchronously causes a race: MatTabGroup fires selectedIndexChange
       // while rebuilding its tab list, which overwrites our value via the two-way binding.
-      setTimeout(() => { this.selectedTabIndex = 0; });
+      // afterNextRender guarantees execution after Angular has finished rendering the new tabs.
+      afterNextRender(() => { this.selectedTabIndex = 0; }, { injector: this.injector });
     });
     this.scoreService.getDutyStats(sid).subscribe((d) => {
       this.dutyStats = d.sort((a, b) => b.count - a.count);
