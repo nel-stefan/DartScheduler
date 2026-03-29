@@ -7,7 +7,11 @@ services:
       - dart_data:/data
     environment:
       - DATABASE_PATH=/data/dartscheduler.db
+      - DATABASE_TYPE=sqlite
       - PORT=8080
+      # - CLUB_NAME=DARTCLUB GROLZICHT
+      # - APP_TITLE=DartScheduler
+      # - LOGO_PATH=/data/logo.png
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]

@@ -20,21 +20,22 @@ const (
 )
 
 // EveningExporter implements usecase.EveningExporter for the wedstrijdformulier Excel format.
-type EveningExporter struct{}
-
-func (e EveningExporter) ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening, players []domain.Player, w io.Writer) error {
-	return ExportEvening(ctx, sched, ev, players, w)
+type EveningExporter struct {
+	ClubName string
 }
 
-// ExportEvening writes a single evening to w in the Dartclub Grolzicht
-// wedstrijdformulier format.
+func (e EveningExporter) ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening, players []domain.Player, w io.Writer) error {
+	return ExportEvening(ctx, sched, ev, players, e.ClubName, w)
+}
+
+// ExportEvening writes a single evening to w in the wedstrijdformulier Excel format.
 //
 // For a regular evening the workbook contains:
 //   - Tab 1 "Blad1": the evening's own matches
 //   - Tab 2+ "Inhaal <datum>": one tab per catch-up evening in sched.Evenings (if any)
 //
 // Build order per sheet: heights → widths → merges → values → styles.
-func ExportEvening(_ context.Context, sched domain.Schedule, ev domain.Evening, players []domain.Player, w io.Writer) error {
+func ExportEvening(_ context.Context, sched domain.Schedule, ev domain.Evening, players []domain.Player, clubName string, w io.Writer) error {
 	// ---- helpers ----
 	playerMap := make(map[string]domain.Player, len(players))
 	for _, p := range players {
@@ -77,7 +78,7 @@ func ExportEvening(_ context.Context, sched domain.Schedule, ev domain.Evening, 
 	// Primary sheet: the requested evening.
 	ws := "Blad1"
 	f.SetSheetName("Sheet1", ws)
-	if err := writeEveningSheet(f, ws, ev, players, playerMap, firstNameNr, playerLabel, reportedByLabel); err != nil {
+	if err := writeEveningSheet(f, ws, ev, players, playerMap, firstNameNr, playerLabel, reportedByLabel, clubName); err != nil {
 		return err
 	}
 
@@ -88,7 +89,7 @@ func ExportEvening(_ context.Context, sched domain.Schedule, ev domain.Evening, 
 		}
 		wsTab := "Afgemeld"
 		f.NewSheet(wsTab)
-		if err := writeEveningSheet(f, wsTab, inhaalEv, players, playerMap, firstNameNr, playerLabel, reportedByLabel); err != nil {
+		if err := writeEveningSheet(f, wsTab, inhaalEv, players, playerMap, firstNameNr, playerLabel, reportedByLabel, clubName); err != nil {
 			return err
 		}
 	}
@@ -107,6 +108,7 @@ func writeEveningSheet(
 	firstNameNr func(domain.Player) string,
 	playerLabel func(string) string,
 	reportedByLabel func(string) string,
+	clubName string,
 ) error {
 	// ---- style helpers ----
 	brd := func(l, r, t, b int) []excelize.Border {
@@ -159,7 +161,7 @@ func writeEveningSheet(
 	f.MergeCell(ws, "A2", "Q2")
 
 	// ================================================================ 4. CELL VALUES
-	f.SetCellValue(ws, "A1", "DARTCLUB GROLZICHT")
+	f.SetCellValue(ws, "A1", clubName)
 
 	dateLabel := ev.Date.Format("2-1-2006")
 	if ev.IsCatchUpEvening {

@@ -14,10 +14,13 @@ import (
 // EveningExporter implements usecase.EveningExporter for the wedstrijdformulier
 // PDF format.  The output is a 1-on-1 copy of the Excel evening export:
 // A4 landscape, 25 data rows per page, same column widths and header layout.
-type EveningExporter struct{}
+type EveningExporter struct {
+	ClubName string
+	LogoPath string
+}
 
 func (e EveningExporter) ExportEvening(_ context.Context, sched domain.Schedule, ev domain.Evening, players []domain.Player, w io.Writer) error {
-	return ExportEvening(sched, ev, players, w)
+	return ExportEvening(sched, ev, players, e.ClubName, e.LogoPath, w)
 }
 
 // ─── column widths in mm (A4 landscape, ~284 mm usable) ───
@@ -51,7 +54,7 @@ const (
 )
 
 // ExportEvening writes the wedstrijdformulier for one evening to w as PDF.
-func ExportEvening(sched domain.Schedule, ev domain.Evening, players []domain.Player, w io.Writer) error {
+func ExportEvening(sched domain.Schedule, ev domain.Evening, players []domain.Player, clubName, logoPath string, w io.Writer) error {
 	playerMap := make(map[string]domain.Player, len(players))
 	for _, p := range players {
 		playerMap[p.ID.String()] = p
@@ -155,8 +158,13 @@ func ExportEvening(sched domain.Schedule, ev domain.Evening, players []domain.Pl
 
 	// drawTitle renders the two header lines: club name + subtitle.
 	drawTitle := func() {
+		if logoPath != "" {
+			imgOpts := gofpdf.ImageOptions{ImageType: "", ReadDpi: true}
+			pdf.ImageOptions(logoPath, pdf.GetX(), pdf.GetY(), 0, titleH, false, imgOpts, 0, "")
+			pdf.Ln(titleH)
+		}
 		pdf.SetFont(fontFamily, "B", 16)
-		pdf.CellFormat(tableW, titleH, "DARTCLUB GROLZICHT", "", 1, "C", false, 0, "")
+		pdf.CellFormat(tableW, titleH, clubName, "", 1, "C", false, 0, "")
 		pdf.SetFont(fontFamily, "B", 9)
 		sub := fmt.Sprintf("Wedstrijdformulier   Spelsoort: 501 dubbel uit best of 3   Speeldatum: %s", dateLabel)
 		pdf.CellFormat(tableW, subtitleH, sub, "", 1, "C", false, 0, "")
@@ -271,7 +279,7 @@ func ExportEvening(sched domain.Schedule, ev domain.Evening, players []domain.Pl
 		}
 		// Recursively export the catch-up evening on additional pages.
 		// We build a temporary sched without extra evenings to avoid recursion.
-		emptyExport(pdf, inhaalEv, players, playerMap, firstNameNr, playerLabel, reportedByLabel)
+		emptyExport(pdf, inhaalEv, players, playerMap, firstNameNr, playerLabel, reportedByLabel, clubName, logoPath)
 	}
 
 	return pdf.Output(w)
@@ -287,6 +295,7 @@ func emptyExport(
 	firstNameNr func(domain.Player) string,
 	playerLabel func(string) string,
 	reportedByLabel func(string) string,
+	clubName, logoPath string,
 ) {
 	matchCount := len(ev.Matches)
 	pages := (matchCount + rowsPerPage - 1) / rowsPerPage
@@ -344,8 +353,13 @@ func emptyExport(
 	}
 
 	drawTitle := func() {
+		if logoPath != "" {
+			imgOpts := gofpdf.ImageOptions{ImageType: "", ReadDpi: true}
+			pdf.ImageOptions(logoPath, pdf.GetX(), pdf.GetY(), 0, titleH, false, imgOpts, 0, "")
+			pdf.Ln(titleH)
+		}
 		pdf.SetFont(fontFamily, "B", 16)
-		pdf.CellFormat(tableW, titleH, "DARTCLUB GROLZICHT", "", 1, "C", false, 0, "")
+		pdf.CellFormat(tableW, titleH, clubName, "", 1, "C", false, 0, "")
 		pdf.SetFont(fontFamily, "B", 9)
 		pdf.CellFormat(tableW, subtitleH,
 			"Wedstrijdformulier   Spelsoort: 501 dubbel uit best of 3   Speeldatum: Inhaal",

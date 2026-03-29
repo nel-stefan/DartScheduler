@@ -6,19 +6,25 @@ package html
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"io"
+	"net/http"
+	"os"
 	"strings"
 
 	"DartScheduler/domain"
 )
 
 // EveningPrinter implements usecase.EveningExporter and produces a printable HTML page.
-type EveningPrinter struct{}
+type EveningPrinter struct {
+	ClubName string
+	LogoPath string
+}
 
 func (e EveningPrinter) ExportEvening(ctx context.Context, sched domain.Schedule, ev domain.Evening, players []domain.Player, w io.Writer) error {
-	return PrintEvening(ctx, sched, ev, players, w)
+	return PrintEvening(ctx, sched, ev, players, e.ClubName, e.LogoPath, w)
 }
 
 type printRow struct {
@@ -33,12 +39,14 @@ type printRow struct {
 }
 
 type printData struct {
-	DateLabel string
-	Rows      []printRow
+	DateLabel  string
+	ClubName   string
+	LogoImgTag string // non-empty when a logo file was provided
+	Rows       []printRow
 }
 
 // PrintEvening renders the wedstrijdformulier as a self-contained HTML page.
-func PrintEvening(_ context.Context, _ domain.Schedule, ev domain.Evening, players []domain.Player, w io.Writer) error {
+func PrintEvening(_ context.Context, _ domain.Schedule, ev domain.Evening, players []domain.Player, clubName, logoPath string, w io.Writer) error {
 	playerMap := make(map[string]domain.Player, len(players))
 	for _, p := range players {
 		playerMap[p.ID.String()] = p
@@ -132,11 +140,20 @@ func PrintEvening(_ context.Context, _ domain.Schedule, ev domain.Evening, playe
 		}
 	}
 
+	logoImgTag := ""
+	if logoPath != "" {
+		if data, err := os.ReadFile(logoPath); err == nil {
+			mime := http.DetectContentType(data)
+			logoImgTag = fmt.Sprintf(`<img src="data:%s;base64,%s" class="hdr-logo" alt="">`,
+				mime, base64.StdEncoding.EncodeToString(data))
+		}
+	}
+
 	tmpl, err := template.New("print").Parse(printTmpl)
 	if err != nil {
 		return err
 	}
-	return tmpl.Execute(w, printData{DateLabel: dateLabel, Rows: rows})
+	return tmpl.Execute(w, printData{DateLabel: dateLabel, ClubName: clubName, LogoImgTag: logoImgTag, Rows: rows})
 }
 
 const printTmpl = `<!DOCTYPE html>
@@ -156,6 +173,7 @@ body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; background: white; p
 }
 @media print { .no-print { display: none; } }
 
+.hdr-logo { display: block; max-height: 32px; margin: 0 auto 4px; }
 .hdr-title {
   font-size: 16pt; font-weight: bold; text-align: center; line-height: 1.3; padding: 2px 0;
 }
@@ -220,7 +238,7 @@ col.cq { width: 4.1%;  }
   <button class="btn-print" onclick="window.print()">Afdrukken</button>
 </div>
 
-<div class="hdr-title">DARTCLUB GROLZICHT</div>
+{{if .LogoImgTag}}{{.LogoImgTag}}{{end}}<div class="hdr-title">{{.ClubName}}</div>
 <div class="hdr-sub">Wedstrijdformulier &nbsp;&nbsp;&nbsp; Spelsoort: 501 dubbel uit best of 3 &nbsp;&nbsp;&nbsp; Speeldatum: {{.DateLabel}}</div>
 
 <table>

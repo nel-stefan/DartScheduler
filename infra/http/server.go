@@ -2,6 +2,7 @@
 //
 // Route overview:
 //
+//	GET    /api/config                        — app configuration (title, club name)
 //	POST   /api/import                        — import players from Excel
 //	GET    /api/players                       — list all players
 //	POST   /api/schedule/generate             — generate a new schedule
@@ -36,6 +37,7 @@ func NewRouter(
 	systemH *handler.SystemHandler,
 	eveningStatH *handler.EveningStatHandler,
 	seasonStatH *handler.SeasonStatHandler,
+	configH *handler.ConfigHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 	r.Use(chimw.Recoverer)
@@ -48,6 +50,8 @@ func NewRouter(
 	})
 
 	r.Route("/api", func(r chi.Router) {
+		r.Get("/config", configH.GetConfig)
+
 		r.Post("/import", playerH.Import)
 		r.Get("/players", playerH.List)
 		r.Put("/players/{id}", playerH.Update)

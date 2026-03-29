@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, AsyncPipe } from '@angular/common';
+import { Title } from '@angular/platform-browser';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,12 +9,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { filter } from 'rxjs';
 import { SeasonService } from './services/season.service';
+import { ConfigService } from './services/config.service';
 import { environment } from '../environments/environment';
 
 @Component({
     selector: 'app-root',
     imports: [
-        RouterOutlet, RouterLink, RouterLinkActive, CommonModule,
+        RouterOutlet, RouterLink, RouterLinkActive, CommonModule, AsyncPipe,
         MatToolbarModule, MatButtonModule, MatIconModule,
         MatSelectModule, MatFormFieldModule,
     ],
@@ -22,13 +24,17 @@ import { environment } from '../environments/environment';
 })
 export class AppComponent implements OnInit {
   protected seasonService = inject(SeasonService);
+  protected configService = inject(ConfigService);
   protected version = environment.version;
   private router = inject(Router);
+  private titleService = inject(Title);
 
   isMobile = false;
 
   ngOnInit(): void {
     this.seasonService.load();
+    this.configService.load();
+    this.configService.appTitle$.subscribe(title => this.titleService.setTitle(title));
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
       this.isMobile = this.router.url.startsWith('/m');
     });

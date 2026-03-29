@@ -18,19 +18,14 @@ import (
 )
 
 func main() {
-	dbPath := os.Getenv("DATABASE_PATH")
-	if dbPath == "" {
-		dbPath = "dartscheduler.db"
-	}
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	cfg := loadConfig()
 
 	logBuf := logbuf.New(200)
 	log.SetOutput(io.MultiWriter(os.Stderr, logBuf))
+	log.Printf("config: port=%s db_type=%s db_path=%s club=%q title=%q logo=%q",
+		cfg.Port, cfg.DatabaseType, cfg.DatabasePath, cfg.ClubName, cfg.AppTitle, cfg.LogoPath)
 
-	db, err := sqlite.Open(dbPath)
+	db, err := sqlite.Open(cfg.DatabasePath)
 	if err != nil {
 		log.Fatalf("open db: %v", err)
 	}
@@ -55,18 +50,19 @@ func main() {
 	schedH := handler.NewScheduleHandler(scheduleUC)
 	scoreH := handler.NewScoreHandler(scoreUC)
 	statsH := handler.NewStatsHandler(playerRepo, scoreUC)
-	exportH      := handler.NewExportHandler(exportUC)
+	exportH      := handler.NewExportHandler(exportUC, cfg.ClubName, cfg.LogoPath)
 	systemH      := handler.NewSystemHandler(logBuf)
 	eveningStatH := handler.NewEveningStatHandler(eveningStatRepo)
 	seasonStatH  := handler.NewSeasonStatHandler(seasonStatRepo)
+	configH      := handler.NewConfigHandler(cfg.AppTitle, cfg.ClubName)
 
-	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH, eveningStatH, seasonStatH)
+	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH, eveningStatH, seasonStatH, configH)
 
-	srv := &http.Server{Addr: ":" + port, Handler: router}
+	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 
 	serveErr := make(chan error, 1)
 	go func() {
-		log.Printf("listening on :%s", port)
+		log.Printf("listening on :%s", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			serveErr <- err
 		}

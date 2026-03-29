@@ -1,6 +1,6 @@
 <mat-toolbar color="primary" class="app-toolbar" *ngIf="!isMobile">
   <img src="assets/logo.svg" alt="dart" class="toolbar-logo">
-  <span class="toolbar-title">DartScheduler</span>
+  <span class="toolbar-title">{{ configService.appTitle$ | async }}</span>
   <span class="toolbar-spacer"></span>
 
   <mat-form-field appearance="outline" subscriptSizing="dynamic"
