@@ -43,18 +43,18 @@ type GenerateScheduleInput struct {
 // --- Score ---
 
 type SubmitScoreInput struct {
-	MatchID        domain.MatchID
-	Leg1Winner     string // player ID string
-	Leg1Turns      int
-	Leg2Winner     string
-	Leg2Turns      int
-	Leg3Winner     string
-	Leg3Turns      int
-	ReportedBy     string
-	RescheduleDate string
-	SecretaryNr    string
-	CounterNr      string
-	PlayedDate     string
+	MatchID              domain.MatchID
+	Leg1Winner           string // player ID string
+	Leg1Turns            int
+	Leg2Winner           string
+	Leg2Turns            int
+	Leg3Winner           string
+	Leg3Turns            int
+	ReportedBy           string
+	RescheduleDate       string
+	SecretaryNr          string
+	CounterNr            string
+	PlayedDate           string
 	PlayerA180s          int
 	PlayerB180s          int
 	PlayerAHighestFinish int
@@ -64,37 +64,37 @@ type SubmitScoreInput struct {
 // --- Stats ---
 
 type PlayerStats struct {
-	Player        domain.Player `json:"player"`
-	Played        int           `json:"played"`
-	Wins          int           `json:"wins"`
-	Losses        int           `json:"losses"`
-	Draws         int           `json:"draws"`
-	PointsFor     int           `json:"pointsFor"`
-	PointsAgainst int           `json:"pointsAgainst"`
-	OneEighties     int     `json:"oneEighties"`
-	HighestFinish   int     `json:"highestFinish"`
-	MinTurns        int     `json:"minTurns"`
-	AvgTurns        float64 `json:"avgTurns"`
-	AvgScorePerTurn float64 `json:"avgScorePerTurn"`
+	Player          domain.Player `json:"player"`
+	Played          int           `json:"played"`
+	Wins            int           `json:"wins"`
+	Losses          int           `json:"losses"`
+	Draws           int           `json:"draws"`
+	PointsFor       int           `json:"pointsFor"`
+	PointsAgainst   int           `json:"pointsAgainst"`
+	OneEighties     int           `json:"oneEighties"`
+	HighestFinish   int           `json:"highestFinish"`
+	MinTurns        int           `json:"minTurns"`
+	AvgTurns        float64       `json:"avgTurns"`
+	AvgScorePerTurn float64       `json:"avgScorePerTurn"`
 }
 
 // DutyMatch holds the evening number and match players for a single duty entry.
 type DutyMatch struct {
-	EveningNr  int    `json:"eveningNr"`
-	PlayerANr  string `json:"playerANr"`
+	EveningNr   int    `json:"eveningNr"`
+	PlayerANr   string `json:"playerANr"`
 	PlayerAName string `json:"playerAName"`
-	PlayerBNr  string `json:"playerBNr"`
+	PlayerBNr   string `json:"playerBNr"`
 	PlayerBName string `json:"playerBName"`
 }
 
 // DutyStats tracks how often a player has served as secretary or counter.
 type DutyStats struct {
-	Player         domain.Player `json:"player"`
-	Count          int           `json:"count"`
-	SecretaryCount int           `json:"secretaryCount"`
-	CounterCount   int           `json:"counterCount"`
-	SecretaryMatches []DutyMatch `json:"secretaryMatches"`
-	CounterMatches   []DutyMatch `json:"counterMatches"`
+	Player           domain.Player `json:"player"`
+	Count            int           `json:"count"`
+	SecretaryCount   int           `json:"secretaryCount"`
+	CounterCount     int           `json:"counterCount"`
+	SecretaryMatches []DutyMatch   `json:"secretaryMatches"`
+	CounterMatches   []DutyMatch   `json:"counterMatches"`
 }
 
 // SeasonSummary is a lightweight schedule list item.

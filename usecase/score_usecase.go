@@ -9,9 +9,9 @@ import (
 )
 
 type ScoreUseCase struct {
-	matches      domain.MatchRepository
-	evenings     domain.EveningRepository
-	seasonStats  domain.SeasonPlayerStatRepository
+	matches     domain.MatchRepository
+	evenings    domain.EveningRepository
+	seasonStats domain.SeasonPlayerStatRepository
 }
 
 func NewScoreUseCase(matches domain.MatchRepository, evenings domain.EveningRepository, seasonStats domain.SeasonPlayerStatRepository) *ScoreUseCase {
@@ -209,13 +209,20 @@ func (uc *ScoreUseCase) GetStats(ctx context.Context, players []domain.Player, s
 			return nil, err
 		}
 	} else {
-		// No schedule filter: iterate per player (no batch method without schedule).
+		// No schedule filter: iterate per player, dedup by match ID to avoid
+		// counting the same match twice (FindByPlayer returns it for both participants).
+		seen := make(map[domain.MatchID]struct{})
 		for _, p := range players {
 			pm, err := uc.matches.FindByPlayer(ctx, p.ID)
 			if err != nil {
 				return nil, err
 			}
-			allMatches = append(allMatches, pm...)
+			for _, m := range pm {
+				if _, ok := seen[m.ID]; !ok {
+					seen[m.ID] = struct{}{}
+					allMatches = append(allMatches, m)
+				}
+			}
 		}
 	}
 
