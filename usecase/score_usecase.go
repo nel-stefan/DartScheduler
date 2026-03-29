@@ -9,9 +9,9 @@ import (
 )
 
 type ScoreUseCase struct {
-	matches      domain.MatchRepository
-	evenings     domain.EveningRepository
-	seasonStats  domain.SeasonPlayerStatRepository
+	matches     domain.MatchRepository
+	evenings    domain.EveningRepository
+	seasonStats domain.SeasonPlayerStatRepository
 }
 
 func NewScoreUseCase(matches domain.MatchRepository, evenings domain.EveningRepository, seasonStats domain.SeasonPlayerStatRepository) *ScoreUseCase {

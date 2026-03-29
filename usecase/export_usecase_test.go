@@ -73,14 +73,14 @@ func (r *exportEveningRepo) FindByID(_ context.Context, id domain.EveningID) (do
 func (r *exportEveningRepo) FindBySchedule(_ context.Context, _ domain.ScheduleID) ([]domain.Evening, error) {
 	return r.evenings, nil
 }
-func (r *exportEveningRepo) Delete(_ context.Context, _ domain.EveningID) error      { return nil }
+func (r *exportEveningRepo) Delete(_ context.Context, _ domain.EveningID) error { return nil }
 func (r *exportEveningRepo) DeleteBySchedule(_ context.Context, _ domain.ScheduleID) error {
 	return nil
 }
 
 type exportMatchRepo struct {
-	byEvening   map[domain.EveningID][]domain.Match
-	cancelled   []domain.Match
+	byEvening map[domain.EveningID][]domain.Match
+	cancelled []domain.Match
 }
 
 func newExportMatchRepo() *exportMatchRepo {
@@ -117,14 +117,14 @@ type exportPlayerRepo struct {
 	players []domain.Player
 }
 
-func (r *exportPlayerRepo) Save(_ context.Context, _ domain.Player) error         { return nil }
-func (r *exportPlayerRepo) SaveBatch(_ context.Context, _ []domain.Player) error  { return nil }
+func (r *exportPlayerRepo) Save(_ context.Context, _ domain.Player) error        { return nil }
+func (r *exportPlayerRepo) SaveBatch(_ context.Context, _ []domain.Player) error { return nil }
 func (r *exportPlayerRepo) FindByID(_ context.Context, _ domain.PlayerID) (domain.Player, error) {
 	return domain.Player{}, domain.ErrNotFound
 }
 func (r *exportPlayerRepo) FindAll(_ context.Context) ([]domain.Player, error) { return r.players, nil }
-func (r *exportPlayerRepo) Delete(_ context.Context, _ domain.PlayerID) error   { return nil }
-func (r *exportPlayerRepo) DeleteAll(_ context.Context) error                   { return nil }
+func (r *exportPlayerRepo) Delete(_ context.Context, _ domain.PlayerID) error  { return nil }
+func (r *exportPlayerRepo) DeleteAll(_ context.Context) error                  { return nil }
 func (r *exportPlayerRepo) SaveBuddyPreference(_ context.Context, _ domain.BuddyPreference) error {
 	return nil
 }

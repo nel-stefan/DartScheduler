@@ -52,9 +52,9 @@ var matchPairNameRe = regexp.MustCompile(`^(\d+)\s*\(([^)]+)\)\s*-\s*(\d+)\s*\((
 // ImportSeason reads a historical season Excel file.
 // Supports two formats:
 //
-// 1. Flat table (headers: avond/evening, datum/date, nr a/naam a, nr b/naam b, leg1, turns1, …)
-// 2. Schedule matrix (row 1 = dates, subsequent rows = "NR - NR" match pairs per column;
-//    columns whose cells spell "INHAAL" are treated as catch-up evenings)
+//  1. Flat table (headers: avond/evening, datum/date, nr a/naam a, nr b/naam b, leg1, turns1, …)
+//  2. Schedule matrix (row 1 = dates, subsequent rows = "NR - NR" match pairs per column;
+//     columns whose cells spell "INHAAL" are treated as catch-up evenings)
 func ImportSeason(r io.Reader) (ImportedSeason, error) {
 	f, err := excelize.OpenReader(r)
 	if err != nil {

@@ -50,9 +50,11 @@ func (r *stubMatchRepo) FindByID(_ context.Context, id domain.MatchID) (domain.M
 }
 
 // Unused methods — satisfy the interface with no-ops.
-func (r *stubMatchRepo) Save(_ context.Context, m domain.Match) error                                          { return nil }
-func (r *stubMatchRepo) SaveBatch(_ context.Context, _ []domain.Match) error                                   { return nil }
-func (r *stubMatchRepo) FindByPlayer(_ context.Context, _ domain.PlayerID) ([]domain.Match, error)             { return nil, nil }
+func (r *stubMatchRepo) Save(_ context.Context, m domain.Match) error        { return nil }
+func (r *stubMatchRepo) SaveBatch(_ context.Context, _ []domain.Match) error { return nil }
+func (r *stubMatchRepo) FindByPlayer(_ context.Context, _ domain.PlayerID) ([]domain.Match, error) {
+	return nil, nil
+}
 func (r *stubMatchRepo) FindByPlayerAndSchedule(_ context.Context, _ domain.PlayerID, _ domain.ScheduleID) ([]domain.Match, error) {
 	return nil, nil
 }

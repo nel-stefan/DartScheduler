@@ -22,7 +22,7 @@ fmt:
 	cd frontend && npm run format || true
 
 fmt-check:
-	@test -z "$$(gofmt -l ./...)" || (echo "Go files need formatting:" && gofmt -l ./... && exit 1)
+	@test -z "$$(gofmt -l .)" || (echo "Go files need formatting:" && gofmt -l . && exit 1)
 
 lint:
 	go vet ./...
