@@ -1,7 +1,7 @@
 @if (!isMobile) {
   <mat-toolbar color="primary" class="app-toolbar">
     <img src="assets/logo.svg" alt="dart" class="toolbar-logo">
-    <a class="toolbar-title" routerLink="/">{{ configService.appTitle$ | async }}</a>
+    <a class="toolbar-title" routerLink="/">{{ configService.clubName$ | async }}</a>
     <span class="toolbar-spacer"></span>
     @if ((seasonService.seasons$ | async)?.length) {
       <mat-form-field appearance="outline" subscriptSizing="dynamic"

@@ -51,7 +51,9 @@ func loadConfig() AppConfig {
 	if v := os.Getenv("DATABASE_PATH"); v != "" {
 		cfg.DatabasePath = v
 	}
-	if v := os.Getenv("CLUB_NAME"); v != "" {
+	if v := os.Getenv("CLUB_NAAM"); v != "" {
+		cfg.ClubName = v
+	} else if v := os.Getenv("CLUB_NAME"); v != "" {
 		cfg.ClubName = v
 	}
 	if v := os.Getenv("APP_TITLE"); v != "" {
