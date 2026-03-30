@@ -281,3 +281,46 @@ func TestGreedyAssign_AllMatchesCovered(t *testing.T) {
 		}
 	}
 }
+
+// ---------------------------------------------------------------------------
+// countMinMatchViolations
+// ---------------------------------------------------------------------------
+
+func TestCountMinMatchViolations_NoViolations(t *testing.T) {
+	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
+	// Each player has 2 matches on evening 0 → no violations.
+	matches := []pair{{p1, p2}, {p3, p4}, {p1, p3}, {p2, p4}}
+	assignment := []int{0, 0, 0, 0}
+	v := countMinMatchViolations(matches, assignment, 1)
+	if v != 0 {
+		t.Errorf("want 0 violations, got %d", v)
+	}
+}
+
+func TestCountMinMatchViolations_OneViolation(t *testing.T) {
+	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
+	// Evening 0: p1 vs p2 only → both p1 and p2 have 1 match → 2 violations.
+	// Evening 1: p3 plays twice → no violation for p3/p4.
+	matches := []pair{{p1, p2}, {p3, p4}, {p3, p1}}
+	// p1 on ev0: count 1 (violation), p2 on ev0: count 1 (violation)
+	// p3 on ev1: count 2 (ok), p4 on ev1: count 1 (violation)
+	// p1 on ev1: count 1 (violation)
+	assignment := []int{0, 1, 1}
+	v := countMinMatchViolations(matches, assignment, 2)
+	// p1 ev0:1✗, p2 ev0:1✗, p4 ev1:1✗, p1 ev1:1✗ → 4 violations
+	if v != 4 {
+		t.Errorf("want 4 violations, got %d", v)
+	}
+}
+
+func TestCountMinMatchViolations_AllSolo(t *testing.T) {
+	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
+	// Each match on its own evening → every player-evening pair has count 1.
+	matches := []pair{{p1, p2}, {p3, p4}}
+	assignment := []int{0, 1}
+	v := countMinMatchViolations(matches, assignment, 2)
+	// 2 matches × 2 players each = 4 player-evening pairs, all with count 1.
+	if v != 4 {
+		t.Errorf("want 4 violations, got %d", v)
+	}
+}

@@ -147,6 +147,21 @@ func countExcessTripleMatchViolations(matches []pair, assignment []int, numEveni
 	return violations
 }
 
+// countMinMatchViolations counts (player, evening) pairs where the player
+// appears on that evening in exactly 1 match (below the minimum of 2).
+func countMinMatchViolations(matches []pair, assignment []int, numEvenings int) int {
+	counts := playerCountsPerEvening(matches, assignment, numEvenings)
+	violations := 0
+	for _, ev := range counts {
+		for _, c := range ev {
+			if c == 1 {
+				violations++
+			}
+		}
+	}
+	return violations
+}
+
 // varianceMatchesPerEvening returns the variance of total matches per evening.
 func varianceMatchesPerEvening(assignment []int, numEvenings int) float64 {
 	counts := make([]float64, numEvenings)
