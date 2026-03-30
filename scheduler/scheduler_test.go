@@ -517,52 +517,43 @@ func TestOddNumberOfPlayers(t *testing.T) {
 	}
 }
 
-// TestMinTwoMatchesPerPlayerPerEvening verifies that the scheduler minimises
-// solo-match evenings. With 12 players and 7 evenings the average is ~1.6
-// matches per player per active evening, so clustering into 2-match blocks is
-// feasible. We allow a small residual for the mathematical edge cases (players
-// with an odd number of remaining opponents).
-func TestMinTwoMatchesPerPlayerPerEvening(t *testing.T) {
-	players := make([]domain.Player, 12)
+// TestAtMostOneSoloEveningPerPlayer verifies the hard constraint: each player
+// may have at most 1 evening with exactly 1 match. Uses the realistic scenario
+// of 20 players across 30 evenings (N-1=19 matches per player; max 9 active
+// evenings each, so clustering into 2-match evenings is mathematically feasible).
+func TestAtMostOneSoloEveningPerPlayer(t *testing.T) {
+	players := make([]domain.Player, 20)
 	for i := range players {
 		players[i] = domain.Player{ID: domain.PlayerID(uuid.New())}
 	}
 	sched, err := scheduler.Generate(scheduler.Input{
-		Players:     players,
-		NumEvenings: 7,
-		StartDate:   time.Now(),
+		Players:      players,
+		NumEvenings:  30,
+		StartDate:    time.Now(),
 		IntervalDays: 7,
 	})
 	if err != nil {
 		t.Fatalf("Generate: %v", err)
 	}
 
-	// Count (player, evening) pairs with exactly 1 match.
-	type key struct {
-		pid domain.PlayerID
-		ev  int
-	}
-	counts := make(map[key]int)
+	// Count solo evenings per player.
+	soloPerPlayer := make(map[domain.PlayerID]int)
 	for _, ev := range sched.Evenings {
+		matchCount := make(map[domain.PlayerID]int)
 		for _, m := range ev.Matches {
-			counts[key{m.PlayerA, ev.Number}]++
-			counts[key{m.PlayerB, ev.Number}]++
+			matchCount[m.PlayerA]++
+			matchCount[m.PlayerB]++
 		}
-	}
-	violations := 0
-	for _, c := range counts {
-		if c == 1 {
-			violations++
+		for pid, c := range matchCount {
+			if c == 1 {
+				soloPerPlayer[pid]++
+			}
 		}
 	}
 
-	// With 12 players each playing 11 matches over 7 evenings, at most a few
-	// unavoidable residuals are expected. Require ≤10% of all player-evening
-	// pairs are solo.
-	totalPairs := len(counts)
-	threshold := int(math.Ceil(0.10 * float64(totalPairs)))
-	if violations > threshold {
-		t.Errorf("too many solo-match evenings: %d violations out of %d player-evening pairs (threshold %d)",
-			violations, totalPairs, threshold)
+	for pid, solo := range soloPerPlayer {
+		if solo > 1 {
+			t.Errorf("player %v has %d solo evenings (max 1 allowed)", pid, solo)
+		}
 	}
 }

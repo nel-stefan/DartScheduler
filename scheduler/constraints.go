@@ -147,16 +147,24 @@ func countExcessTripleMatchViolations(matches []pair, assignment []int, numEveni
 	return violations
 }
 
-// countMinMatchViolations counts (player, evening) pairs where the player
-// appears on that evening in exactly 1 match (below the minimum of 2).
+// countMinMatchViolations counts per-player excess solo evenings.
+// Each player is allowed at most 1 evening with exactly 1 match; every
+// additional solo evening beyond that is one violation.
 func countMinMatchViolations(matches []pair, assignment []int, numEvenings int) int {
 	counts := playerCountsPerEvening(matches, assignment, numEvenings)
-	violations := 0
+
+	soloPerPlayer := make(map[domain.PlayerID]int)
 	for _, ev := range counts {
-		for _, c := range ev {
+		for pid, c := range ev {
 			if c == 1 {
-				violations++
+				soloPerPlayer[pid]++
 			}
+		}
+	}
+	violations := 0
+	for _, solo := range soloPerPlayer {
+		if solo > 1 {
+			violations += solo - 1
 		}
 	}
 	return violations

@@ -288,7 +288,7 @@ func TestGreedyAssign_AllMatchesCovered(t *testing.T) {
 
 func TestCountMinMatchViolations_NoViolations(t *testing.T) {
 	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
-	// Each player has 2 matches on evening 0 → no violations.
+	// Each player has 2 matches on evening 0 → no solo evenings → no violations.
 	matches := []pair{{p1, p2}, {p3, p4}, {p1, p3}, {p2, p4}}
 	assignment := []int{0, 0, 0, 0}
 	v := countMinMatchViolations(matches, assignment, 1)
@@ -297,30 +297,45 @@ func TestCountMinMatchViolations_NoViolations(t *testing.T) {
 	}
 }
 
-func TestCountMinMatchViolations_OneViolation(t *testing.T) {
-	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
-	// Evening 0: p1 vs p2 only → both p1 and p2 have 1 match → 2 violations.
-	// Evening 1: p3 plays twice → no violation for p3/p4.
-	matches := []pair{{p1, p2}, {p3, p4}, {p3, p1}}
-	// p1 on ev0: count 1 (violation), p2 on ev0: count 1 (violation)
-	// p3 on ev1: count 2 (ok), p4 on ev1: count 1 (violation)
-	// p1 on ev1: count 1 (violation)
+func TestCountMinMatchViolations_OneSoloAllowed(t *testing.T) {
+	p1, p2 := newPID(), newPID()
+	// p1 and p2 each have exactly 1 solo evening (ev0) and 2 matches on ev1.
+	// 1 solo evening is allowed → 0 violations.
+	matches := []pair{{p1, p2}, {p1, p2}, {p1, p2}}
 	assignment := []int{0, 1, 1}
 	v := countMinMatchViolations(matches, assignment, 2)
-	// p1 ev0:1✗, p2 ev0:1✗, p4 ev1:1✗, p1 ev1:1✗ → 4 violations
-	if v != 4 {
-		t.Errorf("want 4 violations, got %d", v)
+	if v != 0 {
+		t.Errorf("want 0 violations (1 solo allowed), got %d", v)
 	}
 }
 
-func TestCountMinMatchViolations_AllSolo(t *testing.T) {
-	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
-	// Each match on its own evening → every player-evening pair has count 1.
-	matches := []pair{{p1, p2}, {p3, p4}}
-	assignment := []int{0, 1}
-	v := countMinMatchViolations(matches, assignment, 2)
-	// 2 matches × 2 players each = 4 player-evening pairs, all with count 1.
+func TestCountMinMatchViolations_ExcessSoloEvenings(t *testing.T) {
+	p1, p2 := newPID(), newPID()
+	// p1 and p2 each appear on 3 separate evenings with 1 match each.
+	// 3 solo evenings − 1 allowed = 2 violations per player → 4 total.
+	matches := []pair{{p1, p2}, {p1, p2}, {p1, p2}}
+	assignment := []int{0, 1, 2}
+	v := countMinMatchViolations(matches, assignment, 3)
 	if v != 4 {
-		t.Errorf("want 4 violations, got %d", v)
+		t.Errorf("want 4 violations (2 excess solo evenings × 2 players), got %d", v)
+	}
+}
+
+func TestCountMinMatchViolations_MixedPlayers(t *testing.T) {
+	p1, p2, p3 := newPID(), newPID(), newPID()
+	// p1: 2 solo evenings (ev0, ev1) → 1 violation
+	// p2: 1 solo evening (ev0) → 0 violations
+	// p3: 2 matches on ev1, 1 on ev2 → 1 solo evening → 0 violations
+	matches := []pair{{p1, p2}, {p1, p3}, {p3, p2}, {p1, p3}}
+	// ev0: p1 vs p2 (p1:1, p2:1)
+	// ev1: p1 vs p3 + p3 vs p2 (p1:1, p3:2, p2:1 — but p2 already on ev0 solo)
+	// ev2: p1 vs p3 (p1:1, p3:1)
+	assignment := []int{0, 1, 1, 2}
+	// p1: ev0→1, ev1→1, ev2→1 → 3 solo evenings → 2 violations
+	// p2: ev0→1, ev1→1 → 2 solo evenings → 1 violation
+	// p3: ev1→2, ev2→1 → 1 solo evening → 0 violations
+	v := countMinMatchViolations(matches, assignment, 3)
+	if v != 3 {
+		t.Errorf("want 3 violations, got %d", v)
 	}
 }

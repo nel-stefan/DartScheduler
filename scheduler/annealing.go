@@ -6,7 +6,7 @@
 //	       + wMaxViolation × per-evening match counts above the cap        (hard)
 //	       + wTripleConsec × evenings in a run of >2 consecutive           (hard)
 //	       + wExcessTriple × extra 3-match evenings per player (>10%)      (medium)
-//	       + wMinMatches   × (player, evening) pairs with only 1 match     (medium)
+//	       + wMinMatches   × per-player excess solo evenings (>1 solo)      (hard)
 //	       + wVariance     × variance of total matches per evening          (soft)
 package scheduler
 
@@ -29,7 +29,7 @@ const (
 	wMaxViolation = 10_000.0 // player has more than the allowed matches on one evening
 	wTripleConsec = 5_000.0  // player plays 3+ evenings in a row
 	wExcessTriple = 2_000.0  // >10% of active evenings have 3 matches for a player
-	wMinMatches   = 5.0      // player plays only 1 match on an evening they attend
+	wMinMatches   = 1_000.0 // player has >1 solo evening (only 1 is allowed)
 	wVariance     = 1.0
 
 	// Fraction of steps that use a targeted move instead of a random swap.
