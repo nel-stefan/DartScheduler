@@ -140,6 +140,93 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 	return sched, nil
 }
 
+// Regenerate reruns the scheduler for an existing schedule, replacing all match
+// assignments while keeping the schedule metadata and evening structure intact.
+// Only regular (non-catch-up) evenings are affected; their existing IDs and dates
+// are reused so no downstream references break.
+func (uc *ScheduleUseCase) Regenerate(ctx context.Context, id domain.ScheduleID) (domain.Schedule, error) {
+	log.Printf("[Regenerate] scheduleID=%s", id)
+	sched, err := uc.schedules.FindByID(ctx, id)
+	if err != nil {
+		return domain.Schedule{}, fmt.Errorf("load schedule: %w", err)
+	}
+
+	evenings, err := uc.evenings.FindBySchedule(ctx, id)
+	if err != nil {
+		return domain.Schedule{}, fmt.Errorf("load evenings: %w", err)
+	}
+
+	// Keep only regular evenings (catch-up evenings have no pre-assigned matches).
+	var regularEvenings []domain.Evening
+	for _, ev := range evenings {
+		if !ev.IsCatchUpEvening {
+			regularEvenings = append(regularEvenings, ev)
+		}
+	}
+	sort.Slice(regularEvenings, func(i, j int) bool {
+		return regularEvenings[i].Number < regularEvenings[j].Number
+	})
+
+	allPlayers, err := uc.players.FindAll(ctx)
+	if err != nil {
+		return domain.Schedule{}, fmt.Errorf("load players: %w", err)
+	}
+	participants := make([]domain.Player, 0, len(allPlayers))
+	for _, p := range allPlayers {
+		if !strings.Contains(strings.ToLower(p.Nr), "-s") {
+			participants = append(participants, p)
+		}
+	}
+
+	buddyPairs, err := uc.players.FindAllBuddyPairs(ctx)
+	if err != nil {
+		return domain.Schedule{}, fmt.Errorf("load buddy pairs: %w", err)
+	}
+
+	regularDates := make([]time.Time, len(regularEvenings))
+	for i, ev := range regularEvenings {
+		regularDates[i] = ev.Date
+	}
+
+	log.Printf("[Regenerate] running scheduler: participants=%d regularEvenings=%d buddyPairs=%d",
+		len(participants), len(regularEvenings), len(buddyPairs))
+	newSched, err := scheduler.Generate(scheduler.Input{
+		Players:         participants,
+		BuddyPairs:      buddyPairs,
+		NumEvenings:     len(regularEvenings),
+		EveningDates:    regularDates,
+		CompetitionName: sched.CompetitionName,
+	})
+	if err != nil {
+		return domain.Schedule{}, fmt.Errorf("generate schedule: %w", err)
+	}
+
+	// Delete existing matches for all regular evenings.
+	for _, ev := range regularEvenings {
+		if err := uc.matches.DeleteByEvening(ctx, ev.ID); err != nil {
+			return domain.Schedule{}, fmt.Errorf("delete matches for evening %d: %w", ev.Number, err)
+		}
+	}
+
+	// Save new matches under the existing evening IDs (newSched.Evenings[i] → regularEvenings[i]).
+	totalMatches := 0
+	for i, newEv := range newSched.Evenings {
+		oldEvID := regularEvenings[i].ID
+		for j := range newEv.Matches {
+			newEv.Matches[j].ID = uuid.New()
+			newEv.Matches[j].EveningID = oldEvID
+		}
+		if len(newEv.Matches) > 0 {
+			if err := uc.matches.SaveBatch(ctx, newEv.Matches); err != nil {
+				return domain.Schedule{}, fmt.Errorf("save matches for evening %d: %w", regularEvenings[i].Number, err)
+			}
+			totalMatches += len(newEv.Matches)
+		}
+	}
+	log.Printf("[Regenerate] done: scheduleID=%s matches=%d", id, totalMatches)
+	return uc.hydrate(ctx, sched)
+}
+
 func (uc *ScheduleUseCase) RenameSchedule(ctx context.Context, id domain.ScheduleID, name string) error {
 	sched, err := uc.schedules.FindByID(ctx, id)
 	if err != nil {

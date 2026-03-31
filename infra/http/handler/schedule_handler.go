@@ -145,6 +145,21 @@ func (h *ScheduleHandler) AddCatchUpEvening(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, sched)
 }
 
+func (h *ScheduleHandler) RegenerateSchedule(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	sched, err := h.uc.Regenerate(r.Context(), domain.ScheduleID(id))
+	if err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	writeJSON(w, sched)
+}
+
 func (h *ScheduleHandler) RenameSchedule(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)

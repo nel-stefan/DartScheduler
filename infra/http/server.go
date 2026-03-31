@@ -6,6 +6,7 @@
 //	POST   /api/import                        — import players from Excel
 //	GET    /api/players                       — list all players
 //	POST   /api/schedule/generate             — generate a new schedule
+//	POST   /api/schedules/{id}/regenerate     — rerun scheduler for existing schedule
 //	GET    /api/schedule                      — get the current schedule
 //	GET    /api/schedule/evening/{id}         — get a single playing evening
 //	PUT    /api/matches/{id}/score            — submit a match score
@@ -69,6 +70,7 @@ func NewRouter(
 		r.Post("/schedules/import-season", schedH.ImportSeason)
 		r.Patch("/schedules/{id}", schedH.RenameSchedule)
 		r.Delete("/schedules/{id}", schedH.DeleteSchedule)
+		r.Post("/schedules/{id}/regenerate", schedH.RegenerateSchedule)
 		r.Post("/schedules/{id}/inhaal-avond", schedH.AddCatchUpEvening)
 		r.Delete("/schedules/{id}/evenings/{eveningId}", schedH.DeleteEvening)
 

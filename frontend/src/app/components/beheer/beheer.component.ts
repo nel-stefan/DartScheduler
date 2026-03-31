@@ -364,6 +364,10 @@ export class ImportSeasonDialogComponent {
         font-style: italic;
         font-size: 13px;
       }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
     `,
   ],
   template: `
@@ -415,7 +419,21 @@ export class ImportSeasonDialogComponent {
                   </button>
                 }
                 @if (editingSeasonId() !== s.id) {
-                  <button mat-icon-button color="warn" (click)="deleteSeason(s)" matTooltip="Seizoen verwijderen">
+                  <button
+                    mat-icon-button
+                    [disabled]="regeneratingId() !== ''"
+                    (click)="regenerateSeason(s)"
+                    matTooltip="Schema herberekenen"
+                  >
+                    @if (regeneratingId() === s.id) {
+                      <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
+                    } @else {
+                      <mat-icon>sync</mat-icon>
+                    }
+                  </button>
+                }
+                @if (editingSeasonId() !== s.id) {
+                  <button mat-icon-button color="warn" [disabled]="regeneratingId() !== ''" (click)="deleteSeason(s)" matTooltip="Seizoen verwijderen">
                     <mat-icon>delete</mat-icon>
                   </button>
                 }
@@ -491,11 +509,12 @@ export class BeheerComponent implements OnInit {
 
   readonly renameInputRef = viewChild<ElementRef<HTMLInputElement>>('renameInput');
 
-  seasons         = signal<SeasonSummary[]>([]);
+  seasons          = signal<SeasonSummary[]>([]);
   selectedFile: File | null = null;
-  loading         = signal(false);
-  editingSeasonId = signal('');
-  renameDraft     = signal('');
+  loading          = signal(false);
+  editingSeasonId  = signal('');
+  renameDraft      = signal('');
+  regeneratingId   = signal('');
 
   version = environment.version;
   logs        = signal<string[]>([]);
@@ -591,6 +610,23 @@ export class BeheerComponent implements OnInit {
         this.loadSeasons();
       },
       error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+    });
+  }
+
+  regenerateSeason(s: SeasonSummary): void {
+    if (!confirm(`Schema voor "${s.competitionName}" opnieuw berekenen? De wedstrijdindeling wordt vervangen.`)) return;
+    this.regeneratingId.set(s.id);
+    this.scheduleService.regenerate(s.id).subscribe({
+      next: (sched) => {
+        this.regeneratingId.set('');
+        this.snackBar.open('Schema herberekend!', 'OK', { duration: 3000 });
+        this.seasonService.load(sched.id);
+        this.loadSeasons();
+      },
+      error: (err) => {
+        this.regeneratingId.set('');
+        this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 });
+      },
     });
   }
 
