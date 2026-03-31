@@ -2,12 +2,14 @@
 //
 // Energy function (lower = better schedule):
 //
-//	energy = wBuddyHard    × buddy pairs without a shared evening         (hard)
-//	       + wMaxViolation × per-evening match counts above the cap        (hard)
-//	       + wTripleConsec × evenings in a run of >2 consecutive           (hard)
-//	       + wExcessTriple × extra 3-match evenings per player (>10%)      (medium)
-//	       + wMinMatches   × per-player excess solo evenings (>1 solo)      (hard)
-//	       + wVariance     × variance of total matches per evening          (soft)
+//	energy = WBuddyHard    × buddy pair mismatches beyond the 1 allowed     (hard)
+//	       + WBuddySoft    × buddy pairs with exactly 1 mismatch (allowed)  (soft)
+//	       + WMaxViolation × per-evening match counts above the cap          (hard)
+//	       + WTripleConsec × evenings in a run of >2 consecutive             (hard)
+//	       + WExcessTriple × extra 3-match evenings per player (>10%)        (medium)
+//	       + WMinMatches   × per-player excess solo evenings (>1 solo)       (hard)
+//	       + WSoloSoft     × total solo (player,evening) pairs               (soft)
+//	       + WVariance     × variance of total matches per evening           (soft)
 package scheduler
 
 import (
@@ -20,24 +22,59 @@ import (
 
 const logInterval = 100_000
 
-const (
-	t0    = 10.0
-	tEnd  = 0.001
-	steps = 400_000
+// AnnealConfig holds all tunable parameters for the simulated annealing algorithm.
+// Use DefaultAnnealConfig() for production; override fields in tests for fast runs.
+type AnnealConfig struct {
+	T0    float64 // initial temperature
+	TEnd  float64 // final temperature
+	Steps int     // total number of annealing steps
 
-	wBuddyHard    = 10_000.0 // buddy pair has no shared evening
-	wMaxViolation = 10_000.0 // player has more than the allowed matches on one evening
-	wTripleConsec = 5_000.0  // player plays 3+ evenings in a row
-	wExcessTriple = 2_000.0  // >10% of active evenings have 3 matches for a player
-	wMinMatches   = 1_000.0 // player has >1 solo evening (only 1 is allowed)
-	wVariance     = 1.0
+	// MoveFraction is the fraction of steps that use a "move" operation (assign a
+	// match to any random evening, including empty ones). This is the primary
+	// mechanism for populating empty evenings. The remaining steps use targeted
+	// or random swaps.
+	MoveFraction float64
 
-	// Fraction of steps that use a targeted move instead of a random swap.
-	targetedFraction = 0.5
-)
+	// TargetedFraction is the fraction of non-move steps that use a targeted swap
+	// (buddy or consecutive violation) instead of a random swap.
+	TargetedFraction float64
+
+	// Weights for the energy function.
+	WBuddyHard    float64 // buddy pair has >1 mismatch evening
+	WBuddySoft    float64 // buddy pair has exactly 1 mismatch evening (allowed, but prefer 0)
+	WMaxViolation float64 // player has more than the allowed matches on one evening
+	WTripleConsec float64 // player plays 3+ evenings in a row
+	WExcessTriple float64 // >10% of active evenings have 3 matches for a player
+	WMinMatches   float64 // player has >1 solo evening (only 1 is allowed)
+	WSoloSoft     float64 // any solo evening — nudges toward 0 solo evenings
+	WVariance     float64 // variance of match counts across evenings
+}
+
+// DefaultAnnealConfig returns the production-quality annealing configuration.
+// wVariance×Δvar must exceed 4×WSoloSoft per spread move to allow balancing.
+func DefaultAnnealConfig() AnnealConfig {
+	return AnnealConfig{
+		T0:    100.0, // raised so spreading to empty evenings (delta≈+20) is accepted early
+		TEnd:  0.001,
+		Steps: 1_200_000,
+
+		MoveFraction:     0.20,
+		TargetedFraction: 0.50,
+
+		WBuddyHard:    10_000.0,
+		WBuddySoft:    200.0,
+		WMaxViolation: 10_000.0,
+		WTripleConsec: 5_000.0,
+		WExcessTriple: 2_000.0,
+		WMinMatches:   1_000.0,
+		WSoloSoft:     5.0,
+		WVariance:     50.0,
+	}
+}
 
 // anneal improves the assignment (matchIndex → eveningIndex) using simulated annealing.
 func anneal(
+	cfg AnnealConfig,
 	matches []pair,
 	assignment []int,
 	numEvenings int,
@@ -47,21 +84,46 @@ func anneal(
 	buddyPlayers := buildBuddyPlayerSet(buddyPairs)
 	best := cloneAssignment(assignment)
 	current := cloneAssignment(assignment)
-	bestEnergy := energy(matches, current, numEvenings, buddyPairs, buddyPlayers)
+	bestEnergy := energy(cfg, matches, current, numEvenings, buddyPairs, buddyPlayers)
 	currentEnergy := bestEnergy
 
 	playerMatchIdx := buildPlayerMatchIndex(matches)
-	alpha := math.Pow(tEnd/t0, 1.0/float64(steps))
-	T := t0
+	alpha := math.Pow(cfg.TEnd/cfg.T0, 1.0/float64(cfg.Steps))
+	T := cfg.T0
 
-	for step := 0; step < steps; step++ {
+	for step := 0; step < cfg.Steps; step++ {
 		if step%logInterval == 0 {
 			log.Printf("[anneal] step=%d/%d T=%.4f currentEnergy=%.1f bestEnergy=%.1f",
-				step, steps, T, currentEnergy, bestEnergy)
+				step, cfg.Steps, T, currentEnergy, bestEnergy)
 		}
+
+		// Move operation: assign one match to any random evening (can populate empties).
+		if rng.Float64() < cfg.MoveFraction {
+			mi := rng.Intn(len(current))
+			oldEvening := current[mi]
+			newEvening := rng.Intn(numEvenings)
+			if oldEvening != newEvening {
+				current[mi] = newEvening
+				newEnergy := energy(cfg, matches, current, numEvenings, buddyPairs, buddyPlayers)
+				delta := newEnergy - currentEnergy
+				if delta < 0 || rng.Float64() < math.Exp(-delta/T) {
+					currentEnergy = newEnergy
+					if newEnergy < bestEnergy {
+						bestEnergy = newEnergy
+						best = cloneAssignment(current)
+					}
+				} else {
+					current[mi] = oldEvening
+				}
+			}
+			T *= alpha
+			continue
+		}
+
+		// Swap operation: exchange two match evening assignments.
 		var i, j int
 
-		if rng.Float64() < targetedFraction {
+		if rng.Float64() < cfg.TargetedFraction {
 			// 50/50 between targeting a buddy violation or a triple-consecutive violation.
 			if rng.Intn(2) == 0 {
 				i, j = buddyTargetedSwap(matches, current, numEvenings, buddyPairs, playerMatchIdx, rng)
@@ -81,7 +143,7 @@ func anneal(
 		}
 
 		current[i], current[j] = current[j], current[i]
-		newEnergy := energy(matches, current, numEvenings, buddyPairs, buddyPlayers)
+		newEnergy := energy(cfg, matches, current, numEvenings, buddyPairs, buddyPlayers)
 		delta := newEnergy - currentEnergy
 
 		if delta < 0 || rng.Float64() < math.Exp(-delta/T) {
@@ -244,14 +306,18 @@ func randomSample(total, n int, rng *rand.Rand) []int {
 	return out
 }
 
-func energy(matches []pair, assignment []int, numEvenings int, buddyPairs []domain.BuddyPreference, buddyPlayers map[domain.PlayerID]bool) float64 {
-	buddyV := float64(countBuddyHardViolations(matches, assignment, buddyPairs, numEvenings))
+func energy(cfg AnnealConfig, matches []pair, assignment []int, numEvenings int, buddyPairs []domain.BuddyPreference, buddyPlayers map[domain.PlayerID]bool) float64 {
+	buddyHard := float64(countBuddyHardViolations(matches, assignment, buddyPairs, numEvenings))
+	buddySoft := float64(countBuddySoftViolations(matches, assignment, buddyPairs, numEvenings))
 	maxV := float64(countMaxViolations(matches, assignment, numEvenings, buddyPlayers))
 	tripleV := float64(countTripleConsecutiveViolations(matches, assignment, numEvenings))
 	excessV := float64(countExcessTripleMatchViolations(matches, assignment, numEvenings))
 	minV := float64(countMinMatchViolations(matches, assignment, numEvenings))
+	soloV := float64(countSoloEvenings(matches, assignment, numEvenings))
 	va := varianceMatchesPerEvening(assignment, numEvenings)
-	return wBuddyHard*buddyV + wMaxViolation*maxV + wTripleConsec*tripleV + wExcessV*excessV + wMinMatches*minV + wVariance*va
+	return cfg.WBuddyHard*buddyHard + cfg.WBuddySoft*buddySoft +
+		cfg.WMaxViolation*maxV + cfg.WTripleConsec*tripleV + cfg.WExcessTriple*excessV +
+		cfg.WMinMatches*minV + cfg.WSoloSoft*soloV + cfg.WVariance*va
 }
 
 // buildBuddyPlayerSet returns the set of all player IDs that appear in any buddy pair.
@@ -263,8 +329,6 @@ func buildBuddyPlayerSet(buddyPairs []domain.BuddyPreference) map[domain.PlayerI
 	}
 	return s
 }
-
-const wExcessV = wExcessTriple // alias for readability in energy()
 
 func cloneAssignment(a []int) []int {
 	b := make([]int, len(a))

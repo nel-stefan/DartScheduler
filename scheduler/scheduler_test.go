@@ -20,6 +20,14 @@ func makePlayers(n int) []domain.Player {
 	return players
 }
 
+// fastConfig returns an annealing config with fewer steps for use in tests.
+// Hard constraints still converge for small schedules (≤12 players).
+func fastConfig() scheduler.AnnealConfig {
+	cfg := scheduler.DefaultAnnealConfig()
+	cfg.Steps = 200_000
+	return cfg
+}
+
 // ---------------------------------------------------------------------------
 // Input validation errors
 // ---------------------------------------------------------------------------
@@ -70,6 +78,7 @@ func TestEveningDatesUsed(t *testing.T) {
 		NumEvenings:     3,
 		CompetitionName: "Test",
 		EveningDates:    dates,
+		Config:          fastConfig(),
 	})
 	if err != nil {
 		t.Fatalf("Generate error: %v", err)
@@ -92,6 +101,7 @@ func TestEveningNumbersAreSequential(t *testing.T) {
 		CompetitionName: "Test",
 		StartDate:       time.Now(),
 		IntervalDays:    7,
+		Config:          fastConfig(),
 	})
 	if err != nil {
 		t.Fatalf("Generate error: %v", err)
@@ -111,6 +121,7 @@ func TestAllMatchesHaveValidEveningID(t *testing.T) {
 		CompetitionName: "Test",
 		StartDate:       time.Now(),
 		IntervalDays:    7,
+		Config:          fastConfig(),
 	})
 	if err != nil {
 		t.Fatalf("Generate error: %v", err)
@@ -145,6 +156,7 @@ func TestEveryPairAppearsExactlyOnce(t *testing.T) {
 			CompetitionName: "Test",
 			StartDate:       time.Now(),
 			IntervalDays:    7,
+			Config:          fastConfig(),
 		})
 		if err != nil {
 			t.Fatalf("n=%d: Generate error: %v", n, err)
@@ -187,6 +199,7 @@ func TestMaxMatchesPerPlayerPerEvening(t *testing.T) {
 		CompetitionName: "Test",
 		StartDate:       time.Now(),
 		IntervalDays:    7,
+		Config:          fastConfig(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -221,6 +234,7 @@ func TestBuddyPlayersAllowedFourMatchesNonBuddyNotAllowed(t *testing.T) {
 		CompetitionName: "Test",
 		StartDate:       time.Now(),
 		IntervalDays:    7,
+		Config:          fastConfig(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -247,11 +261,10 @@ func TestBuddyPlayersAllowedFourMatchesNonBuddyNotAllowed(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Hard constraint: buddy pairs MUST share ALL evenings
+// Hard constraint: buddy pairs have at most 1 mismatch evening
 // ---------------------------------------------------------------------------
 
-func TestBuddyPairsMustShareAllEvenings(t *testing.T) {
-	// Use a smaller case so the annealing converges in time.
+func TestBuddyPairsAtMostOneMismatch(t *testing.T) {
 	// 8 players × 7 evenings → 28 matches, ~4/evening, each player active ~4 evenings.
 	players := makePlayers(8)
 	buddies := []domain.BuddyPreference{
@@ -267,6 +280,7 @@ func TestBuddyPairsMustShareAllEvenings(t *testing.T) {
 		CompetitionName: "Test",
 		StartDate:       time.Now(),
 		IntervalDays:    7,
+		Config:          fastConfig(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -282,7 +296,7 @@ func TestBuddyPairsMustShareAllEvenings(t *testing.T) {
 		}
 	}
 
-	// Each unique buddy pair must play together on EVERY evening one of them plays.
+	// Each unique buddy pair may have at most 1 evening where one plays without the other.
 	checked := map[[2]string]bool{}
 	for _, bp := range buddies {
 		a, b := bp.PlayerID.String(), bp.BuddyID.String()
@@ -295,13 +309,15 @@ func TestBuddyPairsMustShareAllEvenings(t *testing.T) {
 		}
 		checked[key] = true
 
-		for i, ep := range eveningPlayers {
-			aPlays := ep[bp.PlayerID]
-			bPlays := ep[bp.BuddyID]
-			if aPlays != bPlays {
-				t.Errorf("buddy pair %s — %s: evening %d: one plays (%v) but the other doesn't (%v)",
-					bp.PlayerID, bp.BuddyID, sched.Evenings[i].Number, aPlays, bPlays)
+		mismatches := 0
+		for _, ep := range eveningPlayers {
+			if ep[bp.PlayerID] != ep[bp.BuddyID] {
+				mismatches++
 			}
+		}
+		if mismatches > 1 {
+			t.Errorf("buddy pair %s — %s: %d mismatch evenings (hard max 1)",
+				bp.PlayerID, bp.BuddyID, mismatches)
 		}
 	}
 }
@@ -318,6 +334,7 @@ func TestNoMoreThanTwoConsecutiveEvenings(t *testing.T) {
 		CompetitionName: "Test",
 		StartDate:       time.Now(),
 		IntervalDays:    7,
+		Config:          fastConfig(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -366,6 +383,7 @@ func TestAtMostTenPercentTripleMatchEvenings(t *testing.T) {
 		CompetitionName: "Test",
 		StartDate:       time.Now(),
 		IntervalDays:    7,
+		Config:          fastConfig(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -418,6 +436,7 @@ func TestAllHardConstraintsWithBuddies(t *testing.T) {
 		CompetitionName: "Test",
 		StartDate:       time.Now(),
 		IntervalDays:    7,
+		Config:          fastConfig(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -432,7 +451,7 @@ func TestAllHardConstraintsWithBuddies(t *testing.T) {
 		}
 	}
 
-	// 1. Buddy pairs share ALL evenings (neither plays without the other).
+	// 1. Buddy pairs have at most 1 mismatch evening.
 	checked := map[[2]string]bool{}
 	for _, bp := range buddies {
 		a, b := bp.PlayerID.String(), bp.BuddyID.String()
@@ -444,13 +463,15 @@ func TestAllHardConstraintsWithBuddies(t *testing.T) {
 			continue
 		}
 		checked[key] = true
-		for i, ep := range eveningPlayers {
-			aPlays := ep[bp.PlayerID]
-			bPlays := ep[bp.BuddyID]
-			if aPlays != bPlays {
-				t.Errorf("(combined) buddy pair %s — %s: evening %d: one plays (%v) but the other doesn't (%v)",
-					bp.PlayerID, bp.BuddyID, sched.Evenings[i].Number, aPlays, bPlays)
+		mismatches := 0
+		for _, ep := range eveningPlayers {
+			if ep[bp.PlayerID] != ep[bp.BuddyID] {
+				mismatches++
 			}
+		}
+		if mismatches > 1 {
+			t.Errorf("(combined) buddy pair %s — %s: %d mismatch evenings (hard max 1)",
+				bp.PlayerID, bp.BuddyID, mismatches)
 		}
 	}
 
@@ -511,6 +532,7 @@ func TestOddNumberOfPlayers(t *testing.T) {
 		CompetitionName: "Test",
 		StartDate:       time.Now(),
 		IntervalDays:    7,
+		Config:          fastConfig(),
 	})
 	if err != nil {
 		t.Fatalf("odd players: %v", err)
@@ -521,7 +543,11 @@ func TestOddNumberOfPlayers(t *testing.T) {
 // may have at most 1 evening with exactly 1 match. Uses the realistic scenario
 // of 20 players across 30 evenings (N-1=19 matches per player; max 9 active
 // evenings each, so clustering into 2-match evenings is mathematically feasible).
+// Skipped in short mode because it runs the full default annealing (~1.2M steps).
 func TestAtMostOneSoloEveningPerPlayer(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping large integration test in short mode")
+	}
 	players := make([]domain.Player, 20)
 	for i := range players {
 		players[i] = domain.Player{ID: domain.PlayerID(uuid.New())}

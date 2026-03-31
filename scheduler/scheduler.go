@@ -31,6 +31,9 @@ type Input struct {
 	// EveningDates, if set, provides explicit dates for each evening (len must equal NumEvenings).
 	// Takes precedence over StartDate+IntervalDays.
 	EveningDates []time.Time
+	// Config overrides the default annealing parameters (weights, steps, fractions).
+	// If Steps == 0, DefaultAnnealConfig() is used.
+	Config AnnealConfig
 }
 
 // Generate builds a round-robin Schedule with simulated-annealing optimisation.
@@ -63,14 +66,19 @@ func Generate(in Input) (domain.Schedule, error) {
 	}
 	log.Printf("[scheduler.Generate] round-robin done: rounds=%d totalMatches=%d", len(rounds), len(flatMatches))
 
-	// 2. Greedy initial assignment: distribute matches across evenings evenly.
-	assignment := greedyAssign(flatMatches, in.NumEvenings)
-	log.Printf("[scheduler.Generate] greedy assignment done: matchesPerEvening≈%d", len(flatMatches)/in.NumEvenings)
+	// 2. Clustering initial assignment: pair consecutive rounds onto the same evening
+	//    so each player starts with ≤1 solo evening instead of spreading 1 match/evening.
+	assignment := clusteringAssign(rounds, in.NumEvenings)
+	log.Printf("[scheduler.Generate] clustering assignment done: matchesPerEvening≈%d", len(flatMatches)/in.NumEvenings)
 
 	// 3. Simulated annealing optimisation.
+	cfg := in.Config
+	if cfg.Steps == 0 {
+		cfg = DefaultAnnealConfig()
+	}
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	log.Printf("[scheduler.Generate] starting annealing: steps=%d", steps)
-	assignment = anneal(flatMatches, assignment, in.NumEvenings, in.BuddyPairs, rng)
+	log.Printf("[scheduler.Generate] starting annealing: steps=%d", cfg.Steps)
+	assignment = anneal(cfg, flatMatches, assignment, in.NumEvenings, in.BuddyPairs, rng)
 	log.Printf("[scheduler.Generate] annealing done")
 
 	// 4. Build domain.Schedule from the optimised assignment.
@@ -109,6 +117,44 @@ func Generate(in Input) (domain.Schedule, error) {
 	log.Printf("[scheduler.Generate] done: scheduleID=%s evenings=%d totalMatches=%d",
 		schedule.ID, len(schedule.Evenings), len(flatMatches))
 	return schedule, nil
+}
+
+// clusteringAssign distributes matches by pairing consecutive rounds onto the same
+// evening. Each player appears in every round exactly once, so within a pair of
+// rounds every player has exactly 2 matches — eliminating most solo evenings before
+// annealing begins. Groups are spaced evenly across numEvenings to avoid introducing
+// consecutive-evening violations in the initial assignment.
+func clusteringAssign(rounds [][]pair, numEvenings int) []int {
+	numRounds := len(rounds)
+	if numRounds == 0 {
+		return nil
+	}
+
+	// Pair consecutive rounds into groups; each group maps to one evening.
+	numGroups := (numRounds + 1) / 2
+
+	// Space groups evenly across evenings: group g → evening floor(g*numEvenings/numGroups).
+	groupEvening := make([]int, numGroups)
+	for g := 0; g < numGroups; g++ {
+		groupEvening[g] = g * numEvenings / numGroups
+	}
+
+	total := 0
+	for _, r := range rounds {
+		total += len(r)
+	}
+	assignment := make([]int, total)
+
+	matchIdx := 0
+	for ri, round := range rounds {
+		g := ri / 2 // rounds 0,1 → group 0; rounds 2,3 → group 1; etc.
+		ei := groupEvening[g]
+		for range round {
+			assignment[matchIdx] = ei
+			matchIdx++
+		}
+	}
+	return assignment
 }
 
 // greedyAssign distributes matches across evenings as evenly as possible.

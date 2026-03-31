@@ -60,9 +60,10 @@ func countMaxViolations(matches []pair, assignment []int, numEvenings int, buddy
 	return violations
 }
 
-// countBuddyHardViolations counts per-evening mismatches for each buddy pair:
-// every evening where one plays but the other doesn't is one violation.
-// Duplicate (bidirectional) buddy preferences are counted only once per pair.
+// countBuddyHardViolations counts hard violations for buddy pairs.
+// Each pair is allowed AT MOST 1 mismatch evening (one night apart is OK).
+// For a pair with M total mismatches: hard violations = max(0, M-1).
+// Bidirectional buddy preferences are counted only once per pair.
 func countBuddyHardViolations(matches []pair, assignment []int, buddyPairs []domain.BuddyPreference, numEvenings int) int {
 	if len(buddyPairs) == 0 {
 		return 0
@@ -80,9 +81,43 @@ func countBuddyHardViolations(matches []pair, assignment []int, buddyPairs []dom
 			continue
 		}
 		seen[key] = true
+		mismatches := 0
 		for _, s := range sets {
-			if s[a] != s[b] { // one plays, the other doesn't
-				violations++
+			if s[a] != s[b] {
+				mismatches++
+			}
+		}
+		if mismatches > 1 {
+			violations += mismatches - 1
+		}
+	}
+	return violations
+}
+
+// countBuddySoftViolations counts soft violations for buddy pairs.
+// Any pair that has at least 1 mismatch evening contributes 1 soft violation
+// (the first mismatch is allowed by the hard constraint, but prefer 0).
+// Bidirectional buddy preferences are counted only once per pair.
+func countBuddySoftViolations(matches []pair, assignment []int, buddyPairs []domain.BuddyPreference, numEvenings int) int {
+	if len(buddyPairs) == 0 {
+		return 0
+	}
+	sets := eveningPlayerSets(matches, assignment, numEvenings)
+
+	type pairKey [2]domain.PlayerID
+	seen := make(map[pairKey]bool)
+	violations := 0
+	for _, bp := range buddyPairs {
+		a, b := bp.PlayerID, bp.BuddyID
+		key := pairKey{a, b}
+		revKey := pairKey{b, a}
+		if seen[key] || seen[revKey] {
+			continue
+		}
+		seen[key] = true
+		for _, s := range sets {
+			if s[a] != s[b] {
+				violations++ // count 1 per mismatch evening (prefer 0 mismatches total)
 			}
 		}
 	}
@@ -168,6 +203,22 @@ func countMinMatchViolations(matches []pair, assignment []int, numEvenings int) 
 		}
 	}
 	return violations
+}
+
+// countSoloEvenings counts the total number of (player, evening) pairs where
+// the player has exactly 1 match. Used as a soft penalty to prefer 0 solo
+// evenings even though 1 is allowed by the hard constraint.
+func countSoloEvenings(matches []pair, assignment []int, numEvenings int) int {
+	counts := playerCountsPerEvening(matches, assignment, numEvenings)
+	total := 0
+	for _, ev := range counts {
+		for _, c := range ev {
+			if c == 1 {
+				total++
+			}
+		}
+	}
+	return total
 }
 
 // varianceMatchesPerEvening returns the variance of total matches per evening.

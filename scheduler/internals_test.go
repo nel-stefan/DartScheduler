@@ -77,21 +77,35 @@ func TestCountBuddyHardViolations_NoViolations(t *testing.T) {
 	}
 }
 
-func TestCountBuddyHardViolations_Mismatch(t *testing.T) {
+func TestCountBuddyHardViolations_OneMismatchAllowed(t *testing.T) {
 	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
-	// p1 plays evening 0; p2 plays evening 1 → mismatch on both evenings = 2 violations
+	// p1 plays evening 0; p2 plays evening 1 → 2 mismatches. First is allowed → 1 hard violation.
 	matches := []pair{{p1, p3}, {p2, p4}}
 	assignment := []int{0, 1}
 	buddyPairs := []domain.BuddyPreference{{PlayerID: p1, BuddyID: p2}}
 	v := countBuddyHardViolations(matches, assignment, buddyPairs, 2)
-	if v != 2 {
-		t.Errorf("want 2 violations, got %d", v)
+	if v != 1 {
+		t.Errorf("want 1 hard violation (2 mismatches, 1 allowed), got %d", v)
+	}
+}
+
+func TestCountBuddyHardViolations_SingleMismatchNotHard(t *testing.T) {
+	p1, p2, p3 := newPID(), newPID(), newPID()
+	// p1 plays evenings 0 and 1; p2 plays only evening 1 → 1 mismatch on evening 0.
+	// 1 mismatch is allowed → 0 hard violations.
+	matches := []pair{{p1, p3}, {p1, p2}}
+	assignment := []int{0, 1}
+	buddyPairs := []domain.BuddyPreference{{PlayerID: p1, BuddyID: p2}}
+	v := countBuddyHardViolations(matches, assignment, buddyPairs, 2)
+	if v != 0 {
+		t.Errorf("want 0 hard violations (single mismatch is allowed), got %d", v)
 	}
 }
 
 func TestCountBuddyHardViolations_BidirectionalCountedOnce(t *testing.T) {
 	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
-	// Bidirectional buddy pair (p1→p2 and p2→p1): each unique pair counted only once
+	// Bidirectional buddy pair (p1→p2 and p2→p1): each unique pair counted only once.
+	// 2 mismatches → 1 hard violation (first mismatch allowed).
 	matches := []pair{{p1, p3}, {p2, p4}}
 	assignment := []int{0, 1}
 	buddyPairs := []domain.BuddyPreference{
@@ -99,8 +113,8 @@ func TestCountBuddyHardViolations_BidirectionalCountedOnce(t *testing.T) {
 		{PlayerID: p2, BuddyID: p1},
 	}
 	v := countBuddyHardViolations(matches, assignment, buddyPairs, 2)
-	if v != 2 {
-		t.Errorf("want 2 violations (bidirectional pair counted once), got %d", v)
+	if v != 1 {
+		t.Errorf("want 1 hard violation (bidirectional pair counted once, 2 mismatches), got %d", v)
 	}
 }
 
@@ -111,6 +125,46 @@ func TestCountBuddyHardViolations_NoBuddyPairs(t *testing.T) {
 	v := countBuddyHardViolations(matches, assignment, nil, 1)
 	if v != 0 {
 		t.Errorf("want 0 violations with no buddy pairs, got %d", v)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// countBuddySoftViolations
+// ---------------------------------------------------------------------------
+
+func TestCountBuddySoftViolations_NoMismatches(t *testing.T) {
+	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
+	// p1 and p2 both play on evening 0 → no mismatch → 0 soft violations.
+	matches := []pair{{p1, p3}, {p2, p4}}
+	assignment := []int{0, 0}
+	buddyPairs := []domain.BuddyPreference{{PlayerID: p1, BuddyID: p2}}
+	v := countBuddySoftViolations(matches, assignment, buddyPairs, 1)
+	if v != 0 {
+		t.Errorf("want 0 soft violations, got %d", v)
+	}
+}
+
+func TestCountBuddySoftViolations_OneMismatch(t *testing.T) {
+	p1, p2, p3 := newPID(), newPID(), newPID()
+	// p1 plays evenings 0 and 1; p2 plays only evening 1 → 1 mismatch → 1 soft violation.
+	matches := []pair{{p1, p3}, {p1, p2}}
+	assignment := []int{0, 1}
+	buddyPairs := []domain.BuddyPreference{{PlayerID: p1, BuddyID: p2}}
+	v := countBuddySoftViolations(matches, assignment, buddyPairs, 2)
+	if v != 1 {
+		t.Errorf("want 1 soft violation (1 mismatch evening), got %d", v)
+	}
+}
+
+func TestCountBuddySoftViolations_TwoMismatches(t *testing.T) {
+	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
+	// p1 plays evening 0; p2 plays evening 1 → 2 mismatches → 2 soft violations.
+	matches := []pair{{p1, p3}, {p2, p4}}
+	assignment := []int{0, 1}
+	buddyPairs := []domain.BuddyPreference{{PlayerID: p1, BuddyID: p2}}
+	v := countBuddySoftViolations(matches, assignment, buddyPairs, 2)
+	if v != 2 {
+		t.Errorf("want 2 soft violations (2 mismatch evenings), got %d", v)
 	}
 }
 
@@ -229,56 +283,6 @@ func TestVarianceMatchesPerEvening_AllSameEvening(t *testing.T) {
 	v := varianceMatchesPerEvening([]int{0, 0, 0, 0}, 4)
 	if v != 3.0 {
 		t.Errorf("want variance 3.0, got %f", v)
-	}
-}
-
-// ---------------------------------------------------------------------------
-// greedyAssign
-// ---------------------------------------------------------------------------
-
-func TestGreedyAssign_EvenDistribution(t *testing.T) {
-	// 6 matches across 3 evenings: each gets exactly 2
-	assignment := greedyAssign(make([]pair, 6), 3)
-	counts := make([]int, 3)
-	for _, ei := range assignment {
-		counts[ei]++
-	}
-	for i, c := range counts {
-		if c != 2 {
-			t.Errorf("evening %d: want 2 matches, got %d", i, c)
-		}
-	}
-}
-
-func TestGreedyAssign_UnevenDistribution(t *testing.T) {
-	// 7 matches across 3 evenings: first evening gets 3, others get 2
-	assignment := greedyAssign(make([]pair, 7), 3)
-	counts := make([]int, 3)
-	for _, ei := range assignment {
-		counts[ei]++
-	}
-	total := 0
-	for _, c := range counts {
-		total += c
-		if c < 2 || c > 3 {
-			t.Errorf("evening count %d outside expected range [2,3]", c)
-		}
-	}
-	if total != 7 {
-		t.Errorf("want 7 total assignments, got %d", total)
-	}
-}
-
-func TestGreedyAssign_AllMatchesCovered(t *testing.T) {
-	n := 15
-	assignment := greedyAssign(make([]pair, n), 4)
-	if len(assignment) != n {
-		t.Errorf("want assignment length %d, got %d", n, len(assignment))
-	}
-	for i, ei := range assignment {
-		if ei < 0 || ei >= 4 {
-			t.Errorf("assignment[%d]=%d out of range [0,4)", i, ei)
-		}
 	}
 }
 

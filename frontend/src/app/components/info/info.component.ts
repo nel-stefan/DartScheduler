@@ -24,7 +24,7 @@ interface PlayerRow {
 
 interface CellData {
   count: number;
-  consecutive: boolean;
+  level: 'none' | 'ok' | 'soft' | 'orange' | 'hard';
 }
 
 interface MatchRow {
@@ -54,9 +54,11 @@ interface MatchRow {
     .th-player { text-align: left !important; min-width: 140px; position: sticky; left: 0; background: #f5f5f5; z-index: 1; }
     .td-player { position: sticky; left: 0; background: white; z-index: 1; font-size: 12px; }
     .td-player strong { font-size: 11px; color: #616161; margin-right: 4px; }
-    .cell-empty { background: #fafafa; color: #bdbdbd; text-align: center; }
-    .cell-played { background: #e8f5e9; color: #2e7d32; text-align: center; font-weight: 600; }
-    .cell-consec { background: #fff3e0; color: #e65100; text-align: center; font-weight: 600; }
+    .cell-none   { background: #fafafa; color: #bdbdbd; text-align: center; }
+    .cell-ok     { background: #e8f5e9; color: #2e7d32; text-align: center; font-weight: 600; }
+    .cell-soft   { background: #ffe066; color: #7a6000; text-align: center; font-weight: 600; }
+    .cell-orange { background: #ff9900; color: #6b3e00; text-align: center; font-weight: 600; }
+    .cell-hard   { background: #e53935; color: #ffffff; text-align: center; font-weight: 600; }
     .th-total { background: #ede7f6; min-width: 50px; }
     .td-total { text-align: center; font-weight: 600; color: #4527a0; background: #ede7f6; }
 
@@ -113,10 +115,19 @@ interface MatchRow {
               <div class="legend">
                 <span>Legenda:</span>
                 <span class="legend-item">
-                  <span class="legend-box" style="background:#e8f5e9"></span> Speelt op deze avond
+                  <span class="legend-box" style="background:#fafafa;border-color:#bdbdbd"></span> Geen wedstrijden
                 </span>
                 <span class="legend-item">
-                  <span class="legend-box" style="background:#fff3e0"></span> Opeenvolgende avonden
+                  <span class="legend-box" style="background:#e8f5e9"></span> Ok (2+ wedstrijden)
+                </span>
+                <span class="legend-item">
+                  <span class="legend-box" style="background:#ffe066"></span> Soft (1 wedstrijd / 2 opeenvolgende avonden)
+                </span>
+                <span class="legend-item">
+                  <span class="legend-box" style="background:#ff9900"></span> Meerdere soft (1 wedstrijd + opeenvolgend)
+                </span>
+                <span class="legend-item">
+                  <span class="legend-box" style="background:#e53935"></span> Hard (&gt;4 wedstrijden / 3+ opeenvolgende / buddy mismatch 2e keer)
                 </span>
               </div>
               <mat-card>
@@ -142,10 +153,7 @@ interface MatchRow {
                               <strong>{{ row.player.nr }}</strong>{{ row.player.name }}
                             </td>
                             @for (cell of row.cells; track cell) {
-                              <td
-                                [class.cell-empty]="cell.count === 0"
-                                [class.cell-played]="cell.count > 0 && !cell.consecutive"
-                                [class.cell-consec]="cell.count > 0 && cell.consecutive">
+                              <td [class]="'cell-' + cell.level">
                                 {{ cell.count || '' }}
                               </td>
                             }
@@ -654,6 +662,61 @@ export class InfoComponent implements OnInit {
     });
   }
 
+  private buildBuddyViolationMap(info: ScheduleInfo, evenings: { id: string; number: number }[]): Map<string, Map<number, 'soft' | 'hard'>> {
+    const eveningIndexById = new Map<string, number>(evenings.map((ev, i) => [ev.id, i]));
+    const lookup = new Map<string, Map<string, number>>();
+    for (const cell of info.matrix) {
+      if (!lookup.has(cell.playerId)) lookup.set(cell.playerId, new Map());
+      lookup.get(cell.playerId)!.set(cell.eveningId, cell.count);
+    }
+
+    // playerId -> eveningIndex -> violation level
+    const result = new Map<string, Map<number, 'soft' | 'hard'>>();
+    const ensurePlayer = (id: string) => {
+      if (!result.has(id)) result.set(id, new Map());
+      return result.get(id)!;
+    };
+
+    for (const pair of info.buddyPairs) {
+      const countsA = lookup.get(pair.playerAId) ?? new Map<string, number>();
+      const countsB = lookup.get(pair.playerBId) ?? new Map<string, number>();
+
+      // Find evenings where exactly one of the two has count > 0
+      const mismatches: number[] = [];
+      for (const [evId, idx] of eveningIndexById) {
+        const cA = countsA.get(evId) ?? 0;
+        const cB = countsB.get(evId) ?? 0;
+        if ((cA > 0) !== (cB > 0)) {
+          mismatches.push(idx);
+        }
+      }
+      mismatches.sort((a, b) => a - b);
+
+      for (let m = 0; m < mismatches.length; m++) {
+        const idx = mismatches[m];
+        const level: 'soft' | 'hard' = m === 0 ? 'soft' : 'hard';
+        // Only mark the player that actually plays (count > 0) on that evening
+        const evId = evenings[idx]?.id;
+        if (!evId) continue;
+        if ((countsA.get(evId) ?? 0) > 0) {
+          const mapA = ensurePlayer(pair.playerAId);
+          // Only escalate, never downgrade
+          if (!mapA.has(idx) || (mapA.get(idx) === 'soft' && level === 'hard')) {
+            mapA.set(idx, level);
+          }
+        }
+        if ((countsB.get(evId) ?? 0) > 0) {
+          const mapB = ensurePlayer(pair.playerBId);
+          if (!mapB.has(idx) || (mapB.get(idx) === 'soft' && level === 'hard')) {
+            mapB.set(idx, level);
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
   private buildPlayerRows(info: ScheduleInfo): PlayerRow[] {
     const lookup = new Map<string, Map<string, number>>();
     for (const cell of info.matrix) {
@@ -662,15 +725,52 @@ export class InfoComponent implements OnInit {
     }
 
     const evenings = [...info.evenings].sort((a, b) => a.number - b.number);
+    const buddyMap = this.buildBuddyViolationMap(info, evenings);
 
     return info.players.map(player => {
       const byEvening = lookup.get(player.id) ?? new Map<string, number>();
       const counts    = evenings.map(ev => byEvening.get(ev.id) ?? 0);
-      const consecutive = counts.map((c, i) => {
-        if (c === 0) return false;
-        return (i > 0 && counts[i - 1] > 0) || (i < counts.length - 1 && counts[i + 1] > 0);
+      const playerBuddyMap = buddyMap.get(player.id) ?? new Map<number, 'soft' | 'hard'>();
+
+      // Compute consecutive run lengths for each cell
+      const runLengths = counts.map((c, i) => {
+        if (c === 0) return 0;
+        // Find start of this run
+        let start = i;
+        while (start > 0 && counts[start - 1] > 0) start--;
+        return i - start + 1; // 1-based position within the run
       });
-      const cells        = counts.map((count, i) => ({ count, consecutive: consecutive[i] }));
+
+      const cells: CellData[] = counts.map((count, i) => {
+        if (count === 0) return { count, level: 'none' as const };
+
+        const runPos  = runLengths[i]; // position within consecutive run (1 = first, 2 = second, etc.)
+        const isConsec = runPos >= 2;   // this evening is part of a run of 2+
+        const isSolo   = count === 1;
+        const buddyLevel = playerBuddyMap.get(i);
+
+        // Hard conditions
+        if (
+          count > 4 ||
+          runPos >= 3 ||
+          buddyLevel === 'hard'
+        ) {
+          return { count, level: 'hard' as const };
+        }
+
+        // Orange: solo AND consecutive
+        if (isSolo && isConsec) {
+          return { count, level: 'orange' as const };
+        }
+
+        // Soft: solo OR consecutive OR first buddy mismatch
+        if (isSolo || isConsec || buddyLevel === 'soft') {
+          return { count, level: 'soft' as const };
+        }
+
+        return { count, level: 'ok' as const };
+      });
+
       const totalMatches = counts.reduce((s, c) => s + c, 0);
       const eveningCount = counts.filter(c => c > 0).length;
       return { player, cells, totalMatches, eveningCount };
