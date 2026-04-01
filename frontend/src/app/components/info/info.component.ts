@@ -25,6 +25,7 @@ interface PlayerRow {
 interface CellData {
   count: number;
   level: 'none' | 'ok' | 'soft' | 'orange' | 'hard';
+  consec: boolean; // part of a 2-evening run — shown bold but not a color violation
 }
 
 interface MatchRow {
@@ -121,10 +122,10 @@ interface MatchRow {
                   <span class="legend-box" style="background:#e8f5e9"></span> Ok (2+ wedstrijden)
                 </span>
                 <span class="legend-item">
-                  <span class="legend-box" style="background:#ffe066"></span> Soft (1 wedstrijd / 2 opeenvolgende avonden)
+                  <span class="legend-box" style="background:#ffe066"></span> Soft (1 wedstrijd / buddy mismatch 1e keer)
                 </span>
                 <span class="legend-item">
-                  <span class="legend-box" style="background:#ff9900"></span> Meerdere soft (1 wedstrijd + opeenvolgend)
+                  <span style="font-weight:700;font-size:13px;min-width:16px;text-align:center">2</span> 2 opeenvolgende avonden (vet)
                 </span>
                 <span class="legend-item">
                   <span class="legend-box" style="background:#e53935"></span> Hard (&gt;4 wedstrijden / 3+ opeenvolgende / buddy mismatch 2e keer / &gt;3 avonden gap)
@@ -153,7 +154,7 @@ interface MatchRow {
                               <strong>{{ row.player.nr }}</strong>{{ row.player.name }}
                             </td>
                             @for (cell of row.cells; track cell) {
-                              <td [class]="'cell-' + cell.level">
+                              <td [class]="'cell-' + cell.level" [style.font-weight]="cell.consec ? '700' : null">
                                 {{ cell.count || '' }}
                               </td>
                             }
@@ -754,35 +755,25 @@ export class InfoComponent implements OnInit {
       }
 
       const cells: CellData[] = counts.map((count, i) => {
-        if (count === 0) return { count, level: 'none' as const };
+        if (count === 0) return { count, level: 'none' as const, consec: false };
 
-        const runPos   = runLengths[i]; // position within consecutive run (1 = first, 2 = second, etc.)
-        const isConsec = runPos >= 2;   // this evening is part of a run of 2+
-        const isSolo   = count === 1;
+        const runPos     = runLengths[i];
+        const consec     = runPos === 2; // exactly 2 consecutive — bold only, no color change
+        const isSolo     = count === 1;
         const buddyLevel = playerBuddyMap.get(i);
         const isGapHard  = gapHardIndices.has(i);
 
-        // Hard conditions
-        if (
-          count > 4 ||
-          runPos >= 3 ||
-          buddyLevel === 'hard' ||
-          isGapHard
-        ) {
-          return { count, level: 'hard' as const };
+        // Hard: count > 4, 3rd+ consecutive evening, buddy hard, or gap violation
+        if (count > 4 || runPos >= 3 || buddyLevel === 'hard' || isGapHard) {
+          return { count, level: 'hard' as const, consec };
         }
 
-        // Orange: solo AND consecutive
-        if (isSolo && isConsec) {
-          return { count, level: 'orange' as const };
+        // Soft: solo evening or first buddy mismatch
+        if (isSolo || buddyLevel === 'soft') {
+          return { count, level: 'soft' as const, consec };
         }
 
-        // Soft: solo OR consecutive OR first buddy mismatch
-        if (isSolo || isConsec || buddyLevel === 'soft') {
-          return { count, level: 'soft' as const };
-        }
-
-        return { count, level: 'ok' as const };
+        return { count, level: 'ok' as const, consec };
       });
 
       const totalMatches = counts.reduce((s, c) => s + c, 0);
