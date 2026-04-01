@@ -6,6 +6,7 @@
 //	       + WBuddySoft    × buddy pairs with exactly 1 mismatch (allowed)  (soft)
 //	       + WMaxViolation × per-evening match counts above the cap          (hard)
 //	       + WTripleConsec × evenings in a run of >2 consecutive             (hard)
+//	       + WGapViolation × excess gap between a player's active evenings   (hard)
 //	       + WExcessTriple × extra 3-match evenings per player (>10%)        (medium)
 //	       + WMinMatches   × per-player excess solo evenings (>1 solo)       (hard)
 //	       + WSoloSoft     × total solo (player,evening) pairs               (soft)
@@ -44,6 +45,7 @@ type AnnealConfig struct {
 	WBuddySoft    float64 // buddy pair has exactly 1 mismatch evening (allowed, but prefer 0)
 	WMaxViolation float64 // player has more than the allowed matches on one evening
 	WTripleConsec float64 // player plays 3+ evenings in a row
+	WGapViolation float64 // gap between consecutive active evenings exceeds maxGapBetweenActiveEvenings
 	WExcessTriple float64 // >10% of active evenings have 3 matches for a player
 	WMinMatches   float64 // player has >1 solo evening (only 1 is allowed)
 	WSoloSoft     float64 // any solo evening — nudges toward 0 solo evenings
@@ -65,6 +67,7 @@ func DefaultAnnealConfig() AnnealConfig {
 		WBuddySoft:    200.0,
 		WMaxViolation: 10_000.0,
 		WTripleConsec: 5_000.0,
+		WGapViolation: 5_000.0,
 		WExcessTriple: 2_000.0,
 		WMinMatches:   1_000.0,
 		WSoloSoft:     5.0,
@@ -124,11 +127,14 @@ func anneal(
 		var i, j int
 
 		if rng.Float64() < cfg.TargetedFraction {
-			// 50/50 between targeting a buddy violation or a triple-consecutive violation.
-			if rng.Intn(2) == 0 {
+			// Rotate among three targeted strategies: buddy, consecutive, gap.
+			switch rng.Intn(3) {
+			case 0:
 				i, j = buddyTargetedSwap(matches, current, numEvenings, buddyPairs, playerMatchIdx, rng)
-			} else {
+			case 1:
 				i, j = consecutiveTargetedSwap(matches, current, numEvenings, playerMatchIdx, rng)
+			case 2:
+				i, j = gapTargetedSwap(matches, current, numEvenings, playerMatchIdx, rng)
 			}
 		}
 		if i < 0 || i == j {
@@ -284,6 +290,57 @@ func consecutiveTargetedSwap(
 	return -1, -1
 }
 
+// gapTargetedSwap finds a player with a gap > maxGapBetweenActiveEvenings and tries to
+// move one of their matches into the gap by swapping it with a match currently sitting
+// inside the gap window.
+func gapTargetedSwap(
+	matches []pair,
+	current []int,
+	numEvenings int,
+	playerMatchIdx map[domain.PlayerID][]int,
+	rng *rand.Rand,
+) (int, int) {
+	sets := eveningPlayerSets(matches, current, numEvenings)
+
+	allPlayers := make([]domain.PlayerID, 0, len(playerMatchIdx))
+	for pid := range playerMatchIdx {
+		allPlayers = append(allPlayers, pid)
+	}
+	rng.Shuffle(len(allPlayers), func(a, b int) { allPlayers[a], allPlayers[b] = allPlayers[b], allPlayers[a] })
+
+	for _, pid := range allPlayers {
+		// Find a gap > maxGapBetweenActiveEvenings.
+		lastActive := -1
+		for ei := 0; ei < numEvenings; ei++ {
+			if sets[ei][pid] {
+				if lastActive >= 0 && ei-lastActive > maxGapBetweenActiveEvenings {
+					// Gap (lastActive, ei) is too large. Find a match of pid outside this
+					// gap and swap it with any match currently in the gap window.
+					gapStart := lastActive + 1
+					gapEnd := ei - 1
+
+					mList := playerMatchIdx[pid]
+					rng.Shuffle(len(mList), func(a, b int) { mList[a], mList[b] = mList[b], mList[a] })
+					for _, mi := range mList {
+						// Pick a match of pid that is outside the gap window.
+						if current[mi] >= gapStart && current[mi] <= gapEnd {
+							continue // already inside gap — we want something outside
+						}
+						// Swap with any match whose evening falls inside the gap window.
+						for _, mj := range randomSample(len(current), 30, rng) {
+							if current[mj] >= gapStart && current[mj] <= gapEnd && mi != mj {
+								return mi, mj
+							}
+						}
+					}
+				}
+				lastActive = ei
+			}
+		}
+	}
+	return -1, -1
+}
+
 // buildPlayerMatchIndex maps each player ID to the list of match indices they participate in.
 func buildPlayerMatchIndex(matches []pair) map[domain.PlayerID][]int {
 	idx := make(map[domain.PlayerID][]int)
@@ -311,13 +368,14 @@ func energy(cfg AnnealConfig, matches []pair, assignment []int, numEvenings int,
 	buddySoft := float64(countBuddySoftViolations(matches, assignment, buddyPairs, numEvenings))
 	maxV := float64(countMaxViolations(matches, assignment, numEvenings, buddyPlayers))
 	tripleV := float64(countTripleConsecutiveViolations(matches, assignment, numEvenings))
+	gapV := float64(countGapViolations(matches, assignment, numEvenings))
 	excessV := float64(countExcessTripleMatchViolations(matches, assignment, numEvenings))
 	minV := float64(countMinMatchViolations(matches, assignment, numEvenings))
 	soloV := float64(countSoloEvenings(matches, assignment, numEvenings))
 	va := varianceMatchesPerEvening(assignment, numEvenings)
 	return cfg.WBuddyHard*buddyHard + cfg.WBuddySoft*buddySoft +
-		cfg.WMaxViolation*maxV + cfg.WTripleConsec*tripleV + cfg.WExcessTriple*excessV +
-		cfg.WMinMatches*minV + cfg.WSoloSoft*soloV + cfg.WVariance*va
+		cfg.WMaxViolation*maxV + cfg.WTripleConsec*tripleV + cfg.WGapViolation*gapV +
+		cfg.WExcessTriple*excessV + cfg.WMinMatches*minV + cfg.WSoloSoft*soloV + cfg.WVariance*va
 }
 
 // buildBuddyPlayerSet returns the set of all player IDs that appear in any buddy pair.

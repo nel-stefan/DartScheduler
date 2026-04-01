@@ -11,6 +11,9 @@ const (
 	maxMatchesPerBuddyPlayerPerEvening = 4    // buddies need extra slack to align on shared evenings
 	maxConsecutiveEvenings             = 2    // playing 3+ evenings in a row is forbidden
 	maxTripleFraction                  = 0.10 // at most 10% of active evenings may have 3 matches
+	maxGapBetweenActiveEvenings        = 4    // max index distance between consecutive active evenings
+	// maxGapBetweenActiveEvenings = 4 means at most 3 non-playing evenings between two active ones.
+	// Violation when consecutiveActiveIndexDiff > 4.
 )
 
 // playerCountsPerEvening returns counts[eveningIdx][playerID] = matchCount.
@@ -219,6 +222,39 @@ func countSoloEvenings(matches []pair, assignment []int, numEvenings int) int {
 		}
 	}
 	return total
+}
+
+// countGapViolations counts how many evening-index gaps between a player's consecutive
+// active evenings exceed maxGapBetweenActiveEvenings. Each unit of excess counts as
+// one violation (e.g. a gap of 6 → 2 violations). Only gaps between active evenings
+// are checked; the edges of the schedule (before first / after last active evening) are
+// not penalised.
+func countGapViolations(matches []pair, assignment []int, numEvenings int) int {
+	sets := eveningPlayerSets(matches, assignment, numEvenings)
+
+	allPlayers := make(map[domain.PlayerID]bool)
+	for _, s := range sets {
+		for pid := range s {
+			allPlayers[pid] = true
+		}
+	}
+
+	violations := 0
+	for pid := range allPlayers {
+		lastActive := -1
+		for ei := 0; ei < numEvenings; ei++ {
+			if sets[ei][pid] {
+				if lastActive >= 0 {
+					gap := ei - lastActive
+					if gap > maxGapBetweenActiveEvenings {
+						violations += gap - maxGapBetweenActiveEvenings
+					}
+				}
+				lastActive = ei
+			}
+		}
+	}
+	return violations
 }
 
 // varianceMatchesPerEvening returns the variance of total matches per evening.

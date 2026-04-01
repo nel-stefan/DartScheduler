@@ -343,3 +343,65 @@ func TestCountMinMatchViolations_MixedPlayers(t *testing.T) {
 		t.Errorf("want 3 violations, got %d", v)
 	}
 }
+
+// ---------------------------------------------------------------------------
+// countGapViolations
+// ---------------------------------------------------------------------------
+
+func TestCountGapViolations_NoViolations(t *testing.T) {
+	p1, p2 := newPID(), newPID()
+	// p1 and p2 play on evenings 0, 4 → gap = 4 = maxGapBetweenActiveEvenings → no violation.
+	matches := []pair{{p1, p2}, {p1, p2}}
+	assignment := []int{0, 4}
+	v := countGapViolations(matches, assignment, 5)
+	if v != 0 {
+		t.Errorf("want 0 violations for gap exactly at limit (4), got %d", v)
+	}
+}
+
+func TestCountGapViolations_OneViolation(t *testing.T) {
+	p1, p2, p3 := newPID(), newPID(), newPID()
+	// p1 plays evening 0 (vs p2) and evening 5 (vs p3) → gap = 5, excess = 1 violation for p1.
+	// p2 and p3 each appear only once → no gap for them.
+	matches := []pair{{p1, p2}, {p1, p3}}
+	assignment := []int{0, 5}
+	v := countGapViolations(matches, assignment, 6)
+	if v != 1 {
+		t.Errorf("want 1 violation for gap of 5 (max 4), got %d", v)
+	}
+}
+
+func TestCountGapViolations_ExcessCounted(t *testing.T) {
+	p1, p2, p3 := newPID(), newPID(), newPID()
+	// p1 plays evening 0 (vs p2) and evening 7 (vs p3) → gap = 7, excess = 3 violations for p1.
+	matches := []pair{{p1, p2}, {p1, p3}}
+	assignment := []int{0, 7}
+	v := countGapViolations(matches, assignment, 8)
+	if v != 3 {
+		t.Errorf("want 3 violations for gap of 7 (excess 3), got %d", v)
+	}
+}
+
+func TestCountGapViolations_EdgeNotPenalised(t *testing.T) {
+	p1, p2 := newPID(), newPID()
+	// p1 and p2 only play on evening 5 of 10 → no gap between active evenings.
+	// The lead-in / tail gaps should NOT be penalised.
+	matches := []pair{{p1, p2}}
+	assignment := []int{5}
+	v := countGapViolations(matches, assignment, 10)
+	if v != 0 {
+		t.Errorf("want 0 violations when player appears only once (no pair to form a gap), got %d", v)
+	}
+}
+
+func TestCountGapViolations_MultipleGaps(t *testing.T) {
+	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
+	// p1 plays evenings 0 (vs p2), 5 (vs p3), 10 (vs p4) → two gaps of 5 → 2 violations for p1.
+	// p2, p3, p4 appear only once → no gaps.
+	matches := []pair{{p1, p2}, {p1, p3}, {p1, p4}}
+	assignment := []int{0, 5, 10}
+	v := countGapViolations(matches, assignment, 11)
+	if v != 2 {
+		t.Errorf("want 2 violations (two gaps of 5, 1 excess each), got %d", v)
+	}
+}

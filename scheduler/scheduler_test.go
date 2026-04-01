@@ -583,3 +583,53 @@ func TestAtMostOneSoloEveningPerPlayer(t *testing.T) {
 		}
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Hard constraint: max gap between a player's consecutive active evenings
+// ---------------------------------------------------------------------------
+
+func TestMaxGapBetweenActiveEvenings(t *testing.T) {
+	// 12 players × 11 evenings: every player plays on every evening, so gap = 1 always.
+	// This also covers the realistic scenario where the constraint is trivially satisfied.
+	players := makePlayers(12)
+	sched, err := scheduler.Generate(scheduler.Input{
+		Players:         players,
+		NumEvenings:     11,
+		CompetitionName: "Test",
+		StartDate:       time.Now(),
+		IntervalDays:    7,
+		Config:          fastConfig(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Build per-player list of active evening indices (sorted).
+	eveningIndex := make(map[domain.EveningID]int, len(sched.Evenings))
+	for i, ev := range sched.Evenings {
+		eveningIndex[ev.ID] = i
+	}
+
+	activeEvenings := make(map[domain.PlayerID][]int)
+	for _, ev := range sched.Evenings {
+		seen := make(map[domain.PlayerID]bool)
+		for _, m := range ev.Matches {
+			for _, pid := range []domain.PlayerID{m.PlayerA, m.PlayerB} {
+				if !seen[pid] {
+					activeEvenings[pid] = append(activeEvenings[pid], eveningIndex[ev.ID])
+					seen[pid] = true
+				}
+			}
+		}
+	}
+
+	for pid, indices := range activeEvenings {
+		for i := 1; i < len(indices); i++ {
+			gap := indices[i] - indices[i-1]
+			if gap > 4 { // maxGapBetweenActiveEvenings = 4
+				t.Errorf("player %s: gap of %d between evening indices %d and %d (max 4)",
+					pid, gap, indices[i-1], indices[i])
+			}
+		}
+	}
+}
