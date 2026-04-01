@@ -585,7 +585,7 @@ func (uc *ScheduleUseCase) GetInfo(ctx context.Context, scheduleID domain.Schedu
 
 	playerItems := make([]PlayerInfoItem, len(allPlayers))
 	for i, p := range allPlayers {
-		playerItems[i] = PlayerInfoItem{ID: p.ID.String(), Nr: p.Nr, Name: domain.FormatDisplayName(p.Name)}
+		playerItems[i] = PlayerInfoItem{ID: p.ID.String(), Nr: p.Nr, Name: domain.FormatDisplayName(p.Name), Email: p.Email}
 	}
 
 	eveningItems := make([]EveningInfoItem, len(regularEvenings))

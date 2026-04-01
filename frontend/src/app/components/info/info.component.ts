@@ -359,6 +359,11 @@ interface MatchRow {
                   <button mat-stroked-button (click)="exportCalendar()">
                     <mat-icon>event</mat-icon> Agenda exporteren (.ics)
                   </button>
+                  <button mat-stroked-button (click)="emailPendingMatches()"
+                          [disabled]="!selectedPlayerEmail()"
+                          [title]="selectedPlayerEmail() ? 'Mail openstaande wedstrijden naar ' + selectedPlayerEmail() : 'Geen e-mailadres bekend'">
+                    <mat-icon>email</mat-icon> Mailen
+                  </button>
                 </div>
               }
               @if (selectedPlayerId()) {
@@ -856,6 +861,38 @@ export class InfoComponent implements OnInit {
     a.download = `dart-${player.nr}-${player.name.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  selectedPlayerEmail(): string {
+    const player = this.sortedPlayers.find(p => p.id === this.selectedPlayerId());
+    return player?.email ?? '';
+  }
+
+  emailPendingMatches(): void {
+    const player = this.sortedPlayers.find(p => p.id === this.selectedPlayerId());
+    if (!player?.email) return;
+
+    const pending = this.playerMatchRows.filter(r => r.result === '—');
+    const compName = this.schedule()?.competitionName ?? 'Dartcompetitie';
+
+    const subject = encodeURIComponent(`Openstaande wedstrijden – ${player.nr} ${player.name} – ${compName}`);
+
+    let body = `Beste ${player.name},\n\n`;
+    body += `Hieronder vind je een overzicht van jouw nog te spelen wedstrijden voor ${compName}.\n\n`;
+
+    if (pending.length === 0) {
+      body += 'Je hebt geen openstaande wedstrijden meer.\n';
+    } else {
+      body += 'Openstaande wedstrijden:\n';
+      for (const r of pending) {
+        const d = new Date(r.eveningDate).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        body += `  Avond ${r.eveningNumber}  –  ${d}  –  vs ${r.opponentName}\n`;
+      }
+    }
+
+    body += '\nMet sportieve groet,\nDart Scheduler';
+
+    window.location.href = `mailto:${player.email}?subject=${subject}&body=${encodeURIComponent(body)}`;
   }
 
   printOpenMatches(): void {

@@ -105,6 +105,7 @@ export interface PlayerInfoItem {
   id: string;
   nr: string;
   name: string;
+  email: string;
 }
 
 export interface EveningInfoItem {

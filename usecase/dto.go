@@ -126,9 +126,10 @@ type ScheduleInfoResult struct {
 }
 
 type PlayerInfoItem struct {
-	ID   string `json:"id"`
-	Nr   string `json:"nr"`
-	Name string `json:"name"`
+	ID    string `json:"id"`
+	Nr    string `json:"nr"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 type EveningInfoItem struct {
