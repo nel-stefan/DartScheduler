@@ -127,7 +127,7 @@ interface MatchRow {
                   <span class="legend-box" style="background:#ff9900"></span> Meerdere soft (1 wedstrijd + opeenvolgend)
                 </span>
                 <span class="legend-item">
-                  <span class="legend-box" style="background:#e53935"></span> Hard (&gt;4 wedstrijden / 3+ opeenvolgende / buddy mismatch 2e keer)
+                  <span class="legend-box" style="background:#e53935"></span> Hard (&gt;4 wedstrijden / 3+ opeenvolgende / buddy mismatch 2e keer / &gt;3 avonden gap)
                 </span>
               </div>
               <mat-card>
@@ -741,19 +741,33 @@ export class InfoComponent implements OnInit {
         return i - start + 1; // 1-based position within the run
       });
 
+      // Compute gap violations: mark the first active evening after a gap > 4 as hard.
+      const gapHardIndices = new Set<number>();
+      let lastActiveIdx = -1;
+      for (let i = 0; i < counts.length; i++) {
+        if (counts[i] > 0) {
+          if (lastActiveIdx >= 0 && i - lastActiveIdx > 4) {
+            gapHardIndices.add(i);
+          }
+          lastActiveIdx = i;
+        }
+      }
+
       const cells: CellData[] = counts.map((count, i) => {
         if (count === 0) return { count, level: 'none' as const };
 
-        const runPos  = runLengths[i]; // position within consecutive run (1 = first, 2 = second, etc.)
+        const runPos   = runLengths[i]; // position within consecutive run (1 = first, 2 = second, etc.)
         const isConsec = runPos >= 2;   // this evening is part of a run of 2+
         const isSolo   = count === 1;
         const buddyLevel = playerBuddyMap.get(i);
+        const isGapHard  = gapHardIndices.has(i);
 
         // Hard conditions
         if (
           count > 4 ||
           runPos >= 3 ||
-          buddyLevel === 'hard'
+          buddyLevel === 'hard' ||
+          isGapHard
         ) {
           return { count, level: 'hard' as const };
         }
