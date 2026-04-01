@@ -50,6 +50,10 @@ type AnnealConfig struct {
 	WMinMatches   float64 // player has >1 solo evening (only 1 is allowed)
 	WSoloSoft     float64 // any solo evening — nudges toward 0 solo evenings
 	WVariance     float64 // variance of match counts across evenings
+
+	// ProgressFn is called every logInterval steps with the current step and total.
+	// If nil, progress reporting is skipped.
+	ProgressFn func(step, total int)
 }
 
 // DefaultAnnealConfig returns the production-quality annealing configuration.
@@ -98,6 +102,9 @@ func anneal(
 		if step%logInterval == 0 {
 			log.Printf("[anneal] step=%d/%d T=%.4f currentEnergy=%.1f bestEnergy=%.1f",
 				step, cfg.Steps, T, currentEnergy, bestEnergy)
+			if cfg.ProgressFn != nil {
+				cfg.ProgressFn(step, cfg.Steps)
+			}
 		}
 
 		// Move operation: assign one match to any random evening (can populate empties).
@@ -164,6 +171,9 @@ func anneal(
 		T *= alpha
 	}
 	log.Printf("[anneal] done: finalBestEnergy=%.1f", bestEnergy)
+	if cfg.ProgressFn != nil {
+		cfg.ProgressFn(cfg.Steps, cfg.Steps)
+	}
 	return best
 }
 

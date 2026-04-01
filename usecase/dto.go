@@ -38,6 +38,9 @@ type GenerateScheduleInput struct {
 	IntervalDays    int
 	CatchUpNrs      []int // slot numbers that become catch-up evenings (no pre-assigned matches)
 	SkipNrs         []int // slot numbers that are entirely skipped (no evening created)
+	// ProgressFn is called during annealing with (step, total) to report progress.
+	// If nil, no progress is reported.
+	ProgressFn func(step, total int)
 }
 
 // --- Score ---

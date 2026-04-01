@@ -3,6 +3,7 @@
 // Route overview:
 //
 //	GET    /api/config                        — app configuration (title, club name)
+//	GET    /api/progress                      — current annealing progress (step/total/percent)
 //	POST   /api/import                        — import players from Excel
 //	GET    /api/players                       — list all players
 //	POST   /api/schedule/generate             — generate a new schedule
@@ -39,6 +40,7 @@ func NewRouter(
 	eveningStatH *handler.EveningStatHandler,
 	seasonStatH *handler.SeasonStatHandler,
 	configH *handler.ConfigHandler,
+	progressH *handler.ProgressHandler,
 	allowedOrigin string,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -91,6 +93,7 @@ func NewRouter(
 		r.Get("/export/evening/{id}/print", exportH.EveningPrint)
 
 		r.Get("/system/logs", systemH.GetLogs)
+		r.Get("/progress", progressH.GetProgress)
 	})
 
 	// SPA fallback: serve Angular app for all non-API routes.

@@ -46,6 +46,9 @@ func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		req.IntervalDays = 7
 	}
 
+	GlobalProgress.Start(1_200_000)
+	defer GlobalProgress.Done()
+
 	sched, err := h.uc.Generate(r.Context(), usecase.GenerateScheduleInput{
 		CompetitionName: req.CompetitionName,
 		Season:          req.Season,
@@ -54,6 +57,7 @@ func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		IntervalDays:    req.IntervalDays,
 		CatchUpNrs:      req.CatchUpNrs,
 		SkipNrs:         req.SkipNrs,
+		ProgressFn:      func(step, _ int) { GlobalProgress.Update(step) },
 	})
 	if err != nil {
 		httpErrorDomain(w, err)
@@ -152,7 +156,11 @@ func (h *ScheduleHandler) RegenerateSchedule(w http.ResponseWriter, r *http.Requ
 		httpError(w, err, http.StatusBadRequest)
 		return
 	}
-	sched, err := h.uc.Regenerate(r.Context(), domain.ScheduleID(id))
+
+	GlobalProgress.Start(1_200_000)
+	defer GlobalProgress.Done()
+
+	sched, err := h.uc.Regenerate(r.Context(), domain.ScheduleID(id), func(step, _ int) { GlobalProgress.Update(step) })
 	if err != nil {
 		httpErrorDomain(w, err)
 		return

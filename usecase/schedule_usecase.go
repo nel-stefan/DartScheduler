@@ -88,12 +88,17 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 	}
 
 	log.Printf("[Generate] slots: regular=%d catchUp=%d skip=%d", len(regularSlots), len(catchUpSlots), len(in.SkipNrs))
+	annealCfg := scheduler.DefaultAnnealConfig()
+	if in.ProgressFn != nil {
+		annealCfg.ProgressFn = in.ProgressFn
+	}
 	sched, err := scheduler.Generate(scheduler.Input{
 		Players:         participants,
 		BuddyPairs:      buddyPairs,
 		NumEvenings:     len(regularSlots),
 		EveningDates:    regularDates,
 		CompetitionName: in.CompetitionName,
+		Config:          annealCfg,
 	})
 	if err != nil {
 		return domain.Schedule{}, fmt.Errorf("generate schedule: %w", err)
@@ -144,7 +149,7 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 // assignments while keeping the schedule metadata and evening structure intact.
 // Only regular (non-catch-up) evenings are affected; their existing IDs and dates
 // are reused so no downstream references break.
-func (uc *ScheduleUseCase) Regenerate(ctx context.Context, id domain.ScheduleID) (domain.Schedule, error) {
+func (uc *ScheduleUseCase) Regenerate(ctx context.Context, id domain.ScheduleID, progressFn func(step, total int)) (domain.Schedule, error) {
 	log.Printf("[Regenerate] scheduleID=%s", id)
 	sched, err := uc.schedules.FindByID(ctx, id)
 	if err != nil {
@@ -190,12 +195,17 @@ func (uc *ScheduleUseCase) Regenerate(ctx context.Context, id domain.ScheduleID)
 
 	log.Printf("[Regenerate] running scheduler: participants=%d regularEvenings=%d buddyPairs=%d",
 		len(participants), len(regularEvenings), len(buddyPairs))
+	annealCfg := scheduler.DefaultAnnealConfig()
+	if progressFn != nil {
+		annealCfg.ProgressFn = progressFn
+	}
 	newSched, err := scheduler.Generate(scheduler.Input{
 		Players:         participants,
 		BuddyPairs:      buddyPairs,
 		NumEvenings:     len(regularEvenings),
 		EveningDates:    regularDates,
 		CompetitionName: sched.CompetitionName,
+		Config:          annealCfg,
 	})
 	if err != nil {
 		return domain.Schedule{}, fmt.Errorf("generate schedule: %w", err)

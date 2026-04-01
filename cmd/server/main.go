@@ -55,8 +55,9 @@ func main() {
 	eveningStatH := handler.NewEveningStatHandler(eveningStatRepo)
 	seasonStatH := handler.NewSeasonStatHandler(seasonStatRepo)
 	configH := handler.NewConfigHandler(cfg.AppTitle, cfg.ClubName)
+	progressH := handler.NewProgressHandler()
 
-	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH, eveningStatH, seasonStatH, configH, cfg.AllowedOrigin)
+	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH, eveningStatH, seasonStatH, configH, progressH, cfg.AllowedOrigin)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 

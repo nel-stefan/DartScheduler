@@ -125,7 +125,7 @@ interface MatchRow {
                   <span class="legend-box" style="background:#ffe066"></span> Soft (1 wedstrijd / buddy mismatch 1e keer)
                 </span>
                 <span class="legend-item">
-                  <span style="font-weight:700;font-size:13px;min-width:16px;text-align:center">2</span> 2 opeenvolgende avonden (vet)
+                  <span style="text-decoration:underline;font-size:13px;min-width:16px;text-align:center">2</span> 2 opeenvolgende avonden (onderstreept)
                 </span>
                 <span class="legend-item">
                   <span class="legend-box" style="background:#e53935"></span> Hard (&gt;4 wedstrijden / 3+ opeenvolgende / buddy mismatch 2e keer / &gt;3 avonden gap)
@@ -154,7 +154,7 @@ interface MatchRow {
                               <strong>{{ row.player.nr }}</strong>{{ row.player.name }}
                             </td>
                             @for (cell of row.cells; track cell) {
-                              <td [class]="'cell-' + cell.level" [style.font-weight]="cell.consec ? '700' : null">
+                              <td [class]="'cell-' + cell.level" [style.text-decoration]="cell.consec ? 'underline' : null">
                                 {{ cell.count || '' }}
                               </td>
                             }

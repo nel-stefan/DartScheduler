@@ -53,6 +53,10 @@ export class ScheduleService {
     return this.http.post<Schedule>(`${this.base}/schedules/${id}/regenerate`, {});
   }
 
+  getProgress(): Observable<{ step: number; total: number; percent: number; busy: boolean }> {
+    return this.http.get<{ step: number; total: number; percent: number; busy: boolean }>(`${this.base}/progress`);
+  }
+
   importSeason(file: File, competitionName: string, season: string): Observable<Schedule> {
     const form = new FormData();
     form.append('file', file);
