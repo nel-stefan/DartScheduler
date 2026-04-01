@@ -9,13 +9,14 @@ RUN npm run build -- --configuration=production
 # Stage 2: Build Go binary
 FROM golang:1.26-alpine AS go-builder
 WORKDIR /app
-# Copy Angular output into the embed path
-COPY --from=frontend-builder /app/web/dist/dart-scheduler/browser ./web/dist/dart-scheduler/browser
-# Download deps
+# Download deps first (cached layer)
 COPY go.mod go.sum ./
 RUN go mod download
-# Copy source
+# Copy source (web/dist is excluded via .dockerignore)
 COPY . .
+# Overwrite with freshly-built frontend — must come after COPY . . so the
+# builder output always wins over any stale local web/dist.
+COPY --from=frontend-builder /app/web/dist/dart-scheduler/browser ./web/dist/dart-scheduler/browser
 RUN CGO_ENABLED=0 go build -o dartscheduler ./cmd/server/
 
 # Stage 3: Minimal runtime

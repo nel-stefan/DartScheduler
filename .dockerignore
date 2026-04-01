@@ -1,7 +1,24 @@
-frontend/node_modules
-frontend/dist
-web/dist/dart-scheduler
-*.db
-dartscheduler
+# Version control
 .git
-.idea
+.gitignore
+
+# Local frontend build output (rebuilt inside Docker from source)
+web/dist
+
+# Node modules
+frontend/node_modules
+
+# Dev tooling
+.claude
+.vscode
+*.md
+
+# Test artifacts
+**/*_test.go
+
+# Local data
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
