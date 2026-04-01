@@ -874,19 +874,37 @@ export class InfoComponent implements OnInit {
 
     const pending = this.playerMatchRows.filter(r => r.result === '—');
     const compName = this.schedule()?.competitionName ?? 'Dartcompetitie';
+    const playerLabel = `${player.nr} ${player.name}`;
 
-    const subject = encodeURIComponent(`Openstaande wedstrijden – ${player.nr} ${player.name} – ${compName}`);
+    const subject = encodeURIComponent(`Openstaande wedstrijden – ${playerLabel} – ${compName}`);
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const fmtDate = (iso: string) => {
+      const d = new Date(iso);
+      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+    };
+
+    // Group by evening (same date + number)
+    const byEvening = new Map<number, typeof pending>();
+    for (const r of pending) {
+      const group = byEvening.get(r.eveningNumber) ?? [];
+      group.push(r);
+      byEvening.set(r.eveningNumber, group);
+    }
+    const evenings = [...byEvening.entries()].sort((a, b) => a[0] - b[0]);
 
     let body = `Beste ${player.name},\n\n`;
     body += `Hieronder vind je een overzicht van jouw nog te spelen wedstrijden voor ${compName}.\n\n`;
 
-    if (pending.length === 0) {
+    if (evenings.length === 0) {
       body += 'Je hebt geen openstaande wedstrijden meer.\n';
     } else {
-      body += 'Openstaande wedstrijden:\n';
-      for (const r of pending) {
-        const d = new Date(r.eveningDate).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        body += `  Avond ${r.eveningNumber}  –  ${d}  –  vs ${r.opponentName}\n`;
+      for (const [, rows] of evenings) {
+        const n = rows.length;
+        body += `${fmtDate(rows[0].eveningDate)}: ${n} wedstrijd${n !== 1 ? 'en' : ''}\n`;
+        for (const r of rows) {
+          body += `\t- ${playerLabel} - ${r.opponentName}\n`;
+        }
       }
     }
 
