@@ -11,12 +11,32 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ScheduleService } from '../../services/schedule.service';
 import { PlayerService } from '../../services/player.service';
 import { SeasonService } from '../../services/season.service';
 import { SystemService } from '../../services/system.service';
 import { SeasonSummary, GenerateScheduleRequest } from '../../models';
 import { environment } from '../../../environments/environment';
+
+// ---------------------------------------------------------------------------
+// Loading-dialog (shown while the scheduler runs)
+// ---------------------------------------------------------------------------
+
+@Component({
+  selector: 'app-loading-dialog',
+  imports: [MatProgressSpinnerModule],
+  template: `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px 56px;text-align:center">
+      <mat-spinner diameter="56"></mat-spinner>
+      <div>
+        <p style="margin:0;font-size:16px;font-weight:500">Schema wordt berekend…</p>
+        <p style="margin:6px 0 0;font-size:13px;color:#9e9e9e">Dit kan een minuut duren.</p>
+      </div>
+    </div>
+  `,
+})
+export class LoadingDialogComponent {}
 
 // ---------------------------------------------------------------------------
 // Generate-dialog
@@ -551,13 +571,18 @@ export class BeheerComponent implements OnInit {
     const ref = this.dialog.open(GenerateDialogComponent, { data: null });
     ref.afterClosed().subscribe((req: GenerateScheduleRequest | undefined) => {
       if (!req) return;
+      const loadingRef = this.dialog.open(LoadingDialogComponent, { disableClose: true });
       this.scheduleService.generate(req).subscribe({
         next: (s) => {
+          loadingRef.close();
           this.snackBar.open('Schema gegenereerd!', 'OK', { duration: 3000 });
           this.seasonService.load(s.id);
           this.loadSeasons();
         },
-        error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+        error: (err) => {
+          loadingRef.close();
+          this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 });
+        },
       });
     });
   }
@@ -616,14 +641,17 @@ export class BeheerComponent implements OnInit {
   regenerateSeason(s: SeasonSummary): void {
     if (!confirm(`Schema voor "${s.competitionName}" opnieuw berekenen? De wedstrijdindeling wordt vervangen.`)) return;
     this.regeneratingId.set(s.id);
+    const loadingRef = this.dialog.open(LoadingDialogComponent, { disableClose: true });
     this.scheduleService.regenerate(s.id).subscribe({
       next: (sched) => {
+        loadingRef.close();
         this.regeneratingId.set('');
         this.snackBar.open('Schema herberekend!', 'OK', { duration: 3000 });
         this.seasonService.load(sched.id);
         this.loadSeasons();
       },
       error: (err) => {
+        loadingRef.close();
         this.regeneratingId.set('');
         this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 });
       },
