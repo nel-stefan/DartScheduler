@@ -287,7 +287,7 @@ export class AbsentDialogComponent {
   get selectablePlayers(): Player[] {
     const ids = new Set<string>();
     for (const m of this.data.evening.matches ?? []) {
-      if (!m.played) { ids.add(m.playerA); ids.add(m.playerB); }
+      if (!m.played && !m.reportedBy) { ids.add(m.playerA); ids.add(m.playerB); }
     }
     return this.data.players
       .filter(p => ids.has(p.id))
