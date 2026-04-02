@@ -903,7 +903,7 @@ export class InfoComponent implements OnInit {
         const n = rows.length;
         body += `${fmtDate(rows[0].eveningDate)}: ${n} wedstrijd${n !== 1 ? 'en' : ''}\n`;
         for (const r of rows) {
-          body += `\t- ${playerLabel} - ${r.opponentName}\n`;
+          body += `  \u2022 ${playerLabel} - ${r.opponentName}\n`;
         }
       }
     }
