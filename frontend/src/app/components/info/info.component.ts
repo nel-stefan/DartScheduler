@@ -31,6 +31,8 @@ interface CellData {
 interface MatchRow {
   eveningNumber: number;
   eveningDate: string;
+  playerAName: string;
+  playerBName: string;
   opponentName: string;
   myScore: number | null;
   oppScore: number | null;
@@ -598,6 +600,7 @@ export class InfoComponent implements OnInit {
         const opponentId = isA ? m.playerB : m.playerA;
         const opp = playerMap.get(opponentId);
         const opponentName = opp ? `${opp.nr} ${opp.name}` : opponentId.slice(0, 8);
+        const selfName = `${playerMap.get(this.selectedPlayerId())?.nr ?? ''} ${playerMap.get(this.selectedPlayerId())?.name ?? ''}`.trim();
 
         const myScore  = isA ? m.scoreA : m.scoreB;
         const oppScore = isA ? m.scoreB : m.scoreA;
@@ -612,6 +615,8 @@ export class InfoComponent implements OnInit {
         rows.push({
           eveningNumber: ev.number,
           eveningDate: ev.date,
+          playerAName: isA ? selfName : opponentName,
+          playerBName: isA ? opponentName : selfName,
           opponentName,
           myScore,
           oppScore,
@@ -903,7 +908,7 @@ export class InfoComponent implements OnInit {
         const n = rows.length;
         body += `${fmtDate(rows[0].eveningDate)}: ${n} wedstrijd${n !== 1 ? 'en' : ''}\n`;
         for (const r of rows) {
-          body += `  \u2022 ${playerLabel} - ${r.opponentName}\n`;
+          body += `  \u2022 ${r.playerAName} - ${r.playerBName}\n`;
         }
       }
     }
