@@ -233,16 +233,16 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
           <div style="display:flex;gap:24px;margin-bottom:12px">
             @if (minTurnsRecord()) {
               <div>
-                <span style="font-size:9pt;color:#757575">Minste beurten: </span>
-                <strong>{{ minTurnsRecord()!.player.name }}</strong>
-                <span style="font-size:9pt"> ({{ minTurnsRecord()!.minTurns }})</span>
+                <span style="font-size:13pt;color:#757575">Minste beurten: </span>
+                <strong style="font-size:13pt">{{ minTurnsRecord()!.player.name }}</strong>
+                <span style="font-size:13pt"> ({{ minTurnsRecord()!.minTurns }})</span>
               </div>
             }
             @if (highestFinishRecord()) {
               <div>
-                <span style="font-size:9pt;color:#757575">Hoogste finish: </span>
-                <strong>{{ highestFinishRecord()!.player.name }}</strong>
-                <span style="font-size:9pt"> ({{ highestFinishRecord()!.highestFinish }})</span>
+                <span style="font-size:13pt;color:#757575">Hoogste finish: </span>
+                <strong style="font-size:13pt">{{ highestFinishRecord()!.player.name }}</strong>
+                <span style="font-size:13pt"> ({{ highestFinishRecord()!.highestFinish }})</span>
               </div>
             }
           </div>
