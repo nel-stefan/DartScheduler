@@ -28,6 +28,13 @@ interface CellData {
   consec: boolean; // part of a 2-evening run — shown bold but not a color violation
 }
 
+interface PlayerStatusRow {
+  player: PlayerInfoItem;
+  gespeeld: number;
+  teSpelen: number;
+  inTeHalen: number;
+}
+
 interface MatchRow {
   eveningNumber: number;
   eveningDate: string;
@@ -444,7 +451,44 @@ interface MatchRow {
               }
             </div>
           </mat-tab>
-          <!-- Tab 6: Schrijver / Teller -->
+          <!-- Tab 6: Speler overzicht -->
+          <mat-tab label="Overzicht">
+            <div style="padding-top:16px">
+              <mat-card>
+                <mat-card-content>
+                  <table mat-table [dataSource]="playerStatusRows" style="width:100%">
+                    <ng-container matColumnDef="nr">
+                      <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
+                      <td mat-cell *matCellDef="let r">{{ r.player.nr }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="name">
+                      <th mat-header-cell *matHeaderCellDef>Naam</th>
+                      <td mat-cell *matCellDef="let r"><strong>{{ r.player.name }}</strong></td>
+                    </ng-container>
+                    <ng-container matColumnDef="gespeeld">
+                      <th mat-header-cell *matHeaderCellDef style="width:100px;text-align:center">Gespeeld</th>
+                      <td mat-cell *matCellDef="let r" style="text-align:center;color:#2e7d32;font-weight:600">{{ r.gespeeld }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="teSpelen">
+                      <th mat-header-cell *matHeaderCellDef style="width:120px;text-align:center">Nog te spelen</th>
+                      <td mat-cell *matCellDef="let r" style="text-align:center">{{ r.teSpelen }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="inTeHalen">
+                      <th mat-header-cell *matHeaderCellDef style="width:130px;text-align:center">Nog in te halen</th>
+                      <td mat-cell *matCellDef="let r" style="text-align:center"
+                          [style.color]="r.inTeHalen > 0 ? '#c62828' : null"
+                          [style.font-weight]="r.inTeHalen > 0 ? '600' : null">
+                        {{ r.inTeHalen || '—' }}
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="statusCols"></tr>
+                    <tr mat-row *matRowDef="let row; columns: statusCols;"></tr>
+                  </table>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </mat-tab>
+          <!-- Tab 7: Schrijver / Teller -->
           <mat-tab label="Schrijver/Teller">
             <div style="padding-top:16px">
               <mat-form-field class="duty-select" subscriptSizing="dynamic">
@@ -575,6 +619,7 @@ export class InfoComponent implements OnInit {
   statCols    = ['nr', 'name', 'minTurns', 'avgTurns', 'avgScore', '180s', 'hf'];
   matchCols   = ['evening', 'date', 'playedDate', 'opponent', 'score', 'result'];
   openCols    = ['evening', 'date', 'playerA', 'playerB'];
+  statusCols  = ['nr', 'name', 'gespeeld', 'teSpelen', 'inTeHalen'];
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -655,6 +700,35 @@ export class InfoComponent implements OnInit {
       }
     }
     return rows.sort((a, b) => a.eveningNumber - b.eveningNumber);
+  }
+
+  get playerStatusRows(): PlayerStatusRow[] {
+    if (!this.schedule() || !this.info()) return [];
+    const playerMap = new Map(this.info()!.players.map(p => [p.id, p]));
+    const counts = new Map<string, { gespeeld: number; teSpelen: number; inTeHalen: number }>();
+    for (const p of this.info()!.players) {
+      counts.set(p.id, { gespeeld: 0, teSpelen: 0, inTeHalen: 0 });
+    }
+    for (const ev of this.schedule()!.evenings) {
+      if (ev.isInhaalAvond) continue;
+      for (const m of ev.matches) {
+        for (const pid of [m.playerA, m.playerB]) {
+          const c = counts.get(pid);
+          if (!c) continue;
+          if (m.played) {
+            c.gespeeld++;
+          } else if (m.reportedBy) {
+            c.inTeHalen++;
+          } else {
+            c.teSpelen++;
+          }
+        }
+      }
+    }
+    return [...counts.entries()]
+      .map(([id, c]) => ({ player: playerMap.get(id)!, ...c }))
+      .filter(r => r.player)
+      .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999));
   }
 
   private load(scheduleId: string): void {
