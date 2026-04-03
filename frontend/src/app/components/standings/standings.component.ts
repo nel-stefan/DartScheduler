@@ -54,20 +54,20 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
     .print-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 9pt;
+      font-size: 13pt;
     }
     .print-table th, .print-table td {
       border: 1px solid #ccc;
-      padding: 2px 6px;
+      padding: 4px 8px;
       text-align: left;
       line-height: 1.3;
     }
     .print-table th { background: #f0f0f0; font-weight: 600; }
     .print-table td.center { text-align: center; }
-    .print-section-title { font-size: 11pt; font-weight: 600; margin: 8px 0 3px 0; }
+    .print-section-title { font-size: 15pt; font-weight: 600; margin: 8px 0 3px 0; }
 
     @media print {
-      @page { margin: 10mm; }
+      @page { margin: 12mm; }
       .screen-only { display: none !important; }
       .print-only  { display: block !important; }
 
@@ -258,8 +258,6 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
                   <th style="width:32px">#</th>
                   <th style="width:40px">Nr</th>
                   <th>Naam</th>
-                  <th class="center" style="width:64px">Gewonnen</th>
-                  <th class="center" style="width:64px">Verloren</th>
                   <th class="center" style="width:60px">+ punten</th>
                   <th class="center" style="width:60px">- punten</th>
                   <th class="center" style="width:44px">180</th>
@@ -271,8 +269,6 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
                     <td>{{ i + 1 }}</td>
                     <td>{{ s.player.nr }}</td>
                     <td><strong>{{ s.player.name }}</strong></td>
-                    <td class="center" style="font-weight:600">{{ s.wins }}</td>
-                    <td class="center">{{ s.losses }}</td>
                     <td class="center">{{ s.pointsFor }}</td>
                     <td class="center">{{ s.pointsAgainst }}</td>
                     <td class="center" style="font-weight:600">{{ s.oneEighties || '—' }}</td>
@@ -397,7 +393,7 @@ export class StandingsComponent implements OnInit {
 
   private sortedStats(stats: PlayerStats[]): PlayerStats[] {
     return [...stats].sort((a, b) => {
-      if (b.wins !== a.wins) return b.wins - a.wins;
+      if (b.pointsFor !== a.pointsFor) return b.pointsFor - a.pointsFor;
       const diffA = a.pointsFor - a.pointsAgainst;
       const diffB = b.pointsFor - b.pointsAgainst;
       return diffB - diffA;
