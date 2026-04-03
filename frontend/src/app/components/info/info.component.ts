@@ -37,6 +37,7 @@ interface MatchRow {
   myScore: number | null;
   oppScore: number | null;
   result: 'W' | 'V' | 'G' | 'Afgemeld' | '—';
+  reportedBy: string; // who reported the absence (empty if not cancelled)
   isCatchUp: boolean;
   playedDate: string; // set for catch-up matches that have been played
 }
@@ -416,7 +417,7 @@ interface MatchRow {
                         </td>
                       </ng-container>
                       <ng-container matColumnDef="result">
-                        <th mat-header-cell *matHeaderCellDef style="width:90px;text-align:center">Uitslag</th>
+                        <th mat-header-cell *matHeaderCellDef style="width:110px;text-align:center">Uitslag</th>
                         <td mat-cell *matCellDef="let r" style="text-align:center">
                           <span [class.result-W]="r.result === 'W'"
                             [class.result-V]="r.result === 'V'"
@@ -424,6 +425,10 @@ interface MatchRow {
                             [class.result-af]="r.result === 'Afgemeld'">
                             {{ r.result }}
                           </span>
+                          @if (r.reportedBy) {
+                            <br>
+                            <span style="font-size:11px;color:#9e9e9e">door: {{ r.reportedBy }}</span>
+                          }
                         </td>
                       </ng-container>
                       <tr mat-header-row *matHeaderRowDef="matchCols"></tr>
@@ -621,6 +626,7 @@ export class InfoComponent implements OnInit {
           myScore,
           oppScore,
           result,
+          reportedBy: result === 'Afgemeld' ? (m.reportedBy ?? '') : '',
           isCatchUp: !!m.playedDate,
           playedDate: m.playedDate ?? '',
         });
