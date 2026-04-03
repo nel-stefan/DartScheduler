@@ -20,12 +20,13 @@ func (e Exporter) Export(_ context.Context, sched domain.Schedule, players []dom
 	}
 
 	pdf := gofpdf.New("L", "mm", "A4", "")
+	tr := pdf.UnicodeTranslatorFromDescriptor("") // UTF-8 → Latin-1 for built-in fonts
 	pdf.SetFont("Arial", "B", 14)
 
 	for _, ev := range sched.Evenings {
 		pdf.AddPage()
 		pdf.CellFormat(0, 10,
-			fmt.Sprintf("%s – Evening %d (%s)", sched.CompetitionName, ev.Number, ev.Date.Format("2006-01-02")),
+			tr(fmt.Sprintf("%s – Evening %d (%s)", sched.CompetitionName, ev.Number, ev.Date.Format("2006-01-02"))),
 			"", 1, "C", false, 0, "")
 
 		pdf.SetFont("Arial", "B", 10)
@@ -47,8 +48,8 @@ func (e Exporter) Export(_ context.Context, sched domain.Schedule, players []dom
 			}
 			row := []string{
 				fmt.Sprintf("%d", i+1),
-				playerName[m.PlayerA],
-				playerName[m.PlayerB],
+				tr(playerName[m.PlayerA]),
+				tr(playerName[m.PlayerB]),
 				scoreA,
 				scoreB,
 			}

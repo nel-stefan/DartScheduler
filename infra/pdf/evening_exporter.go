@@ -151,6 +151,7 @@ func ExportEvening(sched domain.Schedule, ev domain.Evening, players []domain.Pl
 	pdf := gofpdf.New("L", "mm", "A4", "")
 	pdf.SetMargins(marginLR, marginTop, marginLR)
 	pdf.SetAutoPageBreak(false, marginBottom)
+	tr := pdf.UnicodeTranslatorFromDescriptor("") // UTF-8 → Latin-1 for built-in fonts
 
 	tableW := totalWidth()
 
@@ -164,7 +165,7 @@ func ExportEvening(sched domain.Schedule, ev domain.Evening, players []domain.Pl
 			pdf.Ln(titleH)
 		}
 		pdf.SetFont(fontFamily, "B", 16)
-		pdf.CellFormat(tableW, titleH, clubName, "", 1, "C", false, 0, "")
+		pdf.CellFormat(tableW, titleH, tr(clubName), "", 1, "C", false, 0, "")
 		pdf.SetFont(fontFamily, "B", 9)
 		sub := fmt.Sprintf("Wedstrijdformulier   Spelsoort: 501 dubbel uit best of 3   Speeldatum: %s", dateLabel)
 		pdf.CellFormat(tableW, subtitleH, sub, "", 1, "C", false, 0, "")
@@ -224,7 +225,7 @@ func ExportEvening(sched domain.Schedule, ev domain.Evening, players []domain.Pl
 
 			// Clip text to cell width (shrink-to-fit simulation).
 			pdf.SetXY(x+0.5, y0+0.3)
-			pdf.CellFormat(colW[i]-1.0, dataRowH-0.6, cells[i], "", 0, aligns[i], false, 0, "")
+			pdf.CellFormat(colW[i]-1.0, dataRowH-0.6, tr(cells[i]), "", 0, aligns[i], false, 0, "")
 		}
 
 		// Heavy outer table borders: thick left, right edges; thick top on
@@ -279,7 +280,7 @@ func ExportEvening(sched domain.Schedule, ev domain.Evening, players []domain.Pl
 		}
 		// Recursively export the catch-up evening on additional pages.
 		// We build a temporary sched without extra evenings to avoid recursion.
-		emptyExport(pdf, inhaalEv, players, playerMap, firstNameNr, playerLabel, reportedByLabel, clubName, logoPath)
+		emptyExport(pdf, tr, inhaalEv, players, playerMap, firstNameNr, playerLabel, reportedByLabel, clubName, logoPath)
 	}
 
 	return pdf.Output(w)
@@ -289,6 +290,7 @@ func ExportEvening(sched domain.Schedule, ev domain.Evening, players []domain.Pl
 // PDF document (used for the "Afgemeld" tab equivalent).
 func emptyExport(
 	pdf *gofpdf.Fpdf,
+	tr func(string) string,
 	ev domain.Evening,
 	players []domain.Player,
 	playerMap map[string]domain.Player,
@@ -359,7 +361,7 @@ func emptyExport(
 			pdf.Ln(titleH)
 		}
 		pdf.SetFont(fontFamily, "B", 16)
-		pdf.CellFormat(tableW, titleH, clubName, "", 1, "C", false, 0, "")
+		pdf.CellFormat(tableW, titleH, tr(clubName), "", 1, "C", false, 0, "")
 		pdf.SetFont(fontFamily, "B", 9)
 		pdf.CellFormat(tableW, subtitleH,
 			"Wedstrijdformulier   Spelsoort: 501 dubbel uit best of 3   Speeldatum: Inhaal",
@@ -413,7 +415,7 @@ func emptyExport(
 			x := x0 + colOffset(i)
 			pdf.Rect(x, y0, colW[i], dataRowH, "D")
 			pdf.SetXY(x+0.5, y0+0.3)
-			pdf.CellFormat(colW[i]-1.0, dataRowH-0.6, cells[i], "", 0, aligns[i], false, 0, "")
+			pdf.CellFormat(colW[i]-1.0, dataRowH-0.6, tr(cells[i]), "", 0, aligns[i], false, 0, "")
 		}
 		pdf.SetLineWidth(0.55)
 		pdf.Line(x0, y0, x0, y0+dataRowH)
