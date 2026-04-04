@@ -10,6 +10,8 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { FormsModule } from '@angular/forms';
 import { ScheduleService } from '../../services/schedule.service';
 import { SeasonService } from '../../services/season.service';
 import { ScoreService } from '../../services/score.service';
@@ -52,7 +54,7 @@ interface MatchRow {
 @Component({
     selector: 'app-info',
     imports: [CommonModule, MatCardModule, MatTableModule, MatIconModule, MatChipsModule,
-        MatTabsModule, MatSelectModule, MatFormFieldModule, MatButtonModule],
+        MatTabsModule, MatSelectModule, MatFormFieldModule, MatButtonModule, MatInputModule, FormsModule],
     styles: [`
     .page { padding: 24px; }
     h2 { margin: 0 0 20px 0; }
@@ -181,6 +183,15 @@ interface MatchRow {
           <!-- Tab 2: Spelers -->
           <mat-tab label="Spelers">
             <div style="padding-top:16px">
+              <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+                <mat-form-field style="flex:1;min-width:280px" subscriptSizing="dynamic">
+                  <mat-label>Opmerking afdruk klasseindeling (optioneel)</mat-label>
+                  <textarea matInput rows="2" [(ngModel)]="classListNoteValue"></textarea>
+                </mat-form-field>
+                <button mat-stroked-button style="margin-top:4px" (click)="printClassList()">
+                  <mat-icon>print</mat-icon> Klasseindeling afdrukken
+                </button>
+              </div>
               <mat-card>
                 <mat-card-content>
                   <table mat-table [dataSource]="playerRows()" style="width:100%">
@@ -663,6 +674,7 @@ export class InfoComponent implements OnInit {
   matchCols   = ['evening', 'date', 'playedDate', 'opponent', 'score', 'result'];
   openCols    = ['evening', 'date', 'playerA', 'playerB'];
   statusCols  = ['nr', 'name', 'gespeeld', 'teSpelen', 'inTeHalen'];
+  classListNoteValue = '';
   statusSortCol = signal<'nr' | 'name' | 'gespeeld' | 'teSpelen' | 'inTeHalen'>('nr');
   statusSortDir = signal<'asc' | 'desc'>('asc');
 
@@ -1058,6 +1070,59 @@ export class InfoComponent implements OnInit {
     body += '\nMet sportieve groet,\nDart Scheduler';
 
     window.location.href = `mailto:${player.email}?subject=${subject}&body=${encodeURIComponent(body)}`;
+  }
+
+  printClassList(): void {
+    if (!this.info()) return;
+    const compName = this.schedule()?.competitionName ?? '';
+    const season   = this.schedule()?.season ?? '';
+    const note     = this.classListNoteValue.trim();
+
+    // Group players by class, sorted by nr within each group
+    const byClass = new Map<string, typeof this.sortedPlayers>();
+    for (const p of this.sortedPlayers) {
+      const cls = p.class || '—';
+      byClass.set(cls, [...(byClass.get(cls) ?? []), p]);
+    }
+    const classes = [...byClass.keys()].sort();
+
+    const listHtml = classes.map(cls => {
+      const rows = byClass.get(cls)!
+        .map(p => `<tr><td class="nr">${p.nr}</td><td>${p.name}</td></tr>`)
+        .join('');
+      return `<div class="class-block">
+        <h3>${cls}</h3>
+        <table><thead><tr><th class="nr">Nr.</th><th>Naam</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      </div>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Klasseindeling${season ? ' ' + season : ''}</title>
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 13px; padding: 20px; }
+        h1 { font-size: 17px; text-align: center; margin: 0 0 6px; text-transform: uppercase; letter-spacing: .5px; }
+        h2 { font-size: 13px; text-align: center; color: #555; margin: 0 0 20px; font-weight: normal; }
+        .lists { display: flex; gap: 40px; flex-wrap: wrap; }
+        .class-block { flex: 1; min-width: 160px; }
+        h3 { font-size: 14px; text-transform: uppercase; letter-spacing: .4px; margin: 0 0 6px;
+             border-bottom: 2px solid #333; padding-bottom: 3px; }
+        table { border-collapse: collapse; width: 100%; }
+        th { font-weight: 600; text-align: left; padding: 3px 6px; border-bottom: 1px solid #bbb; font-size: 12px; }
+        td { padding: 3px 6px; border-bottom: 1px solid #eee; }
+        .nr { width: 40px; color: #555; }
+        .note { margin-top: 24px; font-size: 12px; color: #333; border-top: 1px solid #ccc; padding-top: 10px; }
+        @media print { @page { size: A4 portrait; margin: 15mm; } }
+      </style></head><body>
+      <h1>Klasse indeling en naam + nummers${season ? ' ' + season : ''}</h1>
+      ${compName ? `<h2>${compName}</h2>` : ''}
+      <div class="lists">${listHtml}</div>
+      ${note ? `<div class="note">${note.replace(/\n/g, '<br>')}</div>` : ''}
+      <script>window.onload = () => { window.print(); }<\/script>
+      </body></html>`;
+
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(html); w.document.close(); }
   }
 
   printOpenMatches(): void {

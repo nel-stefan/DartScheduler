@@ -130,6 +130,7 @@ type PlayerInfoItem struct {
 	Nr    string `json:"nr"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
+	Class string `json:"class"`
 }
 
 type EveningInfoItem struct {
