@@ -13,7 +13,6 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
-import { FormsModule } from '@angular/forms';
 import { PlayerService } from '../../services/player.service';
 import { SeasonService } from '../../services/season.service';
 import { ScheduleService } from '../../services/schedule.service';
@@ -147,8 +146,6 @@ export class BuddyDialogComponent {
     MatCheckboxModule,
     MatSelectModule,
     MatFormFieldModule,
-    MatInputModule,
-    FormsModule,
   ],
   styles: [
     `
@@ -175,12 +172,8 @@ export class BuddyDialogComponent {
     `,
   ],
   template: `
-    <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;flex-wrap:wrap">
-      <mat-form-field style="flex:1;min-width:280px" subscriptSizing="dynamic">
-        <mat-label>Opmerking afdruk klasseindeling (optioneel)</mat-label>
-        <textarea matInput rows="2" [(ngModel)]="classListNote"></textarea>
-      </mat-form-field>
-      <button mat-stroked-button style="margin-top:4px" [disabled]="players().length === 0" (click)="printClassList()">
+    <div style="margin-bottom:16px">
+      <button mat-stroked-button [disabled]="players().length === 0" (click)="printClassList()">
         <mat-icon>print</mat-icon> Klasseindeling afdrukken
       </button>
     </div>
@@ -305,7 +298,9 @@ export class SpelersComponent implements OnInit {
   buddyMap      = signal<Record<string, string[]>>({});
   selection     = new Set<string>();
   batchClass    = signal('');
-  classListNote = '';
+  private readonly classListNote =
+    'Als je een avond niet kunt gooien dien je je uiterlijk donderdagavond voor 8u af te ' +
+    'melden bij je tegenstander en bij de wedstrijdleider: Stefan Marchal 06-24201115';
   cols = ['select', 'nr', 'name', 'class', 'city', 'buddies', 'actions'];
 
   ngOnInit(): void {
