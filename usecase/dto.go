@@ -105,6 +105,7 @@ type SeasonSummary struct {
 	ID              string    `json:"id"`
 	CompetitionName string    `json:"competitionName"`
 	Season          string    `json:"season"`
+	Active          bool      `json:"active"`
 	CreatedAt       time.Time `json:"createdAt"`
 	EveningCount    int       `json:"eveningCount"`
 }

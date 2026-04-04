@@ -15,6 +15,7 @@ type Schedule struct {
 	ID              ScheduleID `json:"id"`
 	CompetitionName string     `json:"competitionName"`
 	Season          string     `json:"season"`
+	Active          bool       `json:"active"`
 	Evenings        []Evening  `json:"evenings"`
 	CreatedAt       time.Time  `json:"createdAt"`
 }

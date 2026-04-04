@@ -428,7 +428,12 @@ export class ImportSeasonDialogComponent {
               <div class="season-row">
                 <div style="flex:1;min-width:0">
                   @if (editingSeasonId() !== s.id) {
-                    <div class="season-name">{{ s.competitionName }}</div>
+                    <div class="season-name">
+                      {{ s.competitionName }}
+                      @if (s.active) {
+                        <span style="font-size:11px;color:#f9a825;font-weight:600;margin-left:6px">actief</span>
+                      }
+                    </div>
                   }
                   @if (editingSeasonId() === s.id) {
                     <input
@@ -443,6 +448,15 @@ export class ImportSeasonDialogComponent {
                   }
                   <div class="season-meta">Seizoen {{ s.season }} · {{ s.eveningCount }} avonden</div>
                 </div>
+                @if (editingSeasonId() !== s.id) {
+                  @if (s.active) {
+                    <mat-icon style="color:#f9a825;margin:0 4px;vertical-align:middle" matTooltip="Actief seizoen">star</mat-icon>
+                  } @else {
+                    <button mat-icon-button (click)="setActiveSeason(s)" matTooltip="Als actief instellen">
+                      <mat-icon>star_border</mat-icon>
+                    </button>
+                  }
+                }
                 @if (editingSeasonId() !== s.id) {
                   <button mat-icon-button (click)="startRename(s)" matTooltip="Naam aanpassen">
                     <mat-icon>edit</mat-icon>
@@ -648,6 +662,17 @@ export class BeheerComponent implements OnInit {
       next: () => {
         this.snackBar.open('Seizoen verwijderd', 'OK', { duration: 2000 });
         this.seasonService.load();
+        this.loadSeasons();
+      },
+      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+    });
+  }
+
+  setActiveSeason(s: SeasonSummary): void {
+    this.scheduleService.setActive(s.id).subscribe({
+      next: () => {
+        this.snackBar.open(`"${s.competitionName}" is nu het actieve seizoen`, 'OK', { duration: 2500 });
+        this.seasonService.load(s.id);
         this.loadSeasons();
       },
       error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),

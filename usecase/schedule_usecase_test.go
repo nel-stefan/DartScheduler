@@ -31,6 +31,7 @@ func (r *stubScheduleRepo) FindAll(_ context.Context) ([]domain.Schedule, error)
 	return []domain.Schedule{r.sched}, nil
 }
 func (r *stubScheduleRepo) Delete(_ context.Context, _ domain.ScheduleID) error { return nil }
+func (r *stubScheduleRepo) SetActive(_ context.Context, _ domain.ScheduleID) error { return nil }
 
 type stubEveningRepo struct {
 	evenings []domain.Evening
@@ -323,6 +324,7 @@ func (r *trackingScheduleRepo) Delete(_ context.Context, _ domain.ScheduleID) er
 	r.deleteCalls++
 	return nil
 }
+func (r *trackingScheduleRepo) SetActive(_ context.Context, _ domain.ScheduleID) error { return nil }
 
 type trackingEveningRepo struct {
 	evenings              []domain.Evening

@@ -58,6 +58,7 @@ export interface SeasonSummary {
   id: string;
   competitionName: string;
   season: string;
+  active: boolean;
   createdAt: string;
   eveningCount: number;
 }

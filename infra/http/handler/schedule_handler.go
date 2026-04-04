@@ -203,6 +203,20 @@ func (h *ScheduleHandler) DeleteSchedule(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *ScheduleHandler) SetActive(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		httpError(w, err, http.StatusBadRequest)
+		return
+	}
+	if err := h.uc.SetActive(r.Context(), domain.ScheduleID(id)); err != nil {
+		httpErrorDomain(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *ScheduleHandler) DeleteEvening(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "eveningId")
 	id, err := uuid.Parse(idStr)

@@ -17,8 +17,9 @@ export class SeasonService {
         this.seasons$.next(list);
         if (selectId) {
           this.selectedId$.next(selectId);
-        } else if (list.length > 0 && !this.selectedId$.value) {
-          this.selectedId$.next(list[0].id);
+        } else if (!this.selectedId$.value) {
+          const active = list.find(s => s.active);
+          this.selectedId$.next(active ? active.id : list[0]?.id ?? '');
         }
       },
       error: () => {},

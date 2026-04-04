@@ -55,4 +55,5 @@ type ScheduleRepository interface {
 	FindByID(ctx context.Context, id ScheduleID) (Schedule, error)
 	FindAll(ctx context.Context) ([]Schedule, error)
 	Delete(ctx context.Context, id ScheduleID) error
+	SetActive(ctx context.Context, id ScheduleID) error
 }

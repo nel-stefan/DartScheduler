@@ -73,6 +73,7 @@ func NewRouter(
 		r.Patch("/schedules/{id}", schedH.RenameSchedule)
 		r.Delete("/schedules/{id}", schedH.DeleteSchedule)
 		r.Post("/schedules/{id}/regenerate", schedH.RegenerateSchedule)
+		r.Post("/schedules/{id}/active", schedH.SetActive)
 		r.Post("/schedules/{id}/inhaal-avond", schedH.AddCatchUpEvening)
 		r.Delete("/schedules/{id}/evenings/{eveningId}", schedH.DeleteEvening)
 

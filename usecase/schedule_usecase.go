@@ -237,6 +237,10 @@ func (uc *ScheduleUseCase) Regenerate(ctx context.Context, id domain.ScheduleID,
 	return uc.hydrate(ctx, sched)
 }
 
+func (uc *ScheduleUseCase) SetActive(ctx context.Context, id domain.ScheduleID) error {
+	return uc.schedules.SetActive(ctx, id)
+}
+
 func (uc *ScheduleUseCase) RenameSchedule(ctx context.Context, id domain.ScheduleID, name string) error {
 	sched, err := uc.schedules.FindByID(ctx, id)
 	if err != nil {
@@ -285,6 +289,7 @@ func (uc *ScheduleUseCase) ListSchedules(ctx context.Context) ([]SeasonSummary, 
 			ID:              s.ID.String(),
 			CompetitionName: s.CompetitionName,
 			Season:          s.Season,
+			Active:          s.Active,
 			CreatedAt:       s.CreatedAt,
 			EveningCount:    len(evenings),
 		}
