@@ -173,6 +173,13 @@ interface MatchRow {
                             <td class="td-total">{{ row.totalMatches }}</td>
                           </tr>
                         }
+                        <tr style="border-top:2px solid #bdbdbd">
+                          <td class="td-player" style="font-weight:600;color:#333">Wedstrijden</td>
+                          @for (n of eveningMatchTotals(); track n) {
+                            <td style="text-align:center;font-weight:700;background:#f5f5f5;color:#333">{{ n }}</td>
+                          }
+                          <td style="text-align:center;font-weight:700;background:#ede7f6;color:#4527a0">{{ totalMatchesAllEvenings() }}</td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -698,6 +705,18 @@ export class InfoComponent implements OnInit {
   get sortedPlayers(): PlayerInfoItem[] {
     if (!this.info()) return [];
     return [...this.info()!.players].sort((a, b) => (parseInt(a.nr) || 9999) - (parseInt(b.nr) || 9999));
+  }
+
+  eveningMatchTotals(): number[] {
+    const rows = this.playerRows();
+    if (rows.length === 0) return [];
+    return rows[0].cells.map((_, col) =>
+      rows.reduce((sum, row) => sum + row.cells[col].count, 0) / 2
+    );
+  }
+
+  totalMatchesAllEvenings(): number {
+    return this.eveningMatchTotals().reduce((s, n) => s + n, 0);
   }
 
   get playerMatchRows(): MatchRow[] {
