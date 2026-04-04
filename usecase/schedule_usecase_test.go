@@ -30,7 +30,7 @@ func (r *stubScheduleRepo) FindByID(_ context.Context, _ domain.ScheduleID) (dom
 func (r *stubScheduleRepo) FindAll(_ context.Context) ([]domain.Schedule, error) {
 	return []domain.Schedule{r.sched}, nil
 }
-func (r *stubScheduleRepo) Delete(_ context.Context, _ domain.ScheduleID) error { return nil }
+func (r *stubScheduleRepo) Delete(_ context.Context, _ domain.ScheduleID) error    { return nil }
 func (r *stubScheduleRepo) SetActive(_ context.Context, _ domain.ScheduleID) error { return nil }
 
 type stubEveningRepo struct {

@@ -53,7 +53,7 @@ func (r *exportScheduleRepo) FindByID(_ context.Context, _ domain.ScheduleID) (d
 func (r *exportScheduleRepo) FindAll(_ context.Context) ([]domain.Schedule, error) {
 	return []domain.Schedule{r.sched}, nil
 }
-func (r *exportScheduleRepo) Delete(_ context.Context, _ domain.ScheduleID) error { return nil }
+func (r *exportScheduleRepo) Delete(_ context.Context, _ domain.ScheduleID) error    { return nil }
 func (r *exportScheduleRepo) SetActive(_ context.Context, _ domain.ScheduleID) error { return nil }
 
 type exportEveningRepo struct {
