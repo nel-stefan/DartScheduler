@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, DestroyRef, signal } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged } from 'rxjs';
 
@@ -446,13 +446,13 @@ export class StandingsComponent implements OnInit {
     }
   }
 
-  sortedClasses(): { label: string; stats: PlayerStats[] }[] {
+  sortedClasses = computed(() => {
     const col = this.standingsSortCol();
     const dir = this.standingsSortDir() === 'asc' ? 1 : -1;
     return this.classes().map((cls) => ({
       label: cls.label,
       stats: [...cls.stats].sort((a, b) => {
-        if (col === 'name') return dir * a.player.name.localeCompare(b.player.name);
+        if (col === 'name')   return dir * a.player.name.localeCompare(b.player.name);
         if (col === 'wins')   return dir * (a.wins - b.wins);
         if (col === 'losses') return dir * (a.losses - b.losses);
         if (col === 'pf')     return dir * (a.pointsFor - b.pointsFor);
@@ -461,7 +461,7 @@ export class StandingsComponent implements OnInit {
         return 0;
       }),
     }));
-  }
+  });
 
   ngOnInit(): void {
     this.seasonService.selectedId$
