@@ -458,23 +458,66 @@ interface MatchRow {
                 <mat-card-content>
                   <table mat-table [dataSource]="playerStatusRows" style="width:100%">
                     <ng-container matColumnDef="nr">
-                      <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
+                      <th mat-header-cell *matHeaderCellDef style="width:48px;cursor:pointer;user-select:none"
+                          (click)="sortStatus('nr')">
+                        Nr
+                        @if (statusSortCol() === 'nr') {
+                          <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                            {{ statusSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                          </mat-icon>
+                        }
+                      </th>
                       <td mat-cell *matCellDef="let r">{{ r.player.nr }}</td>
                     </ng-container>
                     <ng-container matColumnDef="name">
-                      <th mat-header-cell *matHeaderCellDef>Naam</th>
+                      <th mat-header-cell *matHeaderCellDef style="cursor:pointer;user-select:none"
+                          (click)="sortStatus('name')">
+                        Naam
+                        @if (statusSortCol() === 'name') {
+                          <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                            {{ statusSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                          </mat-icon>
+                        }
+                      </th>
                       <td mat-cell *matCellDef="let r"><strong>{{ r.player.name }}</strong></td>
                     </ng-container>
                     <ng-container matColumnDef="gespeeld">
-                      <th mat-header-cell *matHeaderCellDef style="width:100px;text-align:center">Gespeeld</th>
+                      <th mat-header-cell *matHeaderCellDef
+                          style="width:100px;text-align:center;cursor:pointer;user-select:none"
+                          (click)="sortStatus('gespeeld')">
+                        Gespeeld
+                        @if (statusSortCol() === 'gespeeld') {
+                          <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                            {{ statusSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                          </mat-icon>
+                        }
+                      </th>
                       <td mat-cell *matCellDef="let r" style="text-align:center;color:#2e7d32;font-weight:600">{{ r.gespeeld }}</td>
                     </ng-container>
                     <ng-container matColumnDef="teSpelen">
-                      <th mat-header-cell *matHeaderCellDef style="width:120px;text-align:center">Nog te spelen</th>
+                      <th mat-header-cell *matHeaderCellDef
+                          style="width:120px;text-align:center;cursor:pointer;user-select:none"
+                          (click)="sortStatus('teSpelen')">
+                        Nog te spelen
+                        @if (statusSortCol() === 'teSpelen') {
+                          <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                            {{ statusSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                          </mat-icon>
+                        }
+                      </th>
                       <td mat-cell *matCellDef="let r" style="text-align:center">{{ r.teSpelen }}</td>
                     </ng-container>
                     <ng-container matColumnDef="inTeHalen">
-                      <th mat-header-cell *matHeaderCellDef style="width:130px;text-align:center">Nog in te halen</th>
+                      <th mat-header-cell *matHeaderCellDef
+                          style="width:130px;text-align:center;cursor:pointer;user-select:none"
+                          (click)="sortStatus('inTeHalen')">
+                        Nog in te halen
+                        @if (statusSortCol() === 'inTeHalen') {
+                          <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                            {{ statusSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                          </mat-icon>
+                        }
+                      </th>
                       <td mat-cell *matCellDef="let r" style="text-align:center"
                           [style.color]="r.inTeHalen > 0 ? '#c62828' : null"
                           [style.font-weight]="r.inTeHalen > 0 ? '600' : null">
@@ -620,6 +663,17 @@ export class InfoComponent implements OnInit {
   matchCols   = ['evening', 'date', 'playedDate', 'opponent', 'score', 'result'];
   openCols    = ['evening', 'date', 'playerA', 'playerB'];
   statusCols  = ['nr', 'name', 'gespeeld', 'teSpelen', 'inTeHalen'];
+  statusSortCol = signal<'nr' | 'name' | 'gespeeld' | 'teSpelen' | 'inTeHalen'>('nr');
+  statusSortDir = signal<'asc' | 'desc'>('asc');
+
+  sortStatus(col: 'nr' | 'name' | 'gespeeld' | 'teSpelen' | 'inTeHalen'): void {
+    if (this.statusSortCol() === col) {
+      this.statusSortDir.set(this.statusSortDir() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.statusSortCol.set(col);
+      this.statusSortDir.set(col === 'nr' || col === 'name' ? 'asc' : 'desc');
+    }
+  }
 
   ngOnInit(): void {
     this.seasonService.selectedId$.pipe(
@@ -725,10 +779,18 @@ export class InfoComponent implements OnInit {
         }
       }
     }
-    return [...counts.entries()]
+    const rows = [...counts.entries()]
       .map(([id, c]) => ({ player: playerMap.get(id)!, ...c }))
-      .filter(r => r.player)
-      .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999));
+      .filter(r => r.player);
+
+    const col = this.statusSortCol();
+    const dir = this.statusSortDir() === 'asc' ? 1 : -1;
+    rows.sort((a, b) => {
+      if (col === 'name') return dir * a.player.name.localeCompare(b.player.name);
+      if (col === 'nr')   return dir * ((parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999));
+      return dir * (a[col] - b[col]);
+    });
+    return rows;
   }
 
   private load(scheduleId: string): void {
