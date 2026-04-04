@@ -10,7 +10,7 @@
 //	       + WExcessTriple × extra 3-match evenings per player (>10%)        (medium)
 //	       + WMinMatches   × per-player excess solo evenings (>1 solo)       (hard)
 //	       + WSoloSoft     × total solo (player,evening) pairs               (soft)
-//	       + WVariance     × variance of total matches per evening           (soft)
+//	       + WVariance     × variance of total matches per evening           (soft, balance)
 package scheduler
 
 import (
@@ -57,7 +57,9 @@ type AnnealConfig struct {
 }
 
 // DefaultAnnealConfig returns the production-quality annealing configuration.
-// wVariance×Δvar must exceed 4×WSoloSoft per spread move to allow balancing.
+// WVariance penalises unequal match counts across evenings; at 500 a ±1 imbalance
+// costs ~50 energy, strong enough to drive balancing while remaining softer than
+// hard constraints (1000–10000).
 func DefaultAnnealConfig() AnnealConfig {
 	return AnnealConfig{
 		T0:    100.0, // raised so spreading to empty evenings (delta≈+20) is accepted early
@@ -75,7 +77,7 @@ func DefaultAnnealConfig() AnnealConfig {
 		WExcessTriple: 2_000.0,
 		WMinMatches:   1_000.0,
 		WSoloSoft:     5.0,
-		WVariance:     50.0,
+		WVariance:     500.0,
 	}
 }
 
