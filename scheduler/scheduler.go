@@ -38,8 +38,11 @@ type Input struct {
 
 // Generate builds a round-robin Schedule with simulated-annealing optimisation.
 func Generate(in Input) (domain.Schedule, error) {
+	if len(in.Players) == 0 {
+		return domain.Schedule{}, fmt.Errorf("%w: er zijn geen spelers geïmporteerd — importeer eerst spelers via het Beheer-scherm", domain.ErrInvalidInput)
+	}
 	if len(in.Players) < 2 {
-		return domain.Schedule{}, fmt.Errorf("%w: need at least 2 players", domain.ErrInvalidInput)
+		return domain.Schedule{}, fmt.Errorf("%w: minimaal 2 spelers vereist, maar er is slechts 1 speler geïmporteerd", domain.ErrInvalidInput)
 	}
 	if in.NumEvenings < 1 {
 		return domain.Schedule{}, fmt.Errorf("%w: numEvenings must be ≥ 1", domain.ErrInvalidInput)

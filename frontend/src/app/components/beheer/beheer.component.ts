@@ -676,7 +676,31 @@ export class BeheerComponent implements OnInit {
     });
   }
 
+  /** Extracts a readable message from an HTTP error response. */
+  private errorText(err: { error?: string; message?: string }): string {
+    return (typeof err.error === 'string' ? err.error.trim() : null) || err.message || 'Onbekende fout';
+  }
+
   openGenerate(): void {
+    // Check for players first so the user gets a clear explanation instead of a cryptic error.
+    this.playerService.list().subscribe({
+      next: (players) => {
+        const participants = players.filter((p) => !p.nr.toLowerCase().includes('-s'));
+        if (participants.length < 2) {
+          this.snackBar.open(
+            'Er zijn geen spelers geïmporteerd. Importeer eerst spelers via "Spelers importeren".',
+            'OK',
+            { duration: 6000 },
+          );
+          return;
+        }
+        this.openGenerateDialog();
+      },
+      error: () => this.openGenerateDialog(), // if the check fails, just open the dialog
+    });
+  }
+
+  private openGenerateDialog(): void {
     const ref = this.dialog.open(GenerateDialogComponent, { data: null });
     ref.afterClosed().subscribe((req: GenerateScheduleRequest | undefined) => {
       if (!req) return;
@@ -699,7 +723,7 @@ export class BeheerComponent implements OnInit {
         error: (err) => {
           clearInterval(pollId);
           loadingRef.close();
-          this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 });
+          this.snackBar.open(`Fout: ${this.errorText(err)}`, 'Sluiten', { duration: 8000 });
         },
       });
     });
@@ -715,7 +739,7 @@ export class BeheerComponent implements OnInit {
           this.seasonService.load(s.id);
           this.loadSeasons();
         },
-        error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+        error: (err) => this.snackBar.open(`Fout: ${this.errorText(err)}`, 'Sluiten', { duration: 5000 }),
       });
     });
   }
@@ -736,7 +760,7 @@ export class BeheerComponent implements OnInit {
         s.competitionName = name;
         this.seasonService.load();
       },
-      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+      error: (err) => this.snackBar.open(`Fout: ${this.errorText(err)}`, 'Sluiten', { duration: 5000 }),
     });
   }
 
@@ -752,7 +776,7 @@ export class BeheerComponent implements OnInit {
         this.seasonService.load();
         this.loadSeasons();
       },
-      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+      error: (err) => this.snackBar.open(`Fout: ${this.errorText(err)}`, 'Sluiten', { duration: 5000 }),
     });
   }
 
@@ -763,7 +787,7 @@ export class BeheerComponent implements OnInit {
         this.seasonService.load(s.id);
         this.loadSeasons();
       },
-      error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+      error: (err) => this.snackBar.open(`Fout: ${this.errorText(err)}`, 'Sluiten', { duration: 5000 }),
     });
   }
 
@@ -788,7 +812,7 @@ export class BeheerComponent implements OnInit {
         clearInterval(pollId);
         loadingRef.close();
         this.regeneratingId.set('');
-        this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 });
+        this.snackBar.open(`Fout: ${this.errorText(err)}`, 'Sluiten', { duration: 5000 });
       },
     });
   }
