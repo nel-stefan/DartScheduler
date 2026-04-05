@@ -9,16 +9,26 @@ export class ScoreService {
   private http = inject(HttpClient);
   private base = environment.apiBaseUrl;
 
-  submitResult(matchId: string, data: {
-    leg1Winner: string; leg1Turns: number;
-    leg2Winner: string; leg2Turns: number;
-    leg3Winner: string; leg3Turns: number;
-    playerA180s: number; playerB180s: number;
-    playerAHighestFinish: number; playerBHighestFinish: number;
-    reportedBy: string; rescheduleDate: string;
-    secretaryNr: string; counterNr: string;
-    playedDate: string;
-  }): Observable<void> {
+  submitResult(
+    matchId: string,
+    data: {
+      leg1Winner: string;
+      leg1Turns: number;
+      leg2Winner: string;
+      leg2Turns: number;
+      leg3Winner: string;
+      leg3Turns: number;
+      playerA180s: number;
+      playerB180s: number;
+      playerAHighestFinish: number;
+      playerBHighestFinish: number;
+      reportedBy: string;
+      rescheduleDate: string;
+      secretaryNr: string;
+      counterNr: string;
+      playedDate: string;
+    }
+  ): Observable<void> {
     return this.http.put<void>(`${this.base}/matches/${matchId}/score`, data);
   }
 

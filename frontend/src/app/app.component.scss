@@ -2,7 +2,7 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .toolbar-logo {
@@ -14,40 +14,50 @@
 .toolbar-title {
   font-size: 20px;
   font-weight: 500;
-  letter-spacing: .5px;
+  letter-spacing: 0.5px;
   color: #fff;
   text-decoration: none;
-  &:hover { opacity: .85; }
+  &:hover {
+    opacity: 0.85;
+  }
 }
 
 .toolbar-version {
   font-size: 11px;
-  opacity: .55;
+  opacity: 0.55;
   margin-left: 8px;
   align-self: flex-end;
   margin-bottom: 4px;
 }
 
-.toolbar-spacer { flex: 1; }
+.toolbar-spacer {
+  flex: 1;
+}
 
 .toolbar-nav {
   display: flex;
   gap: 4px;
 
   a {
-    color: rgba(255,255,255,.85);
+    color: rgba(255, 255, 255, 0.85);
     border-radius: 6px;
     display: flex;
     align-items: center;
     gap: 4px;
 
-    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
 
     &.nav-active {
-      background: rgba(255,255,255,.18);
+      background: rgba(255, 255, 255, 0.18);
       color: #fff;
     }
-    &:hover { background: rgba(255,255,255,.12); }
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
   }
 }
 
@@ -56,13 +66,13 @@
   min-width: 160px;
   margin-right: 16px;
   // White-tinted outline/label on primary background
-  --mat-form-field-outlined-outline-color:         rgba(255,255,255,.45);
-  --mat-form-field-outlined-hover-outline-color:   rgba(255,255,255,.75);
-  --mat-form-field-outlined-focus-outline-color:   #fff;
-  --mat-form-field-outlined-label-text-color:      rgba(255,255,255,.7);
+  --mat-form-field-outlined-outline-color: rgba(255, 255, 255, 0.45);
+  --mat-form-field-outlined-hover-outline-color: rgba(255, 255, 255, 0.75);
+  --mat-form-field-outlined-focus-outline-color: #fff;
+  --mat-form-field-outlined-label-text-color: rgba(255, 255, 255, 0.7);
   --mat-form-field-outlined-focus-label-text-color: #fff;
-  --mat-select-trigger-text-color:  #fff;
-  --mat-select-arrow-foreground-color: rgba(255,255,255,.7);
+  --mat-select-trigger-text-color: #fff;
+  --mat-select-arrow-foreground-color: rgba(255, 255, 255, 0.7);
 }
 
 .app-content {
@@ -74,7 +84,9 @@
 @media (max-width: 767px) {
   .toolbar-nav,
   .toolbar-title,
-  .toolbar-version { display: none; }
+  .toolbar-version {
+    display: none;
+  }
 
   .toolbar-season-select {
     min-width: 120px;

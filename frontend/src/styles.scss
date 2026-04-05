@@ -4,18 +4,20 @@
 @include mat.app-background();
 
 $dart-primary: mat.m2-define-palette(mat.$m2-brown-palette, 800, 600, 900);
-$dart-accent:  mat.m2-define-palette(mat.$m2-amber-palette, A400);
-$dart-warn:    mat.m2-define-palette(mat.$m2-red-palette);
+$dart-accent: mat.m2-define-palette(mat.$m2-amber-palette, A400);
+$dart-warn: mat.m2-define-palette(mat.$m2-red-palette);
 
-$dart-theme: mat.m2-define-light-theme((
-  color: (
-    primary: $dart-primary,
-    accent:  $dart-accent,
-    warn:    $dart-warn,
-  ),
-  typography: mat.m2-define-typography-config(),
-  density: 0,
-));
+$dart-theme: mat.m2-define-light-theme(
+  (
+    color: (
+      primary: $dart-primary,
+      accent: $dart-accent,
+      warn: $dart-warn,
+    ),
+    typography: mat.m2-define-typography-config(),
+    density: 0,
+  )
+);
 
 // Only include themes for components actually used — omits datepicker, stepper,
 // autocomplete, list, menu, paginator, slider, tree, etc.
@@ -40,11 +42,12 @@ $dart-theme: mat.m2-define-light-theme((
 @include mat.toolbar-theme($dart-theme);
 @include mat.tooltip-theme($dart-theme);
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   background: #f4f6f4;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
 /* Gespeelde wedstrijdrijen: subtiel groen */
@@ -55,7 +58,14 @@ html, body {
 
 @media print {
   .app-toolbar,
-  .toolbar-nav { display: none !important; }
-  .app-content { padding: 0 !important; margin: 0 !important; }
-  app-standings > div { padding: 0 !important; }
+  .toolbar-nav {
+    display: none !important;
+  }
+  .app-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  app-standings > div {
+    padding: 0 !important;
+  }
 }

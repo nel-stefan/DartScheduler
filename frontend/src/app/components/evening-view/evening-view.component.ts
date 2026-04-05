@@ -10,12 +10,12 @@ import { PlayerService } from '../../services/player.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
-    selector: 'app-evening-view',
-    imports: [CommonModule, RouterModule, MatButtonModule, MatCardModule, MatTableModule],
-    template: `
+  selector: 'app-evening-view',
+  imports: [CommonModule, RouterModule, MatButtonModule, MatCardModule, MatTableModule],
+  template: `
     <div style="padding:24px">
       <button mat-button routerLink="/">← Back</button>
-      <h2>Evening {{ evening()?.number }} – {{ evening()?.date | date:'mediumDate' }}</h2>
+      <h2>Evening {{ evening()?.number }} – {{ evening()?.date | date: 'mediumDate' }}</h2>
 
       @if (evening()) {
         <mat-card>
@@ -32,26 +32,25 @@ import { environment } from '../../../environments/environment';
               <ng-container matColumnDef="score">
                 <th mat-header-cell *matHeaderCellDef>Score</th>
                 <td mat-cell *matCellDef="let m">
-                  {{ m.played ? (m.scoreA + ' – ' + m.scoreB) : '—' }}
+                  {{ m.played ? m.scoreA + ' – ' + m.scoreB : '—' }}
                 </td>
               </ng-container>
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef></th>
                 <td mat-cell *matCellDef="let m">
                   @if (!m.played) {
-                    <button mat-button color="primary"
-                    [routerLink]="['/score', m.id]">Enter Score</button>
+                    <button mat-button color="primary" [routerLink]="['/score', m.id]">Enter Score</button>
                   }
                 </td>
               </ng-container>
               <tr mat-header-row *matHeaderRowDef="cols"></tr>
-              <tr mat-row *matRowDef="let row; columns: cols;"></tr>
+              <tr mat-row *matRowDef="let row; columns: cols"></tr>
             </table>
           </mat-card-content>
         </mat-card>
       }
     </div>
-    `
+  `,
 })
 export class EveningViewComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -67,7 +66,7 @@ export class EveningViewComponent implements OnInit {
     this.http.get<Evening>(`${environment.apiBaseUrl}/schedule/evening/${id}`).subscribe((ev) => {
       this.evening.set(ev);
     });
-    this.playerService.list().subscribe((ps) => (this.players.set(ps)));
+    this.playerService.list().subscribe((ps) => this.players.set(ps));
   }
 
   playerName(id: string): string {

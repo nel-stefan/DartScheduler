@@ -9,93 +9,206 @@ import { MobileStateService } from './mobile-state.service';
 import { displayName } from '../utils/display-name';
 
 @Component({
-    selector: 'app-mobile-score',
-    imports: [CommonModule, ReactiveFormsModule, MatSnackBarModule],
-    styles: [`
-    :host { display: block; min-height: 100dvh; background: #f5f0ee; }
+  selector: 'app-mobile-score',
+  imports: [CommonModule, ReactiveFormsModule, MatSnackBarModule],
+  styles: [
+    `
+      :host {
+        display: block;
+        min-height: 100dvh;
+        background: #f5f0ee;
+      }
 
-    .top-bar {
-      display: flex; align-items: center; gap: 8px;
-      background: #4e342e; color: #fff; padding: 12px 16px;
-      position: sticky; top: 0; z-index: 10;
-    }
-    .back-btn {
-      background: none; border: none; color: #fff; cursor: pointer;
-      font-size: 22px; line-height: 1; padding: 0; display: flex; align-items: center;
-    }
-    .top-bar h2 { margin: 0; font-size: 16px; font-weight: 500; }
+      .top-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #4e342e;
+        color: #fff;
+        padding: 12px 16px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .back-btn {
+        background: none;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        font-size: 22px;
+        line-height: 1;
+        padding: 0;
+        display: flex;
+        align-items: center;
+      }
+      .top-bar h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 500;
+      }
 
-    .match-players {
-      background: #5d4037; color: #fff; padding: 10px 16px;
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    }
-    .match-player { font-size: 14px; font-weight: 600; flex: 1; }
-    .match-player.b { text-align: right; }
-    .match-vs { font-size: 12px; color: rgba(255,255,255,.6); }
+      .match-players {
+        background: #5d4037;
+        color: #fff;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .match-player {
+        font-size: 14px;
+        font-weight: 600;
+        flex: 1;
+      }
+      .match-player.b {
+        text-align: right;
+      }
+      .match-vs {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+      }
 
-    .body { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+      .body {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
 
-    .card {
-      background: #fff; border-radius: 10px; padding: 14px;
-      box-shadow: 0 1px 3px rgba(0,0,0,.1);
-    }
-    .card-title {
-      font-size: 12px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: .5px; color: #6d4c41; margin: 0 0 10px;
-    }
+      .card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .card-title {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6d4c41;
+        margin: 0 0 10px;
+      }
 
-    .winner-row {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
-    }
-    .winner-btn {
-      padding: 12px 8px; border-radius: 8px; border: 2px solid #e0d5d0;
-      background: #faf7f5; font-size: 13px; font-weight: 500; cursor: pointer;
-      text-align: center; transition: border-color .15s, background .15s;
-      word-break: break-word;
-    }
-    .winner-btn.selected { border-color: #4e342e; background: #efebe9; }
+      .winner-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .winner-btn {
+        padding: 12px 8px;
+        border-radius: 8px;
+        border: 2px solid #e0d5d0;
+        background: #faf7f5;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: center;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+        word-break: break-word;
+      }
+      .winner-btn.selected {
+        border-color: #4e342e;
+        background: #efebe9;
+      }
 
-    .field-row {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 0;
-    }
-    .field-label { font-size: 13px; color: #424242; min-width: 70px; }
-    .field-input {
-      flex: 1; padding: 8px 10px; border: 1.5px solid #d7ccc8; border-radius: 8px;
-      font-size: 14px; background: #faf7f5; outline: none;
-    }
-    .field-input:focus { border-color: #4e342e; }
-    .field-select {
-      flex: 1; padding: 8px 10px; border: 1.5px solid #d7ccc8; border-radius: 8px;
-      font-size: 14px; background: #faf7f5; outline: none; cursor: pointer;
-    }
-    .field-select:focus { border-color: #4e342e; }
+      .field-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 0;
+      }
+      .field-label {
+        font-size: 13px;
+        color: #424242;
+        min-width: 70px;
+      }
+      .field-input {
+        flex: 1;
+        padding: 8px 10px;
+        border: 1.5px solid #d7ccc8;
+        border-radius: 8px;
+        font-size: 14px;
+        background: #faf7f5;
+        outline: none;
+      }
+      .field-input:focus {
+        border-color: #4e342e;
+      }
+      .field-select {
+        flex: 1;
+        padding: 8px 10px;
+        border: 1.5px solid #d7ccc8;
+        border-radius: 8px;
+        font-size: 14px;
+        background: #faf7f5;
+        outline: none;
+        cursor: pointer;
+      }
+      .field-select:focus {
+        border-color: #4e342e;
+      }
 
-    .duty-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    }
-    .duty-field label { font-size: 11px; color: #757575; display: block; margin-bottom: 4px; }
-    .duty-select {
-      width: 100%; padding: 8px 10px; border: 1.5px solid #d7ccc8; border-radius: 8px;
-      font-size: 13px; background: #faf7f5; outline: none; box-sizing: border-box; cursor: pointer;
-    }
-    .duty-select:focus { border-color: #4e342e; }
+      .duty-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .duty-field label {
+        font-size: 11px;
+        color: #757575;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .duty-select {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1.5px solid #d7ccc8;
+        border-radius: 8px;
+        font-size: 13px;
+        background: #faf7f5;
+        outline: none;
+        box-sizing: border-box;
+        cursor: pointer;
+      }
+      .duty-select:focus {
+        border-color: #4e342e;
+      }
 
-    .submit-btn {
-      width: 100%; padding: 14px; border: none; border-radius: 10px;
-      background: #4e342e; color: #fff; font-size: 16px; font-weight: 600;
-      cursor: pointer; margin-top: 4px;
-    }
-    .submit-btn:disabled { background: #bcaaa4; cursor: default; }
+      .submit-btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 10px;
+        background: #4e342e;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 4px;
+      }
+      .submit-btn:disabled {
+        background: #bcaaa4;
+        cursor: default;
+      }
 
-    .error { color: #c62828; font-size: 12px; margin-top: 4px; }
-  `],
-    template: `
+      .error {
+        color: #c62828;
+        font-size: 12px;
+        margin-top: 4px;
+      }
+    `,
+  ],
+  template: `
     <div class="top-bar">
       <button class="back-btn" (click)="goBack()">&#8592;</button>
       <h2>Score invoeren</h2>
     </div>
-    
+
     @if (match) {
       <div class="match-players">
         <div class="match-player">{{ nameA }}</div>
@@ -103,21 +216,27 @@ import { displayName } from '../utils/display-name';
         <div class="match-player b">{{ nameB }}</div>
       </div>
     }
-    
+
     @if (match) {
       <form [formGroup]="form" (ngSubmit)="submit()" class="body">
         <!-- Leg 1 -->
         <div class="card">
           <p class="card-title">Leg 1</p>
           <div class="winner-row">
-            <button type="button" class="winner-btn"
+            <button
+              type="button"
+              class="winner-btn"
               [class.selected]="form.get('leg1Winner')?.value === match.playerA"
-              (click)="setWinner('leg1Winner', match.playerA)">
+              (click)="setWinner('leg1Winner', match.playerA)"
+            >
               {{ nameA }}
             </button>
-            <button type="button" class="winner-btn"
+            <button
+              type="button"
+              class="winner-btn"
               [class.selected]="form.get('leg1Winner')?.value === match.playerB"
-              (click)="setWinner('leg1Winner', match.playerB)">
+              (click)="setWinner('leg1Winner', match.playerB)"
+            >
               {{ nameB }}
             </button>
           </div>
@@ -135,14 +254,20 @@ import { displayName } from '../utils/display-name';
         <div class="card">
           <p class="card-title">Leg 2</p>
           <div class="winner-row">
-            <button type="button" class="winner-btn"
+            <button
+              type="button"
+              class="winner-btn"
               [class.selected]="form.get('leg2Winner')?.value === match.playerA"
-              (click)="setWinner('leg2Winner', match.playerA)">
+              (click)="setWinner('leg2Winner', match.playerA)"
+            >
               {{ nameA }}
             </button>
-            <button type="button" class="winner-btn"
+            <button
+              type="button"
+              class="winner-btn"
               [class.selected]="form.get('leg2Winner')?.value === match.playerB"
-              (click)="setWinner('leg2Winner', match.playerB)">
+              (click)="setWinner('leg2Winner', match.playerB)"
+            >
               {{ nameB }}
             </button>
           </div>
@@ -160,14 +285,20 @@ import { displayName } from '../utils/display-name';
         <div class="card">
           <p class="card-title">Leg 3</p>
           <div class="winner-row">
-            <button type="button" class="winner-btn"
+            <button
+              type="button"
+              class="winner-btn"
               [class.selected]="form.get('leg3Winner')?.value === match.playerA"
-              (click)="setWinner('leg3Winner', match.playerA)">
+              (click)="setWinner('leg3Winner', match.playerA)"
+            >
               {{ nameA }}
             </button>
-            <button type="button" class="winner-btn"
+            <button
+              type="button"
+              class="winner-btn"
               [class.selected]="form.get('leg3Winner')?.value === match.playerB"
-              (click)="setWinner('leg3Winner', match.playerB)">
+              (click)="setWinner('leg3Winner', match.playerB)"
+            >
               {{ nameB }}
             </button>
           </div>
@@ -215,7 +346,7 @@ import { displayName } from '../utils/display-name';
                 <option value="">— kies avond —</option>
                 @for (ev of evenings; track ev) {
                   <option [value]="ev.date">
-                    {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
+                    {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date: 'd MMM yyyy' }}
                   </option>
                 }
               </select>
@@ -230,23 +361,23 @@ import { displayName } from '../utils/display-name';
         </button>
       </form>
     }
-    `
+  `,
 })
 export class MobileScoreComponent implements OnInit {
-  private route        = inject(ActivatedRoute);
-  private router       = inject(Router);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private scoreService = inject(ScoreService);
-  private snackBar     = inject(MatSnackBar);
-  private fb           = inject(FormBuilder);
-  private mobileState  = inject(MobileStateService);
+  private snackBar = inject(MatSnackBar);
+  private fb = inject(FormBuilder);
+  private mobileState = inject(MobileStateService);
 
-  match:          Match   | null = null;
-  players:        Player[]       = [];
-  evenings:       Evening[]      = [];
-  eveningId       = '';
-  isInhaalAvond   = false;
-  submitting      = false;
-  errorMsg        = '';
+  match: Match | null = null;
+  players: Player[] = [];
+  evenings: Evening[] = [];
+  eveningId = '';
+  isInhaalAvond = false;
+  submitting = false;
+  errorMsg = '';
 
   turnsOptions = Array.from({ length: 18 }, (_, i) => i + 3); // 3..20
 
@@ -256,40 +387,54 @@ export class MobileScoreComponent implements OnInit {
 
   form = this.fb.group({
     leg1Winner: ['', Validators.required],
-    leg1Turns:  [null as number | null, [Validators.required, Validators.min(1)]],
+    leg1Turns: [null as number | null, [Validators.required, Validators.min(1)]],
     leg2Winner: ['', Validators.required],
-    leg2Turns:  [null as number | null, [Validators.required, Validators.min(1)]],
+    leg2Turns: [null as number | null, [Validators.required, Validators.min(1)]],
     leg3Winner: ['', Validators.required],
-    leg3Turns:  [null as number | null, [Validators.required, Validators.min(1)]],
+    leg3Turns: [null as number | null, [Validators.required, Validators.min(1)]],
     secretaryNr: [''],
-    counterNr:   [''],
-    playedDate:  [''],
+    counterNr: [''],
+    playedDate: [''],
   });
 
-  get nameA(): string { return this.match ? this.playerName(this.match.playerA) : ''; }
-  get nameB(): string { return this.match ? this.playerName(this.match.playerB) : ''; }
+  get nameA(): string {
+    return this.match ? this.playerName(this.match.playerA) : '';
+  }
+  get nameB(): string {
+    return this.match ? this.playerName(this.match.playerB) : '';
+  }
 
   ngOnInit(): void {
-    const state = history.state as { match?: Match; eveningId?: string; players?: Player[]; isInhaalAvond?: boolean; evenings?: Evening[]; lastCatchUpPlayedDate?: string };
-    if (!state?.match) { this.router.navigate(['/m/avond']); return; }
+    const state = history.state as {
+      match?: Match;
+      eveningId?: string;
+      players?: Player[];
+      isInhaalAvond?: boolean;
+      evenings?: Evening[];
+      lastCatchUpPlayedDate?: string;
+    };
+    if (!state?.match) {
+      this.router.navigate(['/m/avond']);
+      return;
+    }
 
-    this.match         = state.match;
-    this.eveningId     = state.eveningId     ?? '';
-    this.players       = state.players       ?? [];
+    this.match = state.match;
+    this.eveningId = state.eveningId ?? '';
+    this.players = state.players ?? [];
     this.isInhaalAvond = state.isInhaalAvond ?? false;
-    this.evenings      = state.evenings      ?? [];
+    this.evenings = state.evenings ?? [];
 
     const defaultPlayedDate = this.match.playedDate || state.lastCatchUpPlayedDate || '';
     this.form.patchValue({
-      leg1Winner:  this.match.leg1Winner,
-      leg1Turns:   this.match.leg1Turns  || null,
-      leg2Winner:  this.match.leg2Winner,
-      leg2Turns:   this.match.leg2Turns  || null,
-      leg3Winner:  this.match.leg3Winner,
-      leg3Turns:   this.match.leg3Turns  || null,
+      leg1Winner: this.match.leg1Winner,
+      leg1Turns: this.match.leg1Turns || null,
+      leg2Winner: this.match.leg2Winner,
+      leg2Turns: this.match.leg2Turns || null,
+      leg3Winner: this.match.leg3Winner,
+      leg3Turns: this.match.leg3Turns || null,
       secretaryNr: this.match.secretaryNr,
-      counterNr:   this.match.counterNr,
-      playedDate:  defaultPlayedDate,
+      counterNr: this.match.counterNr,
+      playedDate: defaultPlayedDate,
     });
   }
 
@@ -303,7 +448,7 @@ export class MobileScoreComponent implements OnInit {
   }
 
   playerName(id: string): string {
-    const p = this.players.find(pl => pl.id === id);
+    const p = this.players.find((pl) => pl.id === id);
     return p ? displayName(p.name) : id;
   }
 
@@ -315,37 +460,39 @@ export class MobileScoreComponent implements OnInit {
     if (!this.match || !this.formValid()) return;
     const v = this.form.value;
     this.submitting = true;
-    this.errorMsg   = '';
+    this.errorMsg = '';
 
-    this.scoreService.submitResult(this.match.id, {
-      leg1Winner:            v.leg1Winner!,
-      leg1Turns:             Number(v.leg1Turns),
-      leg2Winner:            v.leg2Winner!,
-      leg2Turns:             Number(v.leg2Turns),
-      leg3Winner:            v.leg3Winner!,
-      leg3Turns:             Number(v.leg3Turns),
-      playerA180s:           0,
-      playerB180s:           0,
-      playerAHighestFinish:  0,
-      playerBHighestFinish:  0,
-      reportedBy:            '',
-      rescheduleDate:        '',
-      secretaryNr:           v.secretaryNr ?? '',
-      counterNr:             v.counterNr   ?? '',
-      playedDate:            v.playedDate  ?? '',
-    }).subscribe({
-      next: () => {
-        this.submitting = false;
-        if (this.isInhaalAvond && v.playedDate) {
-          this.mobileState.lastCatchUpPlayedDate = v.playedDate;
-        }
-        this.snackBar.open('Score opgeslagen', '', { duration: 2000 });
-        this.router.navigate(['/m/avond']);
-      },
-      error: () => {
-        this.submitting = false;
-        this.errorMsg   = 'Fout bij opslaan, probeer opnieuw.';
-      },
-    });
+    this.scoreService
+      .submitResult(this.match.id, {
+        leg1Winner: v.leg1Winner!,
+        leg1Turns: Number(v.leg1Turns),
+        leg2Winner: v.leg2Winner!,
+        leg2Turns: Number(v.leg2Turns),
+        leg3Winner: v.leg3Winner!,
+        leg3Turns: Number(v.leg3Turns),
+        playerA180s: 0,
+        playerB180s: 0,
+        playerAHighestFinish: 0,
+        playerBHighestFinish: 0,
+        reportedBy: '',
+        rescheduleDate: '',
+        secretaryNr: v.secretaryNr ?? '',
+        counterNr: v.counterNr ?? '',
+        playedDate: v.playedDate ?? '',
+      })
+      .subscribe({
+        next: () => {
+          this.submitting = false;
+          if (this.isInhaalAvond && v.playedDate) {
+            this.mobileState.lastCatchUpPlayedDate = v.playedDate;
+          }
+          this.snackBar.open('Score opgeslagen', '', { duration: 2000 });
+          this.router.navigate(['/m/avond']);
+        },
+        error: () => {
+          this.submitting = false;
+          this.errorMsg = 'Fout bij opslaan, probeer opnieuw.';
+        },
+      });
   }
 }

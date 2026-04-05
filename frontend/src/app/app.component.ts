@@ -14,14 +14,21 @@ import { ConfigService } from './services/config.service';
 import { environment } from '../environments/environment';
 
 @Component({
-    selector: 'app-root',
-    imports: [
-        RouterOutlet, RouterLink, RouterLinkActive, CommonModule, AsyncPipe,
-        MatToolbarModule, MatButtonModule, MatIconModule,
-        MatSelectModule, MatFormFieldModule,
-    ],
-    templateUrl: './app.component.html',
-    styleUrl: './app.component.scss'
+  selector: 'app-root',
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    CommonModule,
+    AsyncPipe,
+    MatToolbarModule,
+    MatButtonModule,
+    MatIconModule,
+    MatSelectModule,
+    MatFormFieldModule,
+  ],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss',
 })
 export class AppComponent implements OnInit {
   protected seasonService = inject(SeasonService);
@@ -36,9 +43,16 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     this.seasonService.load();
     this.configService.load();
-    this.configService.appTitle$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(title => this.titleService.setTitle(title));
-    this.router.events.pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.isMobile = this.router.url.startsWith('/m');
-    });
+    this.configService.appTitle$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((title) => this.titleService.setTitle(title));
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => {
+        this.isMobile = this.router.url.startsWith('/m');
+      });
   }
 }

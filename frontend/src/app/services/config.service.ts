@@ -17,7 +17,7 @@ export class ConfigService {
 
   load(): void {
     this.http.get<AppConfig>(`${environment.apiBaseUrl}/config`).subscribe({
-      next: cfg => {
+      next: (cfg) => {
         this.appTitle$.next(cfg.appTitle);
         this.clubName$.next(cfg.clubName);
       },

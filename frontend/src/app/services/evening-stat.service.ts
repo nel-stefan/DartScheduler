@@ -14,6 +14,9 @@ export class EveningStatService {
   }
 
   upsert(eveningId: string, playerId: string, oneEighties: number, highestFinish: number): Observable<void> {
-    return this.http.put<void>(`${this.base}/evenings/${eveningId}/player-stats/${playerId}`, { oneEighties, highestFinish });
+    return this.http.put<void>(`${this.base}/evenings/${eveningId}/player-stats/${playerId}`, {
+      oneEighties,
+      highestFinish,
+    });
   }
 }

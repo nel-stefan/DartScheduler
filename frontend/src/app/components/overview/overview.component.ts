@@ -41,30 +41,82 @@ export interface ScoreDialogData {
 }
 
 @Component({
-    selector: 'app-score-dialog',
-    imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatButtonModule,
-        MatFormFieldModule, MatInputModule, MatRadioModule, MatSelectModule, MatDividerModule],
-    styles: [`
-    .matchup { font-size: 13px; text-align: center; margin-bottom: 12px; color: #444; }
-    .matchup strong { font-size: 14px; color: #111; }
-    .matchup .vs { color: #999; margin: 0 6px; }
-    .matchup .bof { font-size: 11px; color: #aaa; margin-left: 6px; }
-    .legs-grid {
-      display: grid;
-      grid-template-columns: 48px 1fr 80px;
-      align-items: center;
-      gap: 6px 10px;
-      margin-bottom: 4px;
-      font-size: 13px;
-    }
-    .leg-label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: .4px; }
-    .radio-group { display: flex; gap: 16px; align-items: center; }
-    .radio-group label { display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer; }
-    .radio-group input[type=radio] { cursor: pointer; accent-color: #1976d2; }
-    .turns-field { width: 80px; }
-    .admin-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-  `],
-    template: `
+  selector: 'app-score-dialog',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatRadioModule,
+    MatSelectModule,
+    MatDividerModule,
+  ],
+  styles: [
+    `
+      .matchup {
+        font-size: 13px;
+        text-align: center;
+        margin-bottom: 12px;
+        color: #444;
+      }
+      .matchup strong {
+        font-size: 14px;
+        color: #111;
+      }
+      .matchup .vs {
+        color: #999;
+        margin: 0 6px;
+      }
+      .matchup .bof {
+        font-size: 11px;
+        color: #aaa;
+        margin-left: 6px;
+      }
+      .legs-grid {
+        display: grid;
+        grid-template-columns: 48px 1fr 80px;
+        align-items: center;
+        gap: 6px 10px;
+        margin-bottom: 4px;
+        font-size: 13px;
+      }
+      .leg-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .radio-group {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .radio-group input[type='radio'] {
+        cursor: pointer;
+        accent-color: #1976d2;
+      }
+      .turns-field {
+        width: 80px;
+      }
+      .admin-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+    `,
+  ],
+  template: `
     <h2 mat-dialog-title style="font-size:16px;margin-bottom:4px">Score invoeren</h2>
     <mat-dialog-content style="min-width:400px;padding-top:0">
       <div class="matchup">
@@ -82,8 +134,12 @@ export interface ScoreDialogData {
           <!-- Partij 1 -->
           <span class="leg-label">P1</span>
           <div class="radio-group">
-            <label><input type="radio" [value]="data.match.playerA" formControlName="leg1Winner"> {{ data.nameA }}</label>
-            <label><input type="radio" [value]="data.match.playerB" formControlName="leg1Winner"> {{ data.nameB }}</label>
+            <label
+              ><input type="radio" [value]="data.match.playerA" formControlName="leg1Winner" /> {{ data.nameA }}</label
+            >
+            <label
+              ><input type="radio" [value]="data.match.playerB" formControlName="leg1Winner" /> {{ data.nameB }}</label
+            >
           </div>
           <mat-form-field class="turns-field" subscriptSizing="dynamic">
             <mat-select formControlName="leg1Turns">
@@ -96,8 +152,12 @@ export interface ScoreDialogData {
           <!-- Partij 2 -->
           <span class="leg-label">P2</span>
           <div class="radio-group">
-            <label><input type="radio" [value]="data.match.playerA" formControlName="leg2Winner"> {{ data.nameA }}</label>
-            <label><input type="radio" [value]="data.match.playerB" formControlName="leg2Winner"> {{ data.nameB }}</label>
+            <label
+              ><input type="radio" [value]="data.match.playerA" formControlName="leg2Winner" /> {{ data.nameA }}</label
+            >
+            <label
+              ><input type="radio" [value]="data.match.playerB" formControlName="leg2Winner" /> {{ data.nameB }}</label
+            >
           </div>
           <mat-form-field class="turns-field" subscriptSizing="dynamic">
             <mat-select formControlName="leg2Turns">
@@ -110,8 +170,12 @@ export interface ScoreDialogData {
           <!-- Partij 3 -->
           <span class="leg-label">P3</span>
           <div class="radio-group">
-            <label><input type="radio" [value]="data.match.playerA" formControlName="leg3Winner"> {{ data.nameA }}</label>
-            <label><input type="radio" [value]="data.match.playerB" formControlName="leg3Winner"> {{ data.nameB }}</label>
+            <label
+              ><input type="radio" [value]="data.match.playerA" formControlName="leg3Winner" /> {{ data.nameA }}</label
+            >
+            <label
+              ><input type="radio" [value]="data.match.playerB" formControlName="leg3Winner" /> {{ data.nameB }}</label
+            >
           </div>
           <mat-form-field class="turns-field" subscriptSizing="dynamic">
             <mat-select formControlName="leg3Turns">
@@ -152,7 +216,7 @@ export interface ScoreDialogData {
                 <mat-option value="">— kies avond —</mat-option>
                 @for (ev of data.evenings; track ev) {
                   <mat-option [value]="ev.date">
-                    {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date:'d MMM yyyy' }}
+                    {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }} — {{ ev.date | date: 'd MMM yyyy' }}
                   </mat-option>
                 }
               </mat-select>
@@ -165,7 +229,7 @@ export interface ScoreDialogData {
       <button mat-button (click)="dialogRef.close()">Annuleren</button>
       <button mat-raised-button color="primary" [disabled]="!isValid()" (click)="submit()">Opslaan</button>
     </mat-dialog-actions>
-    `
+  `,
 })
 export class ScoreDialogComponent {
   dialogRef = inject(MatDialogRef<ScoreDialogComponent>);
@@ -177,14 +241,14 @@ export class ScoreDialogComponent {
 
   form = this.fb.group({
     leg1Winner: [this.data.match.leg1Winner || '', Validators.required],
-    leg1Turns:  [this.data.match.leg1Turns  || null as number | null],
+    leg1Turns: [this.data.match.leg1Turns || (null as number | null)],
     leg2Winner: [this.data.match.leg2Winner || '', Validators.required],
-    leg2Turns:  [this.data.match.leg2Turns  || null as number | null],
+    leg2Turns: [this.data.match.leg2Turns || (null as number | null)],
     leg3Winner: [this.data.match.leg3Winner || ''],
-    leg3Turns:  [this.data.match.leg3Turns  || null as number | null],
+    leg3Turns: [this.data.match.leg3Turns || (null as number | null)],
     secretaryNr: [this.data.match.secretaryNr || ''],
-    counterNr:   [this.data.match.counterNr   || ''],
-    playedDate:  [this.data.match.playedDate || this.data.defaultPlayedDate || ''],
+    counterNr: [this.data.match.counterNr || ''],
+    playedDate: [this.data.match.playedDate || this.data.defaultPlayedDate || ''],
   });
 
   isValid(): boolean {
@@ -196,21 +260,21 @@ export class ScoreDialogComponent {
     if (!this.isValid()) return;
     const v = this.form.value;
     this.dialogRef.close({
-      leg1Winner:     v.leg1Winner ?? '',
-      leg1Turns:      v.leg1Turns ?? 0,
-      leg2Winner:     v.leg2Winner ?? '',
-      leg2Turns:      v.leg2Turns ?? 0,
-      leg3Winner:     v.leg3Winner ?? '',
-      leg3Turns:      v.leg3Turns ?? 0,
-      playerA180s:          0,
-      playerB180s:          0,
+      leg1Winner: v.leg1Winner ?? '',
+      leg1Turns: v.leg1Turns ?? 0,
+      leg2Winner: v.leg2Winner ?? '',
+      leg2Turns: v.leg2Turns ?? 0,
+      leg3Winner: v.leg3Winner ?? '',
+      leg3Turns: v.leg3Turns ?? 0,
+      playerA180s: 0,
+      playerB180s: 0,
       playerAHighestFinish: 0,
       playerBHighestFinish: 0,
-      reportedBy:     '',
+      reportedBy: '',
       rescheduleDate: '',
-      secretaryNr:    v.secretaryNr ?? '',
-      counterNr:      v.counterNr ?? '',
-      playedDate:     v.playedDate ?? '',
+      secretaryNr: v.secretaryNr ?? '',
+      counterNr: v.counterNr ?? '',
+      playedDate: v.playedDate ?? '',
     });
   }
 }
@@ -219,45 +283,52 @@ export class ScoreDialogComponent {
 // AbsentDialog — report one player absent for an evening
 // ---------------------------------------------------------------------------
 
-interface AbsentDialogData { evening: Evening; players: Player[]; }
+interface AbsentDialogData {
+  evening: Evening;
+  players: Player[];
+}
 
 @Component({
-    selector: 'app-absent-dialog',
-    imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule,
-        MatSelectModule, MatInputModule, MatIconModule],
-    template: `
+  selector: 'app-absent-dialog',
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+    MatIconModule,
+  ],
+  template: `
     <h2 mat-dialog-title>Speler afmelden — avond {{ data.evening.number }}</h2>
     <mat-dialog-content style="min-width:420px;padding-top:8px">
-    
       <mat-form-field style="width:100%">
         <mat-label>Afwezige speler</mat-label>
         <mat-select [(ngModel)]="selectedPlayerId" (ngModelChange)="onPlayerChange()">
           @for (p of selectablePlayers; track p) {
-            <mat-option [value]="p.id">
-              {{ p.nr }} — {{ p.name }}
-            </mat-option>
+            <mat-option [value]="p.id"> {{ p.nr }} — {{ p.name }} </mat-option>
           }
         </mat-select>
       </mat-form-field>
-    
+
       <mat-form-field style="width:100%;margin-top:4px">
         <mat-label>Afgemeld door</mat-label>
-        <input matInput [(ngModel)]="reportedBy" placeholder="naam of nr">
+        <input matInput [(ngModel)]="reportedBy" placeholder="naam of nr" />
       </mat-form-field>
-    
+
       @if (selectedPlayerId) {
         <div style="margin-top:12px">
           <div style="font-size:13px;font-weight:500;margin-bottom:6px;color:#333">
             Wedstrijden die als afgemeld worden gemarkeerd:
           </div>
           @if (affectedMatches.length === 0) {
-            <div style="color:#9e9e9e;font-size:13px">
-              Geen openstaande wedstrijden gevonden.
-            </div>
+            <div style="color:#9e9e9e;font-size:13px">Geen openstaande wedstrijden gevonden.</div>
           }
           @for (m of affectedMatches; track m) {
             <div
-              style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:#fff3e0;border-radius:4px;margin-bottom:4px;font-size:13px">
+              style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:#fff3e0;border-radius:4px;margin-bottom:4px;font-size:13px"
+            >
               <mat-icon style="font-size:16px;width:16px;height:16px;color:#e65100">warning</mat-icon>
               <strong>{{ playerLabel(m.playerA) }}</strong>
               <span style="color:#999">vs</span>
@@ -269,16 +340,19 @@ interface AbsentDialogData { evening: Evening; players: Player[]; }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Annuleren</button>
-      <button mat-raised-button color="warn"
+      <button
+        mat-raised-button
+        color="warn"
         [disabled]="!selectedPlayerId || affectedMatches.length === 0"
-        (click)="confirm()">
+        (click)="confirm()"
+      >
         <mat-icon>person_off</mat-icon> Afmelden
       </button>
     </mat-dialog-actions>
-    `
+  `,
 })
 export class AbsentDialogComponent {
-  data      = inject<AbsentDialogData>(MAT_DIALOG_DATA);
+  data = inject<AbsentDialogData>(MAT_DIALOG_DATA);
   dialogRef = inject(MatDialogRef<AbsentDialogComponent>);
 
   selectedPlayerId = '';
@@ -287,27 +361,28 @@ export class AbsentDialogComponent {
   get selectablePlayers(): Player[] {
     const ids = new Set<string>();
     for (const m of this.data.evening.matches ?? []) {
-      if (!m.played && !m.reportedBy) { ids.add(m.playerA); ids.add(m.playerB); }
+      if (!m.played && !m.reportedBy) {
+        ids.add(m.playerA);
+        ids.add(m.playerB);
+      }
     }
-    return this.data.players
-      .filter(p => ids.has(p.id))
-      .sort((a, b) => parseInt(a.nr || '0') - parseInt(b.nr || '0'));
+    return this.data.players.filter((p) => ids.has(p.id)).sort((a, b) => parseInt(a.nr || '0') - parseInt(b.nr || '0'));
   }
 
   get affectedMatches(): Match[] {
     if (!this.selectedPlayerId) return [];
     return (this.data.evening.matches ?? []).filter(
-      m => !m.played && (m.playerA === this.selectedPlayerId || m.playerB === this.selectedPlayerId)
+      (m) => !m.played && (m.playerA === this.selectedPlayerId || m.playerB === this.selectedPlayerId)
     );
   }
 
   playerLabel(id: string): string {
-    const p = this.data.players.find(p => p.id === id);
+    const p = this.data.players.find((p) => p.id === id);
     return p ? `${p.nr} ${p.name}` : id.slice(0, 6);
   }
 
   onPlayerChange(): void {
-    const p = this.data.players.find(p => p.id === this.selectedPlayerId);
+    const p = this.data.players.find((p) => p.id === this.selectedPlayerId);
     if (p) this.reportedBy = p.nr ? `${p.nr} ${p.name}` : p.name;
   }
 
@@ -321,69 +396,125 @@ export class AbsentDialogComponent {
 // ---------------------------------------------------------------------------
 
 @Component({
-    selector: 'app-overview',
-    imports: [
-        CommonModule,
-        MatButtonModule, MatCardModule, MatTableModule, MatTabsModule,
-        MatSnackBarModule, MatDialogModule, MatIconModule,
-        MatTooltipModule, MatSelectModule, MatFormFieldModule, MatInputModule,
-        FormsModule, ReactiveFormsModule,
-    ],
-    styles: [`
-    .schedule-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .schedule-title { margin: 0; font-size: 22px; font-weight: 500; }
-    table { width: 100%; }
-    :host ::ng-deep .mat-mdc-tab-header { display: none; }
-    .score-cell { font-weight: 600; color: #2e7d32; }
-    .vs-cell { color: #9e9e9e; width: 36px; text-align: center; }
-    .empty-state {
-      padding: 48px 0;
-      text-align: center;
-      color: #757575;
-    }
-    .empty-state mat-icon { font-size: 64px; width: 64px; height: 64px; color: #bdbdbd; }
-    .card-header-row { display: flex; align-items: flex-start; justify-content: space-between; }
+  selector: 'app-overview',
+  imports: [
+    CommonModule,
+    MatButtonModule,
+    MatCardModule,
+    MatTableModule,
+    MatTabsModule,
+    MatSnackBarModule,
+    MatDialogModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    MatInputModule,
+    FormsModule,
+    ReactiveFormsModule,
+  ],
+  styles: [
+    `
+      .schedule-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .schedule-title {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 500;
+      }
+      table {
+        width: 100%;
+      }
+      :host ::ng-deep .mat-mdc-tab-header {
+        display: none;
+      }
+      .score-cell {
+        font-weight: 600;
+        color: #2e7d32;
+      }
+      .vs-cell {
+        color: #9e9e9e;
+        width: 36px;
+        text-align: center;
+      }
+      .empty-state {
+        padding: 48px 0;
+        text-align: center;
+        color: #757575;
+      }
+      .empty-state mat-icon {
+        font-size: 64px;
+        width: 64px;
+        height: 64px;
+        color: #bdbdbd;
+      }
+      .card-header-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
 
-    .print-only { display: none; }
-    .print-schedule-table {
-      width: 100%;
-      border-collapse: collapse;
-      border: 1px solid #bbb;
-      font-size: 8pt;
-      table-layout: fixed;
-    }
-    .print-schedule-table th, .print-schedule-table td {
-      border: 1px solid #bbb;
-      padding: 2px 4px;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-    .print-schedule-table th { background: #f0f0f0; font-weight: 600; }
-    .print-schedule-table td.row-nr { width: 24px; color: #666; font-size: 7pt; }
-    .print-schedule-title { font-size: 11pt; font-weight: 600; margin: 0 0 4px 0; }
+      .print-only {
+        display: none;
+      }
+      .print-schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #bbb;
+        font-size: 8pt;
+        table-layout: fixed;
+      }
+      .print-schedule-table th,
+      .print-schedule-table td {
+        border: 1px solid #bbb;
+        padding: 2px 4px;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .print-schedule-table th {
+        background: #f0f0f0;
+        font-weight: 600;
+      }
+      .print-schedule-table td.row-nr {
+        width: 24px;
+        color: #666;
+        font-size: 7pt;
+      }
+      .print-schedule-title {
+        font-size: 11pt;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+      }
 
-    @media print {
-      @page { size: A4 landscape; margin: 8mm; }
-      .schedule-header { display: none !important; }
-      mat-tab-group  { display: none !important; }
-      .print-only    { display: block !important; }
-    }
-  `],
-    template: `
+      @media print {
+        @page {
+          size: A4 landscape;
+          margin: 8mm;
+        }
+        .schedule-header {
+          display: none !important;
+        }
+        mat-tab-group {
+          display: none !important;
+        }
+        .print-only {
+          display: block !important;
+        }
+      }
+    `,
+  ],
+  template: `
     <div class="schedule-header">
       <h2 class="schedule-title">{{ schedule()?.competitionName ?? 'DartScheduler' }}</h2>
 
       @if (schedule()) {
-        <button mat-stroked-button (click)="printSchedule()">
-          <mat-icon>print</mat-icon> Afdrukken
-        </button>
+        <button mat-stroked-button (click)="printSchedule()"><mat-icon>print</mat-icon> Afdrukken</button>
       }
       @if (schedule()) {
         <mat-form-field style="min-width:320px" subscriptSizing="dynamic">
@@ -391,20 +522,27 @@ export class AbsentDialogComponent {
           <mat-select [ngModel]="activeTab()" (ngModelChange)="activeTab.set($event)">
             <mat-select-trigger>
               @if (schedule()!.evenings[activeTab()]; as ev) {
-                <span [style.background]="eveningColor(ev)"
-                style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle;flex-shrink:0"></span>
+                <span
+                  [style.background]="eveningColor(ev)"
+                  style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle;flex-shrink:0"
+                ></span>
                 {{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }}
-                <span style="color:#9e9e9e;margin-left:4px">— {{ ev.date | date:'d MMM' }}</span>
+                <span style="color:#9e9e9e;margin-left:4px">— {{ ev.date | date: 'd MMM' }}</span>
               }
             </mat-select-trigger>
             @for (ev of schedule()!.evenings; track ev; let i = $index) {
               <mat-option [value]="i">
                 <span style="display:flex;align-items:center;gap:8px;width:100%">
-                  <span [style.background]="eveningColor(ev)"
-                  style="width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block"></span>
+                  <span
+                    [style.background]="eveningColor(ev)"
+                    style="width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block"
+                  ></span>
                   <span style="flex:1">{{ ev.isInhaalAvond ? 'Inhaalavond' : 'Avond ' + ev.number }}</span>
-                  <span style="color:#9e9e9e;font-size:12px">{{ ev.date | date:'d MMM' }}</span>
-                  <span [style.color]="eveningColor(ev)" style="font-size:12px;min-width:32px;text-align:right;font-weight:500">
+                  <span style="color:#9e9e9e;font-size:12px">{{ ev.date | date: 'd MMM' }}</span>
+                  <span
+                    [style.color]="eveningColor(ev)"
+                    style="font-size:12px;min-width:32px;text-align:right;font-weight:500"
+                  >
                     {{ eveningCountLabel(ev) }}
                   </span>
                 </span>
@@ -414,17 +552,20 @@ export class AbsentDialogComponent {
         </mat-form-field>
       }
     </div>
-    
+
     @if (!schedule()) {
       <div class="empty-state">
         <mat-icon>sports_bar</mat-icon>
         <p>Nog geen schema. Ga naar <strong>Beheer</strong> om spelers te importeren en een schema te genereren.</p>
       </div>
     }
-    
+
     @if (schedule()) {
-      <mat-tab-group animationDuration="150ms" [selectedIndex]="activeTab()"
-        (selectedIndexChange)="activeTab.set($event)">
+      <mat-tab-group
+        animationDuration="150ms"
+        [selectedIndex]="activeTab()"
+        (selectedIndexChange)="activeTab.set($event)"
+      >
         @for (ev of schedule()!.evenings; track ev) {
           <mat-tab>
             <!-- Tab-inhoud -->
@@ -442,7 +583,7 @@ export class AbsentDialogComponent {
                       @if (!ev.isInhaalAvond) {
                         <span>Avond {{ ev.number }}</span>
                       }
-                      &mdash; {{ ev.date | date:'EEEE d MMMM yyyy' }}
+                      &mdash; {{ ev.date | date: 'EEEE d MMMM yyyy' }}
                     </mat-card-title>
                     @if (!ev.isInhaalAvond) {
                       <mat-card-subtitle>
@@ -457,14 +598,12 @@ export class AbsentDialogComponent {
                   </div>
                   <div style="display:flex;gap:4px;align-items:center">
                     @if (ev.matches.length > 0) {
-                      <button mat-stroked-button (click)="openAbsentDialog(ev)" matTooltip="Speler afmelden"
-                        >
+                      <button mat-stroked-button (click)="openAbsentDialog(ev)" matTooltip="Speler afmelden">
                         <mat-icon>person_off</mat-icon> Afmelden
                       </button>
                     }
                     @if (ev.matches.length > 0) {
-                      <button mat-stroked-button (click)="openStatDialog(ev)" matTooltip="180s / Hoge Finish invoeren"
-                        >
+                      <button mat-stroked-button (click)="openStatDialog(ev)" matTooltip="180s / Hoge Finish invoeren">
                         <mat-icon>emoji_events</mat-icon> 180 / HF
                       </button>
                     }
@@ -478,8 +617,7 @@ export class AbsentDialogComponent {
                       <mat-icon>print</mat-icon>
                     </button>
                     @if (ev.isInhaalAvond) {
-                      <button mat-icon-button color="warn" (click)="deleteEvening(ev)" matTooltip="Avond verwijderen"
-                        >
+                      <button mat-icon-button color="warn" (click)="deleteEvening(ev)" matTooltip="Avond verwijderen">
                         <mat-icon>delete</mat-icon>
                       </button>
                     }
@@ -488,16 +626,19 @@ export class AbsentDialogComponent {
               </mat-card-header>
               <mat-card-content>
                 @if (ev.isInhaalAvond && ev.matches.length === 0) {
-                  <p
-                    style="color:#757575;text-align:center;padding:24px 0;margin:0">
+                  <p style="color:#757575;text-align:center;padding:24px 0;margin:0">
                     Geen uitgestelde wedstrijden gevonden voor deze inhaalavond.
                   </p>
                 }
                 @if (ev.isInhaalAvond && ev.matches.length > 0) {
-                  <mat-form-field
-                    style="width:100%;margin-bottom:8px" subscriptSizing="dynamic">
+                  <mat-form-field style="width:100%;margin-bottom:8px" subscriptSizing="dynamic">
                     <mat-label>Zoek op nr (bijv. 12 of 12 34)</mat-label>
-                    <input matInput [ngModel]="catchUpSearch()" (ngModelChange)="catchUpSearch.set($event)" placeholder="nr A   nr B">
+                    <input
+                      matInput
+                      [ngModel]="catchUpSearch()"
+                      (ngModelChange)="catchUpSearch.set($event)"
+                      placeholder="nr A   nr B"
+                    />
                     @if (catchUpSearch()) {
                       <button matSuffix mat-icon-button (click)="catchUpSearch.set('')">
                         <mat-icon>close</mat-icon>
@@ -527,9 +668,10 @@ export class AbsentDialogComponent {
                           <span>{{ m.scoreA }} – {{ m.scoreB }}</span>
                         }
                         @if (!m.played && m.reportedBy) {
-                          <span
-                            style="color:#e65100;font-size:12px;font-weight:500">
-                            <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">schedule</mat-icon>
+                          <span style="color:#e65100;font-size:12px;font-weight:500">
+                            <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px"
+                              >schedule</mat-icon
+                            >
                             Afgemeld: {{ m.reportedBy }}
                           </span>
                         }
@@ -542,22 +684,24 @@ export class AbsentDialogComponent {
                       <th mat-header-cell *matHeaderCellDef></th>
                       <td mat-cell *matCellDef="let m" style="text-align:right">
                         @if (!m.played) {
-                          <button mat-stroked-button color="primary"
-                            (click)="openScore(m, ev.isInhaalAvond)">
+                          <button mat-stroked-button color="primary" (click)="openScore(m, ev.isInhaalAvond)">
                             <mat-icon>edit</mat-icon> Score
                           </button>
                         }
                         @if (m.played) {
-                          <button mat-button color="accent"
-                            (click)="openScore(m, ev.isInhaalAvond)" matTooltip="Score wijzigen">
+                          <button
+                            mat-button
+                            color="accent"
+                            (click)="openScore(m, ev.isInhaalAvond)"
+                            matTooltip="Score wijzigen"
+                          >
                             <mat-icon>check_circle</mat-icon> Wijzigen
                           </button>
                         }
                       </td>
                     </ng-container>
                     <tr mat-header-row *matHeaderRowDef="matchCols"></tr>
-                    <tr mat-row *matRowDef="let row; columns: matchCols;"
-                    [class.match-played]="row.played"></tr>
+                    <tr mat-row *matRowDef="let row; columns: matchCols" [class.match-played]="row.played"></tr>
                   </table>
                 }
               </mat-card-content>
@@ -566,7 +710,7 @@ export class AbsentDialogComponent {
         }
       </mat-tab-group>
     }
-    
+
     <!-- Print-only schedule matrix -->
     @if (schedule() && printData) {
       <div class="print-only">
@@ -578,7 +722,7 @@ export class AbsentDialogComponent {
               <th class="row-nr">#</th>
               @for (ev of printData.half1; track ev) {
                 <th>
-                  {{ ev.number }}<br><span style="font-weight:400">{{ ev.date | date:'d MMM' }}</span>
+                  {{ ev.number }}<br /><span style="font-weight:400">{{ ev.date | date: 'd MMM' }}</span>
                 </th>
               }
             </tr>
@@ -591,7 +735,8 @@ export class AbsentDialogComponent {
                   @if (col.isCatchUp && i === 0) {
                     <td
                       [attr.rowspan]="printData.rowCount"
-                      style="writing-mode:vertical-lr;text-align:center;vertical-align:middle;font-weight:600;letter-spacing:3px;color:#7b1fa2;font-size:7pt">
+                      style="writing-mode:vertical-lr;text-align:center;vertical-align:middle;font-weight:600;letter-spacing:3px;color:#7b1fa2;font-size:7pt"
+                    >
                       INHAALAVOND
                     </td>
                   }
@@ -612,7 +757,7 @@ export class AbsentDialogComponent {
               <th class="row-nr">#</th>
               @for (ev of printData.half2; track ev) {
                 <th>
-                  {{ ev.number }}<br><span style="font-weight:400">{{ ev.date | date:'d MMM' }}</span>
+                  {{ ev.number }}<br /><span style="font-weight:400">{{ ev.date | date: 'd MMM' }}</span>
                 </th>
               }
             </tr>
@@ -625,7 +770,8 @@ export class AbsentDialogComponent {
                   @if (col.isCatchUp && i === 0) {
                     <td
                       [attr.rowspan]="printData.rowCount"
-                      style="writing-mode:vertical-lr;text-align:center;vertical-align:middle;font-weight:600;letter-spacing:3px;color:#7b1fa2;font-size:7pt">
+                      style="writing-mode:vertical-lr;text-align:center;vertical-align:middle;font-weight:600;letter-spacing:3px;color:#7b1fa2;font-size:7pt"
+                    >
                       INHAALAVOND
                     </td>
                   }
@@ -639,33 +785,35 @@ export class AbsentDialogComponent {
         </table>
       </div>
     }
-    `
+  `,
 })
 export class OverviewComponent implements OnInit {
-  private scheduleService  = inject(ScheduleService);
-  private playerService    = inject(PlayerService);
-  private scoreService     = inject(ScoreService);
-  private seasonService    = inject(SeasonService);
-  private snackBar         = inject(MatSnackBar);
-  private dialog           = inject(MatDialog);
-  private destroyRef       = inject(DestroyRef);
+  private scheduleService = inject(ScheduleService);
+  private playerService = inject(PlayerService);
+  private scoreService = inject(ScoreService);
+  private seasonService = inject(SeasonService);
+  private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
 
   schedule = signal<Schedule | null>(null);
-  players  = signal<Player[]>([]);
+  players = signal<Player[]>([]);
   activeTab = signal(0);
   matchCols = ['playerA', 'vs', 'playerB', 'score', 'actions'];
   catchUpSearch = signal('');
   lastCatchUpPlayedDate = signal('');
 
   ngOnInit(): void {
-    this.seasonService.selectedId$.pipe(
-      takeUntilDestroyed(this.destroyRef),
-      filter(id => !!id),
-      distinctUntilChanged(),
-    ).subscribe(id => {
-      if (this.schedule()?.id !== id) this.loadScheduleById(id);
-    });
-    this.playerService.list().subscribe({ next: (ps) => (this.players.set(ps)), error: () => {} });
+    this.seasonService.selectedId$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((id) => !!id),
+        distinctUntilChanged()
+      )
+      .subscribe((id) => {
+        if (this.schedule()?.id !== id) this.loadScheduleById(id);
+      });
+    this.playerService.list().subscribe({ next: (ps) => this.players.set(ps), error: () => {} });
   }
 
   loadScheduleById(id: string, preserveTab = false): void {
@@ -681,7 +829,7 @@ export class OverviewComponent implements OnInit {
   private firstUpcomingTab(evenings: Evening[]): number {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const idx = evenings.findIndex(ev => new Date(ev.date) >= today);
+    const idx = evenings.findIndex((ev) => new Date(ev.date) >= today);
     return idx >= 0 ? idx : evenings.length - 1;
   }
 
@@ -699,23 +847,25 @@ export class OverviewComponent implements OnInit {
     const q = this.catchUpSearch().trim().toLowerCase();
     if (!q) return ev.matches;
     const tokens = q.split(/\s+/);
-    return ev.matches.filter(m => {
+    return ev.matches.filter((m) => {
       const nrA = this.playerNr(m.playerA).toLowerCase();
       const nrB = this.playerNr(m.playerB).toLowerCase();
-      return tokens.every(t => nrA.includes(t) || nrB.includes(t));
+      return tokens.every((t) => nrA.includes(t) || nrB.includes(t));
     });
   }
 
   playedCount(ev: Evening): number {
-    return ev.matches?.filter(m => m.played).length ?? 0;
+    return ev.matches?.filter((m) => m.played).length ?? 0;
   }
 
-  openCount(ev: Evening):  number  { return (ev.matches ?? []).filter(m => !m.played).length; }
+  openCount(ev: Evening): number {
+    return (ev.matches ?? []).filter((m) => !m.played).length;
+  }
 
   eveningColor(ev: Evening): string {
     if (ev.isInhaalAvond) return '#7b1fa2';
     const played = this.playedCount(ev);
-    const total  = ev.matches?.length ?? 0;
+    const total = ev.matches?.length ?? 0;
     if (total === 0 || played === 0) return '#9e9e9e';
     if (played === total) return '#2e7d32';
     return '#f57c00';
@@ -733,50 +883,63 @@ export class OverviewComponent implements OnInit {
         match,
         nameA: this.playerName(match.playerA),
         nameB: this.playerName(match.playerB),
-        nrA:   this.playerNr(match.playerA),
-        nrB:   this.playerNr(match.playerB),
+        nrA: this.playerNr(match.playerA),
+        nrB: this.playerNr(match.playerB),
         players: this.players(),
         isInhaalAvond,
         evenings: this.schedule()?.evenings ?? [],
         defaultPlayedDate: this.lastCatchUpPlayedDate(),
       } as ScoreDialogData,
     });
-    ref.afterClosed().subscribe((result: {
-      leg1Winner: string; leg1Turns: number;
-      leg2Winner: string; leg2Turns: number;
-      leg3Winner: string; leg3Turns: number;
-      playerA180s: number; playerB180s: number;
-      playerAHighestFinish: number; playerBHighestFinish: number;
-      reportedBy: string; rescheduleDate: string;
-      secretaryNr: string; counterNr: string;
-      playedDate: string;
-    } | undefined) => {
-      if (!result) return;
-      this.scoreService.submitResult(match.id, { ...result, playedDate: result.playedDate ?? '' }).subscribe({
-        next: () => {
-          if (isInhaalAvond && result.playedDate) this.lastCatchUpPlayedDate.set(result.playedDate);
-          this.snackBar.open('Resultaat opgeslagen!', 'OK', { duration: 2000 });
-          if (this.schedule()) this.loadScheduleById(this.schedule()!.id, true);
-        },
-        error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
-      });
-    });
+    ref.afterClosed().subscribe(
+      (
+        result:
+          | {
+              leg1Winner: string;
+              leg1Turns: number;
+              leg2Winner: string;
+              leg2Turns: number;
+              leg3Winner: string;
+              leg3Turns: number;
+              playerA180s: number;
+              playerB180s: number;
+              playerAHighestFinish: number;
+              playerBHighestFinish: number;
+              reportedBy: string;
+              rescheduleDate: string;
+              secretaryNr: string;
+              counterNr: string;
+              playedDate: string;
+            }
+          | undefined
+      ) => {
+        if (!result) return;
+        this.scoreService.submitResult(match.id, { ...result, playedDate: result.playedDate ?? '' }).subscribe({
+          next: () => {
+            if (isInhaalAvond && result.playedDate) this.lastCatchUpPlayedDate.set(result.playedDate);
+            this.snackBar.open('Resultaat opgeslagen!', 'OK', { duration: 2000 });
+            if (this.schedule()) this.loadScheduleById(this.schedule()!.id, true);
+          },
+          error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
+        });
+      }
+    );
   }
 
   get printData(): {
-    half1: { number: number; date: string; isCatchUp: boolean }[]; rows1: string[][];
-    half2: { number: number; date: string; isCatchUp: boolean }[]; rows2: string[][];
+    half1: { number: number; date: string; isCatchUp: boolean }[];
+    rows1: string[][];
+    half2: { number: number; date: string; isCatchUp: boolean }[];
+    rows2: string[][];
     rowCount: number;
   } | null {
     if (!this.schedule()) return null;
     const evs = this.schedule()!.evenings;
     const mid = Math.ceil(evs.length / 2);
-    const maxRows = Math.max(0, ...evs
-      .filter(e => !e.isInhaalAvond)
-      .map(ev => ev.matches?.length ?? 0));
+    const maxRows = Math.max(0, ...evs.filter((e) => !e.isInhaalAvond).map((ev) => ev.matches?.length ?? 0));
     const buildRows = (cols: Evening[]): string[][] =>
       Array.from({ length: maxRows }, (_, ri) =>
-        cols.map(ev => {
+        cols.map((ev) => {
           if (ev.isInhaalAvond) return '';
           const m = ev.matches?.[ri];
           if (!m) return '';
@@ -817,18 +980,21 @@ export class OverviewComponent implements OnInit {
   }
 
   openStatDialog(ev: Evening): void {
-    const playerIdsOnEvening = new Set(ev.matches.flatMap(m => [m.playerA, m.playerB]));
+    const playerIdsOnEvening = new Set(ev.matches.flatMap((m) => [m.playerA, m.playerB]));
     const players = this.players()
-      .filter(p => playerIdsOnEvening.has(p.id))
-      .map(p => ({ id: p.id, name: p.name }));
-    this.dialog.open(EveningStatDialogComponent, {
-      data: {
-        scheduleId: this.schedule()!.id,
-        players,
-      } as EveningStatDialogData,
-    }).afterClosed().subscribe(saved => {
-      if (saved) this.snackBar.open('Opgeslagen', '', { duration: 2000 });
-    });
+      .filter((p) => playerIdsOnEvening.has(p.id))
+      .map((p) => ({ id: p.id, name: p.name }));
+    this.dialog
+      .open(EveningStatDialogComponent, {
+        data: {
+          scheduleId: this.schedule()!.id,
+          players,
+        } as EveningStatDialogData,
+      })
+      .afterClosed()
+      .subscribe((saved) => {
+        if (saved) this.snackBar.open('Opgeslagen', '', { duration: 2000 });
+      });
   }
 
   exportEvening(eveningId: string): void {
@@ -853,5 +1019,4 @@ export class OverviewComponent implements OnInit {
       error: (err) => this.snackBar.open(`Fout: ${err.message}`, 'Sluiten', { duration: 5000 }),
     });
   }
-
 }
