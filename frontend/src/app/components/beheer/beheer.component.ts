@@ -711,7 +711,7 @@ export class BeheerComponent implements OnInit {
       });
       const pollId = setInterval(() => {
         this.scheduleService.getProgress().subscribe((p) => progressPct.set(p.percent));
-      }, 500);
+      }, 150);
       this.scheduleService.generate(req).subscribe({
         next: (s) => {
           clearInterval(pollId);

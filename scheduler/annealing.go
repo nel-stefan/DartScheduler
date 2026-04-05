@@ -103,13 +103,20 @@ func anneal(
 	alpha := math.Pow(cfg.TEnd/cfg.T0, 1.0/float64(cfg.Steps))
 	T := cfg.T0
 
+	// Report progress ~100 times per run regardless of step count so the progress
+	// bar stays smooth even when workers run fewer steps than logInterval.
+	progressInterval := cfg.Steps / 100
+	if progressInterval < 1 {
+		progressInterval = 1
+	}
+
 	for step := 0; step < cfg.Steps; step++ {
 		if step%logInterval == 0 {
 			log.Printf("[anneal] step=%d/%d T=%.4f currentEnergy=%.1f bestEnergy=%.1f",
 				step, cfg.Steps, T, currentEnergy, bestEnergy)
-			if cfg.ProgressFn != nil {
-				cfg.ProgressFn(step, cfg.Steps)
-			}
+		}
+		if cfg.ProgressFn != nil && step%progressInterval == 0 {
+			cfg.ProgressFn(step, cfg.Steps)
 		}
 
 		// Move operation: assign one match to any random evening (can populate empties).
