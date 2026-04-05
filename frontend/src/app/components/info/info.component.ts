@@ -1182,7 +1182,7 @@ export class InfoComponent implements OnInit {
     const evenings = [...info.evenings].sort((a, b) => a.number - b.number);
     const buddyMap = this.buildBuddyViolationMap(info, evenings);
 
-    return info.players
+    const sorted = info.players
       .map((player) => {
         const byEvening = lookup.get(player.id) ?? new Map<string, number>();
         const counts = evenings.map((ev) => byEvening.get(ev.id) ?? 0);
@@ -1237,6 +1237,30 @@ export class InfoComponent implements OnInit {
       })
       .filter((row) => row.totalMatches > 0)
       .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999));
+
+    // Group buddy partners together: each player is immediately followed by their partner.
+    const partnerOf = new Map<string, string>();
+    for (const pair of info.buddyPairs) {
+      partnerOf.set(pair.playerAId, pair.playerBId);
+      partnerOf.set(pair.playerBId, pair.playerAId);
+    }
+
+    const seen = new Set<string>();
+    const grouped: PlayerRow[] = [];
+    for (const row of sorted) {
+      if (seen.has(row.player.id)) continue;
+      seen.add(row.player.id);
+      grouped.push(row);
+      const partnerId = partnerOf.get(row.player.id);
+      if (partnerId) {
+        const partnerRow = sorted.find((r) => r.player.id === partnerId);
+        if (partnerRow && !seen.has(partnerRow.player.id)) {
+          seen.add(partnerRow.player.id);
+          grouped.push(partnerRow);
+        }
+      }
+    }
+    return grouped;
   }
 
   printPendingMatches(): void {
