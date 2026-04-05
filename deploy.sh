@@ -23,9 +23,9 @@ for f in "${ENV_FILES[@]}"; do
 done
 
 echo "==> 4. Docker: down → build → up"
-docker compose down
-docker compose build --no-cache
-docker compose up -d
+docker compose -f docker-compose-public.yml down
+docker compose -f docker-compose-public.yml build --no-cache
+docker compose -f docker-compose-public.yml up -d
 
 echo "==> Herstel originele versie-bestanden"
 for f in "${ENV_FILES[@]}"; do
