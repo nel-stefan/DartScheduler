@@ -15,6 +15,7 @@ import (
 	"math"
 	"math/rand"
 	"runtime"
+	"strings"
 	"time"
 
 	"DartScheduler/domain"
@@ -169,7 +170,14 @@ func Generate(in Input) (domain.Schedule, error) {
 	// redistribute one match at a time from the most-loaded evening.
 	assignment = fillEmptyEvenings(assignment, in.NumEvenings)
 
-	// 4. Build domain.Schedule from the optimised assignment.
+	// 4. Validate all hard constraints before building the schedule.
+	//    Return an error if any constraint is violated so the caller knows the
+	//    result is unusable rather than silently producing a broken schedule.
+	if err := validateHardConstraints(flatMatches, assignment, in.NumEvenings, in.BuddyPairs, buddyPlayers); err != nil {
+		return domain.Schedule{}, err
+	}
+
+	// 5. Build domain.Schedule from the optimised assignment.
 	schedID := uuid.New()
 	schedule := domain.Schedule{
 		ID:              schedID,
@@ -205,6 +213,67 @@ func Generate(in Input) (domain.Schedule, error) {
 	log.Printf("[scheduler.Generate] done: scheduleID=%s evenings=%d totalMatches=%d",
 		schedule.ID, len(schedule.Evenings), len(flatMatches))
 	return schedule, nil
+}
+
+// validateHardConstraints checks all hard constraints against the final assignment.
+// Returns a formatted error listing every violated constraint, or nil if all pass.
+// Hard constraints (weights ≥ 5000 in the energy function):
+//   - no empty evenings
+//   - max matches per player per evening (3 regular / 4 buddy)
+//   - max 2 consecutive active evenings per player
+//   - max gap of 4 between consecutive active evenings per player
+//   - at most 1 solo evening per player
+//   - spread within ±spreadTolerance of average matches per evening
+//   - buddy pairs: at most 1 mismatch evening
+func validateHardConstraints(
+	matches []pair,
+	assignment []int,
+	numEvenings int,
+	buddyPairs []domain.BuddyPreference,
+	buddyPlayers map[domain.PlayerID]bool,
+) error {
+	var msgs []string
+
+	// Empty evenings.
+	counts := make([]int, numEvenings)
+	for _, ei := range assignment {
+		counts[ei]++
+	}
+	emptyEvenings := 0
+	for _, c := range counts {
+		if c == 0 {
+			emptyEvenings++
+		}
+	}
+	if emptyEvenings > 0 {
+		msgs = append(msgs, fmt.Sprintf("avonden zonder wedstrijden: %d", emptyEvenings))
+	}
+
+	if v := countMaxViolations(matches, assignment, numEvenings, buddyPlayers); v > 0 {
+		msgs = append(msgs, fmt.Sprintf("te veel wedstrijden per speler per avond: %d overschrijding(en)", v))
+	}
+	if v := countTripleConsecutiveViolations(matches, assignment, numEvenings); v > 0 {
+		msgs = append(msgs, fmt.Sprintf("speler speelt 3+ avonden op rij: %d overschrijding(en)", v))
+	}
+	if v := countGapViolations(matches, assignment, numEvenings); v > 0 {
+		msgs = append(msgs, fmt.Sprintf("te grote pauze tussen actieve avonden: %d overschrijding(en)", v))
+	}
+	if v := countMinMatchViolations(matches, assignment, numEvenings); v > 0 {
+		msgs = append(msgs, fmt.Sprintf("speler heeft meer dan 1 avond met slechts 1 wedstrijd: %d overschrijding(en)", v))
+	}
+	if v := countSpreadViolation(assignment, numEvenings); v > 0 {
+		msgs = append(msgs, fmt.Sprintf("avonden wijken te veel af van het gemiddeld aantal wedstrijden (±%d): %d overschrijding(en)", spreadTolerance, v))
+	}
+	if v := countBuddyHardViolations(matches, assignment, buddyPairs, numEvenings); v > 0 {
+		msgs = append(msgs, fmt.Sprintf("buddy-paar speelt te vaak op verschillende avonden: %d overschrijding(en)", v))
+	}
+
+	if len(msgs) == 0 {
+		return nil
+	}
+	return fmt.Errorf("%w: het gegenereerde schema voldoet niet aan de volgende harde constraints:\n• %s",
+		domain.ErrScheduleConstraintViolation,
+		strings.Join(msgs, "\n• "))
 }
 
 // fillEmptyEvenings ensures every evening has at least one match by moving one match

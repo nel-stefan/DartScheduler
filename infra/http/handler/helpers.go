@@ -36,6 +36,8 @@ func httpErrorDomain(w http.ResponseWriter, err error) {
 		code = http.StatusConflict
 	case errors.Is(err, domain.ErrMatchAlreadyPlayed):
 		code = http.StatusConflict
+	case errors.Is(err, domain.ErrScheduleConstraintViolation):
+		code = http.StatusUnprocessableEntity
 	default:
 		code = http.StatusInternalServerError
 	}

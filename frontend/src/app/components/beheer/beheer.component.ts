@@ -61,6 +61,43 @@ export class LoadingDialogComponent {
 }
 
 // ---------------------------------------------------------------------------
+// Constraint-violation-dialog (shown when the scheduler returns HTTP 422)
+// ---------------------------------------------------------------------------
+
+@Component({
+  selector: 'app-constraint-violation-dialog',
+  imports: [MatDialogModule, MatButtonModule],
+  template: `
+    <h2 mat-dialog-title style="color:#b71c1c">Schema voldoet niet aan constraints</h2>
+    <mat-dialog-content>
+      <p style="margin:0 0 12px;font-size:14px;color:#555">
+        Het gegenereerde schema voldoet niet aan de volgende harde constraints:
+      </p>
+      <ul style="margin:0;padding-left:20px;font-size:14px;line-height:1.8">
+        @for (line of lines; track line) {
+          <li>{{ line }}</li>
+        }
+      </ul>
+      <p style="margin:16px 0 0;font-size:13px;color:#9e9e9e">
+        Probeer het schema opnieuw te genereren. Als het probleem aanhoudt, pas dan het aantal speelavonden aan.
+      </p>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Sluiten</button>
+    </mat-dialog-actions>
+  `,
+})
+export class ConstraintViolationDialogComponent {
+  data = inject<{ message: string }>(MAT_DIALOG_DATA);
+  get lines(): string[] {
+    return this.data.message
+      .split('\n')
+      .map((l) => l.replace(/^[•\-]\s*/, '').trim())
+      .filter((l) => l.length > 0 && !l.startsWith('het gegenereerde schema'));
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Generate-dialog
 // ---------------------------------------------------------------------------
 
@@ -723,10 +760,18 @@ export class BeheerComponent implements OnInit {
         error: (err) => {
           clearInterval(pollId);
           loadingRef.close();
-          this.snackBar.open(`Fout: ${this.errorText(err)}`, 'Sluiten', { duration: 8000 });
+          if (err.status === 422) {
+            this.showConstraintViolationDialog(this.errorText(err));
+          } else {
+            this.snackBar.open(`Fout: ${this.errorText(err)}`, 'Sluiten', { duration: 8000 });
+          }
         },
       });
     });
+  }
+
+  private showConstraintViolationDialog(message: string): void {
+    this.dialog.open(ConstraintViolationDialogComponent, { data: { message }, maxWidth: '520px' });
   }
 
   openImportSeason(): void {
@@ -812,7 +857,11 @@ export class BeheerComponent implements OnInit {
         clearInterval(pollId);
         loadingRef.close();
         this.regeneratingId.set('');
-        this.snackBar.open(`Fout: ${this.errorText(err)}`, 'Sluiten', { duration: 5000 });
+        if (err.status === 422) {
+          this.showConstraintViolationDialog(this.errorText(err));
+        } else {
+          this.snackBar.open(`Fout: ${this.errorText(err)}`, 'Sluiten', { duration: 5000 });
+        }
       },
     });
   }

@@ -20,4 +20,8 @@ var (
 	// ErrMatchAlreadyPlayed is returned when a score is submitted for a match
 	// that has already been played.
 	ErrMatchAlreadyPlayed = errors.New("match already played")
+
+	// ErrScheduleConstraintViolation is returned when a generated schedule violates
+	// one or more hard constraints and cannot be used.
+	ErrScheduleConstraintViolation = errors.New("schema voldoet niet aan harde constraints")
 )
