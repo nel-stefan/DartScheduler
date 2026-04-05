@@ -1,0 +1,24 @@
+services:
+  dartscheduler:
+    build: .
+    ports:
+      - "8090:8090"
+    volumes:
+      - dart_data_public:/data
+    environment:
+      - DATABASE_PATH=/data/dartscheduler.db
+      - DATABASE_TYPE=sqlite
+      - CLUB_NAME=DEMO DARTCLUB GROLZICHT
+      - APP_TITLE=Demo Darts
+      # - LOGO_PATH=/data/logo.png
+      - PORT=8090
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  dart_data_public:
