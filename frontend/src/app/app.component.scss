@@ -72,6 +72,10 @@
   --mat-form-field-outlined-label-text-color: rgba(255, 255, 255, 0.7);
   --mat-form-field-outlined-focus-label-text-color: #fff;
   --mat-select-trigger-text-color: #fff;
+
+  ::ng-deep .mat-mdc-select-value-text {
+    font-weight: 500;
+  }
   --mat-select-arrow-foreground-color: rgba(255, 255, 255, 0.7);
 }
 
