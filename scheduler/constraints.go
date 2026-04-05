@@ -14,7 +14,7 @@ const (
 	maxGapBetweenActiveEvenings        = 4    // max index distance between consecutive active evenings
 	// maxGapBetweenActiveEvenings = 4 means at most 3 non-playing evenings between two active ones.
 	// Violation when consecutiveActiveIndexDiff > 4.
-	maxEveningSpread = 5 // max allowed difference between the most and fewest matches per evening
+	spreadTolerance = 3 // each evening may deviate at most this many matches from the average
 )
 
 // playerCountsPerEvening returns counts[eveningIdx][playerID] = matchCount.
@@ -258,9 +258,10 @@ func countGapViolations(matches []pair, assignment []int, numEvenings int) int {
 	return violations
 }
 
-// countSpreadViolation returns the amount by which the spread (max − min total matches
-// per evening) exceeds maxEveningSpread. Returns 0 when the spread is within the limit.
-// Each excess unit is one violation (e.g. spread 8 → 3 violations at limit 5).
+// countSpreadViolation returns the total number of violation units across all evenings
+// where the match count deviates more than spreadTolerance from the average
+// (totalMatches / numEvenings). Each unit above or below the tolerance counts as one
+// violation (e.g. avg=6, tolerance=3 → evening with 11 matches contributes 2 violations).
 func countSpreadViolation(assignment []int, numEvenings int) int {
 	if numEvenings <= 1 {
 		return 0
@@ -269,19 +270,19 @@ func countSpreadViolation(assignment []int, numEvenings int) int {
 	for _, ei := range assignment {
 		counts[ei]++
 	}
-	minC, maxC := counts[0], counts[0]
-	for _, c := range counts[1:] {
-		if c < minC {
-			minC = c
-		}
-		if c > maxC {
-			maxC = c
+	avg := float64(len(assignment)) / float64(numEvenings)
+	upper := avg + float64(spreadTolerance)
+	lower := avg - float64(spreadTolerance)
+	violations := 0
+	for _, c := range counts {
+		fc := float64(c)
+		if fc > upper {
+			violations += int(math.Ceil(fc - upper))
+		} else if fc < lower {
+			violations += int(math.Ceil(lower - fc))
 		}
 	}
-	if excess := (maxC - minC) - maxEveningSpread; excess > 0 {
-		return excess
-	}
-	return 0
+	return violations
 }
 
 // varianceMatchesPerEvening returns the variance of total matches per evening.

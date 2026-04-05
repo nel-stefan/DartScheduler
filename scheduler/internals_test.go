@@ -408,26 +408,28 @@ func TestCountSpreadViolation_NoViolation_EqualEvenings(t *testing.T) {
 }
 
 func TestCountSpreadViolation_NoViolation_AtLimit(t *testing.T) {
-	// Evening 0: 5 matches, evening 1: 10 matches → spread = 5 = maxEveningSpread → no violation.
+	// Evening 0: 5 matches, evening 1: 10 matches → avg=7.5, tolerance=3 → [4.5, 10.5].
+	// Both evenings within the allowed range → no violation.
 	assignment := make([]int, 15)
 	for i := 5; i < 15; i++ {
 		assignment[i] = 1
 	}
 	v := countSpreadViolation(assignment, 2)
 	if v != 0 {
-		t.Errorf("want 0 for spread exactly at limit (%d), got %d", maxEveningSpread, v)
+		t.Errorf("want 0 (both evenings within avg±%d), got %d", spreadTolerance, v)
 	}
 }
 
 func TestCountSpreadViolation_OneUnitExcess(t *testing.T) {
-	// Evening 0: 4 matches, evening 1: 11 matches → spread = 7, excess = 2.
+	// Evening 0: 4 matches, evening 1: 11 matches → avg=7.5, tolerance=3 → [4.5, 10.5].
+	// Evening 0: 4 < 4.5 → ceil(0.5)=1 violation. Evening 1: 11 > 10.5 → ceil(0.5)=1 violation.
 	assignment := make([]int, 15)
 	for i := 4; i < 15; i++ {
 		assignment[i] = 1
 	}
 	v := countSpreadViolation(assignment, 2)
 	if v != 2 {
-		t.Errorf("want 2 for spread 7 (excess 2 over limit %d), got %d", maxEveningSpread, v)
+		t.Errorf("want 2 (one unit over/under avg±%d), got %d", spreadTolerance, v)
 	}
 }
 
