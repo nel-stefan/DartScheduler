@@ -33,6 +33,16 @@ func (pt *ProgressTracker) Update(step int) {
 	pt.step = step
 }
 
+// SetTotal updates the total step count. Called when the scheduler determines
+// the actual step count (which may differ from the initial estimate due to scaling).
+func (pt *ProgressTracker) SetTotal(total int) {
+	pt.mu.Lock()
+	defer pt.mu.Unlock()
+	if total > 0 {
+		pt.total = total
+	}
+}
+
 // Done marks the tracker as no longer busy.
 func (pt *ProgressTracker) Done() {
 	pt.mu.Lock()

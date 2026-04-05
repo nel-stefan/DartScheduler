@@ -136,11 +136,14 @@ func Generate(in Input) (domain.Schedule, error) {
 		workerCfg := cfg
 		workerCfg.Steps = stepsPerWorker
 		workerCfg.ProgressFn = nil
-		// Worker 0 reports progress scaled so it spans the full original Steps range.
+		// Worker 0 reports progress scaled so it spans the full cfg.Steps range.
+		// Pass cfg.Steps as total so callers can size their progress bar correctly
+		// even when step scaling has increased Steps beyond the default 1.2M.
 		if w == 0 && cfg.ProgressFn != nil {
 			fn := cfg.ProgressFn
 			scale := numWorkers
-			workerCfg.ProgressFn = func(step, _ int) { fn(step*scale, 0) }
+			total := cfg.Steps
+			workerCfg.ProgressFn = func(step, _ int) { fn(step*scale, total) }
 		}
 		rng := rand.New(rand.NewSource(time.Now().UnixNano() + int64(w)*997))
 		init := cloneAssignment(assignment)
