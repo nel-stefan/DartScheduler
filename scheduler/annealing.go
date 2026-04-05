@@ -2,16 +2,18 @@
 //
 // Energy function (lower = better schedule):
 //
-//	energy = WBuddyHard    × buddy pair mismatches beyond the 1 allowed     (hard)
-//	       + WBuddySoft    × buddy pairs with exactly 1 mismatch (allowed)  (soft)
-//	       + WMaxViolation × per-evening match counts above the cap          (hard)
-//	       + WTripleConsec × evenings in a run of >2 consecutive             (hard)
-//	       + WGapViolation × excess gap between a player's active evenings   (hard)
-//	       + WExcessTriple × extra 3-match evenings per player (>10%)        (medium)
-//	       + WMinMatches   × per-player excess solo evenings (>1 solo)       (hard)
-//	       + WSoloSoft     × total solo (player,evening) pairs               (soft)
-//	       + WSpread       × excess spread (max−min matches/evening > 5)     (hard)
-//	       + WVariance     × variance of total matches per evening           (soft, balance)
+// The energy uses two strictly separated phases:
+//
+//  1. Hard phase (any hard violation present):
+//     energy = hardPhaseOffset + WBuddyHard×buddyHard + WMaxViolation×maxV
+//            + WTripleConsec×tripleV + WGapViolation×gapV
+//            + WMinMatches×minV + WSpread×spreadV
+//     hardPhaseOffset (1e9) guarantees any hard-violation state is strictly worse
+//     than any violation-free state, regardless of soft values.
+//
+//  2. Soft phase (all hard constraints satisfied):
+//     energy = WBuddySoft×buddySoft + WExcessTriple×excessV
+//            + WSoloSoft×soloV + WVariance×va
 package scheduler
 
 import (
@@ -42,6 +44,7 @@ type AnnealConfig struct {
 	TargetedFraction float64
 
 	// Weights for the energy function.
+	WEmpty        float64 // hard: any evening with 0 matches
 	WBuddyHard    float64 // buddy pair has >1 mismatch evening
 	WBuddySoft    float64 // buddy pair has exactly 1 mismatch evening (allowed, but prefer 0)
 	WMaxViolation float64 // player has more than the allowed matches on one evening
@@ -50,7 +53,7 @@ type AnnealConfig struct {
 	WExcessTriple float64 // >10% of active evenings have 3 matches for a player
 	WMinMatches   float64 // player has >1 solo evening (only 1 is allowed)
 	WSoloSoft     float64 // any solo evening — nudges toward 0 solo evenings
-	WSpread       float64 // spread (max−min matches/evening) exceeds maxEveningSpread (5)
+	WSpread       float64 // each evening deviates more than spreadTolerance from the average
 	WVariance     float64 // variance of match counts across evenings
 
 	// ProgressFn is called every logInterval steps with the current step and total.
@@ -71,6 +74,7 @@ func DefaultAnnealConfig() AnnealConfig {
 		MoveFraction:     0.20,
 		TargetedFraction: 0.50,
 
+		WEmpty:        10_000.0,
 		WBuddyHard:    10_000.0,
 		WBuddySoft:    200.0,
 		WMaxViolation: 10_000.0,
@@ -464,21 +468,54 @@ func randomSample(total, n int, rng *rand.Rand) []int {
 	return out
 }
 
+// hardPhaseOffset is added to the energy whenever any hard constraint is violated.
+// It must exceed the maximum achievable soft energy for any schedule, guaranteeing
+// that any state with a hard violation is strictly worse than any violation-free
+// state — regardless of soft constraint values. 1e9 is several orders of magnitude
+// larger than any realistic soft energy contribution (which tops out around ~5M for
+// the largest supported schedules).
+const hardPhaseOffset = 1e9
+
 func energy(cfg AnnealConfig, matches []pair, assignment []int, numEvenings int, buddyPairs []domain.BuddyPreference, buddyPlayers map[domain.PlayerID]bool) float64 {
+	// --- Hard constraints ---
+
+	// Empty evenings: count directly (countSpreadViolation misses them when avg is small).
+	eveningCounts := make([]int, numEvenings)
+	for _, ei := range assignment {
+		eveningCounts[ei]++
+	}
+	emptyV := 0
+	for _, c := range eveningCounts {
+		if c == 0 {
+			emptyV++
+		}
+	}
+
 	buddyHard := float64(countBuddyHardViolations(matches, assignment, buddyPairs, numEvenings))
-	buddySoft := float64(countBuddySoftViolations(matches, assignment, buddyPairs, numEvenings))
 	maxV := float64(countMaxViolations(matches, assignment, numEvenings, buddyPlayers))
 	tripleV := float64(countTripleConsecutiveViolations(matches, assignment, numEvenings))
 	gapV := float64(countGapViolations(matches, assignment, numEvenings))
-	excessV := float64(countExcessTripleMatchViolations(matches, assignment, numEvenings))
 	minV := float64(countMinMatchViolations(matches, assignment, numEvenings))
-	soloV := float64(countSoloEvenings(matches, assignment, numEvenings))
 	spreadV := float64(countSpreadViolation(assignment, numEvenings))
-	va := varianceMatchesPerEvening(assignment, numEvenings)
-	return cfg.WBuddyHard*buddyHard + cfg.WBuddySoft*buddySoft +
+
+	hardEnergy := cfg.WEmpty*float64(emptyV) + cfg.WBuddyHard*buddyHard +
 		cfg.WMaxViolation*maxV + cfg.WTripleConsec*tripleV + cfg.WGapViolation*gapV +
-		cfg.WExcessTriple*excessV + cfg.WMinMatches*minV + cfg.WSoloSoft*soloV +
-		cfg.WSpread*spreadV + cfg.WVariance*va
+		cfg.WMinMatches*minV + cfg.WSpread*spreadV
+
+	if hardEnergy > 0 {
+		// Hard phase: soft constraints are irrelevant until all hard violations are fixed.
+		// The offset ensures energy(hard>0) > energy(hard=0, any soft) always holds.
+		return hardPhaseOffset + hardEnergy
+	}
+
+	// --- Soft constraints (only optimised once all hard constraints are satisfied) ---
+	buddySoft := float64(countBuddySoftViolations(matches, assignment, buddyPairs, numEvenings))
+	excessV := float64(countExcessTripleMatchViolations(matches, assignment, numEvenings))
+	soloV := float64(countSoloEvenings(matches, assignment, numEvenings))
+	va := varianceMatchesPerEvening(assignment, numEvenings)
+
+	return cfg.WBuddySoft*buddySoft + cfg.WExcessTriple*excessV +
+		cfg.WSoloSoft*soloV + cfg.WVariance*va
 }
 
 // buildBuddyPlayerSet returns the set of all player IDs that appear in any buddy pair.

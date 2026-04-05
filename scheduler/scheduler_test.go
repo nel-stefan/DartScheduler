@@ -526,9 +526,11 @@ func TestAllHardConstraintsWithBuddies(t *testing.T) {
 
 func TestOddNumberOfPlayers(t *testing.T) {
 	players := makePlayers(5)
+	// 5 players / 5 evenings forces 1 match/active evening for every player (infeasible for
+	// the solo-evening hard constraint). Use 2 evenings: avg 5 matches/evening allows ≥2 per player.
 	_, err := scheduler.Generate(scheduler.Input{
 		Players:         players,
-		NumEvenings:     5,
+		NumEvenings:     2,
 		CompetitionName: "Test",
 		StartDate:       time.Now(),
 		IntervalDays:    7,
