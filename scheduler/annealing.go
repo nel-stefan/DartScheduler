@@ -6,14 +6,14 @@
 //
 //  1. Hard phase (any hard violation present):
 //     energy = hardPhaseOffset + WBuddyHard×buddyHard + WMaxViolation×maxV
-//            + WTripleConsec×tripleV + WGapViolation×gapV
-//            + WMinMatches×minV + WSpread×spreadV
+//     + WTripleConsec×tripleV + WGapViolation×gapV
+//     + WMinMatches×minV + WSpread×spreadV
 //     hardPhaseOffset (1e9) guarantees any hard-violation state is strictly worse
 //     than any violation-free state, regardless of soft values.
 //
 //  2. Soft phase (all hard constraints satisfied):
 //     energy = WBuddySoft×buddySoft + WExcessTriple×excessV
-//            + WSoloSoft×soloV + WVariance×va
+//     + WSoloSoft×soloV + WVariance×va
 package scheduler
 
 import (
