@@ -10,6 +10,7 @@
 //	       + WExcessTriple × extra 3-match evenings per player (>10%)        (medium)
 //	       + WMinMatches   × per-player excess solo evenings (>1 solo)       (hard)
 //	       + WSoloSoft     × total solo (player,evening) pairs               (soft)
+//	       + WSpread       × excess spread (max−min matches/evening > 5)     (hard)
 //	       + WVariance     × variance of total matches per evening           (soft, balance)
 package scheduler
 
@@ -49,6 +50,7 @@ type AnnealConfig struct {
 	WExcessTriple float64 // >10% of active evenings have 3 matches for a player
 	WMinMatches   float64 // player has >1 solo evening (only 1 is allowed)
 	WSoloSoft     float64 // any solo evening — nudges toward 0 solo evenings
+	WSpread       float64 // spread (max−min matches/evening) exceeds maxEveningSpread (5)
 	WVariance     float64 // variance of match counts across evenings
 
 	// ProgressFn is called every logInterval steps with the current step and total.
@@ -77,6 +79,7 @@ func DefaultAnnealConfig() AnnealConfig {
 		WExcessTriple: 2_000.0,
 		WMinMatches:   1_000.0,
 		WSoloSoft:     5.0,
+		WSpread:       5_000.0,
 		WVariance:     500.0,
 	}
 }
@@ -384,10 +387,12 @@ func energy(cfg AnnealConfig, matches []pair, assignment []int, numEvenings int,
 	excessV := float64(countExcessTripleMatchViolations(matches, assignment, numEvenings))
 	minV := float64(countMinMatchViolations(matches, assignment, numEvenings))
 	soloV := float64(countSoloEvenings(matches, assignment, numEvenings))
+	spreadV := float64(countSpreadViolation(assignment, numEvenings))
 	va := varianceMatchesPerEvening(assignment, numEvenings)
 	return cfg.WBuddyHard*buddyHard + cfg.WBuddySoft*buddySoft +
 		cfg.WMaxViolation*maxV + cfg.WTripleConsec*tripleV + cfg.WGapViolation*gapV +
-		cfg.WExcessTriple*excessV + cfg.WMinMatches*minV + cfg.WSoloSoft*soloV + cfg.WVariance*va
+		cfg.WExcessTriple*excessV + cfg.WMinMatches*minV + cfg.WSoloSoft*soloV +
+		cfg.WSpread*spreadV + cfg.WVariance*va
 }
 
 // buildBuddyPlayerSet returns the set of all player IDs that appear in any buddy pair.

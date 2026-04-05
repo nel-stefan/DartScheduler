@@ -14,6 +14,7 @@ const (
 	maxGapBetweenActiveEvenings        = 4    // max index distance between consecutive active evenings
 	// maxGapBetweenActiveEvenings = 4 means at most 3 non-playing evenings between two active ones.
 	// Violation when consecutiveActiveIndexDiff > 4.
+	maxEveningSpread = 5 // max allowed difference between the most and fewest matches per evening
 )
 
 // playerCountsPerEvening returns counts[eveningIdx][playerID] = matchCount.
@@ -255,6 +256,32 @@ func countGapViolations(matches []pair, assignment []int, numEvenings int) int {
 		}
 	}
 	return violations
+}
+
+// countSpreadViolation returns the amount by which the spread (max − min total matches
+// per evening) exceeds maxEveningSpread. Returns 0 when the spread is within the limit.
+// Each excess unit is one violation (e.g. spread 8 → 3 violations at limit 5).
+func countSpreadViolation(assignment []int, numEvenings int) int {
+	if numEvenings <= 1 {
+		return 0
+	}
+	counts := make([]int, numEvenings)
+	for _, ei := range assignment {
+		counts[ei]++
+	}
+	minC, maxC := counts[0], counts[0]
+	for _, c := range counts[1:] {
+		if c < minC {
+			minC = c
+		}
+		if c > maxC {
+			maxC = c
+		}
+	}
+	if excess := (maxC - minC) - maxEveningSpread; excess > 0 {
+		return excess
+	}
+	return 0
 }
 
 // varianceMatchesPerEvening returns the variance of total matches per evening.

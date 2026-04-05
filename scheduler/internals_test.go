@@ -394,6 +394,52 @@ func TestCountGapViolations_EdgeNotPenalised(t *testing.T) {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// countSpreadViolation
+// ---------------------------------------------------------------------------
+
+func TestCountSpreadViolation_NoViolation_EqualEvenings(t *testing.T) {
+	// 3 evenings, 3 matches each → spread 0, no violation.
+	assignment := []int{0, 0, 0, 1, 1, 1, 2, 2, 2}
+	v := countSpreadViolation(assignment, 3)
+	if v != 0 {
+		t.Errorf("want 0 for spread 0, got %d", v)
+	}
+}
+
+func TestCountSpreadViolation_NoViolation_AtLimit(t *testing.T) {
+	// Evening 0: 5 matches, evening 1: 10 matches → spread = 5 = maxEveningSpread → no violation.
+	assignment := make([]int, 15)
+	for i := 5; i < 15; i++ {
+		assignment[i] = 1
+	}
+	v := countSpreadViolation(assignment, 2)
+	if v != 0 {
+		t.Errorf("want 0 for spread exactly at limit (%d), got %d", maxEveningSpread, v)
+	}
+}
+
+func TestCountSpreadViolation_OneUnitExcess(t *testing.T) {
+	// Evening 0: 4 matches, evening 1: 11 matches → spread = 7, excess = 2.
+	assignment := make([]int, 15)
+	for i := 4; i < 15; i++ {
+		assignment[i] = 1
+	}
+	v := countSpreadViolation(assignment, 2)
+	if v != 2 {
+		t.Errorf("want 2 for spread 7 (excess 2 over limit %d), got %d", maxEveningSpread, v)
+	}
+}
+
+func TestCountSpreadViolation_SingleEvening(t *testing.T) {
+	// Only one evening → spread is 0 by definition.
+	assignment := []int{0, 0, 0}
+	v := countSpreadViolation(assignment, 1)
+	if v != 0 {
+		t.Errorf("want 0 for single evening, got %d", v)
+	}
+}
+
 func TestCountGapViolations_MultipleGaps(t *testing.T) {
 	p1, p2, p3, p4 := newPID(), newPID(), newPID(), newPID()
 	// p1 plays evenings 0 (vs p2), 5 (vs p3), 10 (vs p4) → two gaps of 5 → 2 violations for p1.
