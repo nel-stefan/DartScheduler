@@ -12,7 +12,9 @@ package scheduler
 import (
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
+	"runtime"
 	"time"
 
 	"DartScheduler/domain"
@@ -74,15 +76,61 @@ func Generate(in Input) (domain.Schedule, error) {
 	assignment := clusteringAssign(rounds, in.NumEvenings)
 	log.Printf("[scheduler.Generate] clustering assignment done: matchesPerEvening≈%d", len(flatMatches)/in.NumEvenings)
 
-	// 3. Simulated annealing optimisation.
+	// 3. Simulated annealing optimisation — run one independent worker per CPU core,
+	//    each with a different random seed and Steps/numWorkers steps, then pick the
+	//    best result. This gives ~numWorkers× speedup with no quality loss because
+	//    multiple restarts often find better solutions than a single long run.
 	cfg := in.Config
 	if cfg.Steps == 0 {
 		cfg = DefaultAnnealConfig()
 	}
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	log.Printf("[scheduler.Generate] starting annealing: steps=%d", cfg.Steps)
-	assignment = anneal(cfg, flatMatches, assignment, in.NumEvenings, in.BuddyPairs, rng)
-	log.Printf("[scheduler.Generate] annealing done")
+
+	numWorkers := runtime.NumCPU()
+	if numWorkers < 1 {
+		numWorkers = 1
+	}
+	stepsPerWorker := cfg.Steps / numWorkers
+	if stepsPerWorker < 1 {
+		stepsPerWorker = 1
+	}
+	log.Printf("[scheduler.Generate] starting annealing: workers=%d stepsPerWorker=%d totalSteps=%d",
+		numWorkers, stepsPerWorker, cfg.Steps)
+
+	type workerResult struct {
+		assignment []int
+		e          float64
+	}
+	resultCh := make(chan workerResult, numWorkers)
+	buddyPlayers := buildBuddyPlayerSet(in.BuddyPairs)
+
+	for w := range numWorkers {
+		workerCfg := cfg
+		workerCfg.Steps = stepsPerWorker
+		workerCfg.ProgressFn = nil
+		// Worker 0 reports progress scaled so it spans the full original Steps range.
+		if w == 0 && cfg.ProgressFn != nil {
+			fn := cfg.ProgressFn
+			scale := numWorkers
+			workerCfg.ProgressFn = func(step, _ int) { fn(step*scale, 0) }
+		}
+		rng := rand.New(rand.NewSource(time.Now().UnixNano() + int64(w)*997))
+		init := cloneAssignment(assignment)
+		go func(wCfg AnnealConfig, init []int, rng *rand.Rand) {
+			best := anneal(wCfg, flatMatches, init, in.NumEvenings, in.BuddyPairs, rng)
+			e := energy(wCfg, flatMatches, best, in.NumEvenings, in.BuddyPairs, buddyPlayers)
+			resultCh <- workerResult{best, e}
+		}(workerCfg, init, rng)
+	}
+
+	bestEnergy := math.Inf(1)
+	for range numWorkers {
+		r := <-resultCh
+		if r.e < bestEnergy {
+			bestEnergy = r.e
+			assignment = r.assignment
+		}
+	}
+	log.Printf("[scheduler.Generate] annealing done: bestEnergy=%.1f workers=%d", bestEnergy, numWorkers)
 
 	// 4. Build domain.Schedule from the optimised assignment.
 	schedID := uuid.New()
