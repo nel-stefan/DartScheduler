@@ -71,10 +71,21 @@ func Generate(in Input) (domain.Schedule, error) {
 	}
 	log.Printf("[scheduler.Generate] round-robin done: rounds=%d totalMatches=%d", len(rounds), len(flatMatches))
 
-	// 2. Clustering initial assignment: pair consecutive rounds onto the same evening
-	//    so each player starts with ≤1 solo evening instead of spreading 1 match/evening.
-	assignment := clusteringAssign(rounds, in.NumEvenings)
-	log.Printf("[scheduler.Generate] clustering assignment done: matchesPerEvening≈%d", len(flatMatches)/in.NumEvenings)
+	// 2. Initial assignment.
+	//
+	// When numEvenings ≤ numRounds: clusteringAssign groups consecutive rounds onto the
+	// same evening so each player immediately has ≥2 matches per active evening.
+	//
+	// When numEvenings > numRounds: clusteringAssign would leave many evenings empty
+	// (only numRounds/2 evenings populated). Instead use greedyAssign for a balanced
+	// spread across all evenings; soloTargetedSwap then consolidates per-player matches.
+	var assignment []int
+	if in.NumEvenings <= len(rounds) {
+		assignment = clusteringAssign(rounds, in.NumEvenings)
+	} else {
+		assignment = greedyAssign(flatMatches, in.NumEvenings)
+	}
+	log.Printf("[scheduler.Generate] initial assignment done: matchesPerEvening≈%d", len(flatMatches)/in.NumEvenings)
 
 	// 3. Simulated annealing optimisation — run one independent worker per CPU core,
 	//    each with a different random seed and Steps/numWorkers steps, then pick the
@@ -85,13 +96,31 @@ func Generate(in Input) (domain.Schedule, error) {
 		cfg = DefaultAnnealConfig()
 	}
 
+	// Scale total steps with problem size: larger schedules need more annealing
+	// iterations to converge. Minimum 10K steps per match pair ensures adequate
+	// convergence for N=20, E=30 (190 matches → 1.9M steps) without affecting
+	// smaller schedules (N=12, E=11 → 660K < 1.2M default, so no scaling).
+	const minStepsPerMatch = 10_000
+	if minScaled := minStepsPerMatch * len(flatMatches); minScaled > cfg.Steps {
+		cfg.Steps = minScaled
+	}
+
+	// Each worker needs enough steps to redistribute matches from the clustered
+	// initial assignment to all evenings. Below ~300K steps convergence becomes
+	// unreliable, leaving some evenings with 0 matches.
+	const minStepsPerWorker = 300_000
+
 	numWorkers := runtime.NumCPU()
 	if numWorkers < 1 {
 		numWorkers = 1
 	}
 	stepsPerWorker := cfg.Steps / numWorkers
-	if stepsPerWorker < 1 {
-		stepsPerWorker = 1
+	if stepsPerWorker < minStepsPerWorker {
+		stepsPerWorker = minStepsPerWorker
+		numWorkers = cfg.Steps / stepsPerWorker
+		if numWorkers < 1 {
+			numWorkers = 1
+		}
 	}
 	log.Printf("[scheduler.Generate] starting annealing: workers=%d stepsPerWorker=%d totalSteps=%d",
 		numWorkers, stepsPerWorker, cfg.Steps)
@@ -132,6 +161,11 @@ func Generate(in Input) (domain.Schedule, error) {
 	}
 	log.Printf("[scheduler.Generate] annealing done: bestEnergy=%.1f workers=%d", bestEnergy, numWorkers)
 
+	// Safety pass: if any regular evening still has 0 matches (can happen when
+	// the annealing doesn't fully converge from the clustered initial state),
+	// redistribute one match at a time from the most-loaded evening.
+	assignment = fillEmptyEvenings(assignment, in.NumEvenings)
+
 	// 4. Build domain.Schedule from the optimised assignment.
 	schedID := uuid.New()
 	schedule := domain.Schedule{
@@ -168,6 +202,42 @@ func Generate(in Input) (domain.Schedule, error) {
 	log.Printf("[scheduler.Generate] done: scheduleID=%s evenings=%d totalMatches=%d",
 		schedule.ID, len(schedule.Evenings), len(flatMatches))
 	return schedule, nil
+}
+
+// fillEmptyEvenings ensures every evening has at least one match by moving one match
+// at a time from the most-loaded evening to each empty evening.
+func fillEmptyEvenings(assignment []int, numEvenings int) []int {
+	result := cloneAssignment(assignment)
+	for {
+		counts := make([]int, numEvenings)
+		for _, ei := range result {
+			counts[ei]++
+		}
+		// Find first empty evening.
+		emptyEvening := -1
+		for ei, c := range counts {
+			if c == 0 {
+				emptyEvening = ei
+				break
+			}
+		}
+		if emptyEvening < 0 {
+			return result // all evenings have at least one match
+		}
+		// Move one match from the most-loaded evening to the empty one.
+		maxEvening := 0
+		for ei, c := range counts {
+			if c > counts[maxEvening] {
+				maxEvening = ei
+			}
+		}
+		for mi, ei := range result {
+			if ei == maxEvening {
+				result[mi] = emptyEvening
+				break
+			}
+		}
+	}
 }
 
 // clusteringAssign distributes matches by pairing consecutive rounds onto the same

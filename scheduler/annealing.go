@@ -77,7 +77,7 @@ func DefaultAnnealConfig() AnnealConfig {
 		WTripleConsec: 5_000.0,
 		WGapViolation: 5_000.0,
 		WExcessTriple: 2_000.0,
-		WMinMatches:   1_000.0,
+		WMinMatches:   5_000.0,
 		WSoloSoft:     5.0,
 		WSpread:       5_000.0,
 		WVariance:     500.0,
@@ -146,14 +146,16 @@ func anneal(
 		var i, j int
 
 		if rng.Float64() < cfg.TargetedFraction {
-			// Rotate among three targeted strategies: buddy, consecutive, gap.
-			switch rng.Intn(3) {
+			// Rotate among four targeted strategies: buddy, consecutive, gap, solo.
+			switch rng.Intn(4) {
 			case 0:
 				i, j = buddyTargetedSwap(matches, current, numEvenings, buddyPairs, playerMatchIdx, rng)
 			case 1:
 				i, j = consecutiveTargetedSwap(matches, current, numEvenings, playerMatchIdx, rng)
 			case 2:
 				i, j = gapTargetedSwap(matches, current, numEvenings, playerMatchIdx, rng)
+			case 3:
+				i, j = soloTargetedSwap(matches, current, numEvenings, playerMatchIdx, rng)
 			}
 		}
 		if i < 0 || i == j {
@@ -357,6 +359,83 @@ func gapTargetedSwap(
 					}
 				}
 				lastActive = ei
+			}
+		}
+	}
+	return -1, -1
+}
+
+// soloTargetedSwap finds a player with ≥2 solo evenings and consolidates two of them:
+// it swaps the player's match on soloA with a non-player match on soloB.
+// After the swap the player has 0 matches on soloA and 2 on soloB (eliminating both solos).
+func soloTargetedSwap(
+	matches []pair,
+	current []int,
+	numEvenings int,
+	playerMatchIdx map[domain.PlayerID][]int,
+	rng *rand.Rand,
+) (int, int) {
+	counts := playerCountsPerEvening(matches, current, numEvenings)
+
+	// Build evening → match indices for efficient lookup.
+	eveningMatches := make([][]int, numEvenings)
+	for mi, ei := range current {
+		eveningMatches[ei] = append(eveningMatches[ei], mi)
+	}
+
+	// Build per-player list of solo evenings.
+	playerSolos := make(map[domain.PlayerID][]int)
+	for ei := 0; ei < numEvenings; ei++ {
+		for pid, c := range counts[ei] {
+			if c == 1 {
+				playerSolos[pid] = append(playerSolos[pid], ei)
+			}
+		}
+	}
+
+	// Collect players with ≥2 solo evenings.
+	candidates := make([]domain.PlayerID, 0, len(playerSolos))
+	for pid, solos := range playerSolos {
+		if len(solos) >= 2 {
+			candidates = append(candidates, pid)
+		}
+	}
+	if len(candidates) == 0 {
+		return -1, -1
+	}
+	rng.Shuffle(len(candidates), func(a, b int) { candidates[a], candidates[b] = candidates[b], candidates[a] })
+
+	for _, pid := range candidates {
+		solos := playerSolos[pid]
+		rng.Shuffle(len(solos), func(a, b int) { solos[a], solos[b] = solos[b], solos[a] })
+
+		for si := 0; si < len(solos); si++ {
+			soloA := solos[si]
+
+			// Find pid's match on soloA.
+			matchA := -1
+			for _, mi := range playerMatchIdx[pid] {
+				if current[mi] == soloA {
+					matchA = mi
+					break
+				}
+			}
+			if matchA < 0 {
+				continue
+			}
+
+			// Find soloB with a non-pid match to swap with.
+			for sj := 0; sj < len(solos); sj++ {
+				if sj == si {
+					continue
+				}
+				soloB := solos[sj]
+				mList := eveningMatches[soloB]
+				for _, mj := range mList {
+					if matches[mj].A != pid && matches[mj].B != pid {
+						return matchA, mj
+					}
+				}
 			}
 		}
 	}
