@@ -1,4 +1,14 @@
-import { Component, inject, OnInit, Inject, ElementRef, ChangeDetectorRef, viewChild, signal, Signal } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  Inject,
+  ElementRef,
+  ChangeDetectorRef,
+  viewChild,
+  signal,
+  Signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -28,7 +38,9 @@ import { environment } from '../../../environments/environment';
   selector: 'app-loading-dialog',
   imports: [MatProgressSpinnerModule, MatProgressBarModule, CommonModule],
   template: `
-    <div style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px 56px;text-align:center;min-width:280px">
+    <div
+      style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px 56px;text-align:center;min-width:280px"
+    >
       @if (data.percent() < 5) {
         <mat-spinner diameter="56"></mat-spinner>
       } @else {
@@ -59,6 +71,7 @@ export class LoadingDialogComponent {
     ReactiveFormsModule,
     MatDialogModule,
     MatButtonModule,
+    MatIconModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -70,7 +83,6 @@ export class LoadingDialogComponent {
         align-items: center;
         gap: 12px;
         padding: 4px 0;
-        border-bottom: 1px solid #f5f5f5;
       }
       .slot-date {
         color: #555;
@@ -81,6 +93,35 @@ export class LoadingDialogComponent {
         min-width: 64px;
         font-size: 13px;
         font-weight: 500;
+      }
+      .insert-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        height: 20px;
+        opacity: 0.25;
+        transition: opacity 0.15s;
+        cursor: pointer;
+      }
+      .insert-row:hover {
+        opacity: 1;
+      }
+      .insert-line {
+        flex: 1;
+        height: 1px;
+        background: #bdbdbd;
+      }
+      .insert-btn {
+        width: 20px !important;
+        height: 20px !important;
+        line-height: 20px !important;
+      }
+      .insert-btn mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        line-height: 16px;
+        color: #757575;
       }
     `,
   ],
@@ -93,8 +134,8 @@ export class LoadingDialogComponent {
           <input matInput formControlName="competitionName" />
         </mat-form-field>
         <mat-form-field style="grid-column:1/-1"
-          ><mat-label>Seizoen (bijv. 2026)</mat-label>
-          <input matInput formControlName="season" placeholder="2026" />
+          ><mat-label>Seizoen (bijv. 2026-2027)</mat-label>
+          <input matInput formControlName="season" placeholder="2026-2027" />
         </mat-form-field>
         <mat-form-field
           ><mat-label>Aantal avonden (totaal)</mat-label>
@@ -106,7 +147,7 @@ export class LoadingDialogComponent {
         </mat-form-field>
         <mat-form-field style="grid-column:1/-1"
           ><mat-label>Startdatum (YYYY-MM-DD)</mat-label>
-          <input matInput formControlName="startDate" placeholder="2026-04-01" />
+          <input matInput formControlName="startDate" placeholder="2026-09-01" />
         </mat-form-field>
       </form>
 
@@ -119,18 +160,25 @@ export class LoadingDialogComponent {
               {{ regularCount }} speelavonden · {{ inhaalCount }} inhaalavonden · {{ vrijCount }} vrij
             </span>
           </div>
-          <div style="max-height:280px;overflow-y:auto">
-            @for (s of slots; track s) {
+          <div style="max-height:320px;overflow-y:auto">
+            @for (s of slots; track s.nr; let i = $index) {
               <div class="slot-row">
                 <span class="slot-nr">Avond {{ s.nr }}</span>
                 <span class="slot-date">{{ s.date | date: 'EEE d MMM yyyy' }}</span>
                 <mat-form-field style="min-width:130px" subscriptSizing="dynamic">
-                  <mat-select [(value)]="slotTypes[s.nr]">
+                  <mat-select [(value)]="s.type">
                     <mat-option value="normaal">Normaal</mat-option>
                     <mat-option value="inhaal">Inhaalavond</mat-option>
                     <mat-option value="vrij">Vrije avond</mat-option>
                   </mat-select>
                 </mat-form-field>
+              </div>
+              <div class="insert-row" (click)="insertVrij(i)" title="Vakantieweek invoegen">
+                <div class="insert-line"></div>
+                <button type="button" mat-icon-button class="insert-btn">
+                  <mat-icon>add_circle_outline</mat-icon>
+                </button>
+                <div class="insert-line"></div>
               </div>
             }
           </div>
@@ -152,29 +200,40 @@ export class GenerateDialogComponent implements OnInit {
   constructor(@Inject(MAT_DIALOG_DATA) public data: null) {}
 
   form = this.fb.group({
-    competitionName: ['Liga 2026', Validators.required],
-    season: ['2026', Validators.required],
-    numEvenings: [20, [Validators.required, Validators.min(1)]],
-    startDate: ['2026-04-01', Validators.required],
+    competitionName: ['2026-2027', Validators.required],
+    season: ['2026-2027', Validators.required],
+    numEvenings: [30, [Validators.required, Validators.min(1)]],
+    startDate: ['2026-09-01', Validators.required],
     intervalDays: [7, [Validators.required, Validators.min(1)]],
   });
 
-  slotTypes: Record<number, string> = {};
-  slots: { nr: number; date: Date }[] = [];
+  slots: { nr: number; date: Date; type: string }[] = [];
 
   ngOnInit(): void {
-    this.form.valueChanges.subscribe(() => this.rebuildSlots());
+    // Sync competitionName ↔ season so both fields always match.
+    this.form.get('competitionName')!.valueChanges.subscribe((v) => {
+      this.form.get('season')!.setValue(v, { emitEvent: false });
+    });
+    this.form.get('season')!.valueChanges.subscribe((v) => {
+      this.form.get('competitionName')!.setValue(v, { emitEvent: false });
+    });
+
+    // Rebuild slot list when scheduling parameters change.
+    ['numEvenings', 'startDate', 'intervalDays'].forEach((field) => {
+      this.form.get(field)!.valueChanges.subscribe(() => this.rebuildSlots());
+    });
+
     this.rebuildSlots();
   }
 
   get regularCount(): number {
-    return this.slots.filter((s) => (this.slotTypes[s.nr] ?? 'normaal') === 'normaal').length;
+    return this.slots.filter((s) => s.type === 'normaal').length;
   }
   get inhaalCount(): number {
-    return this.slots.filter((s) => this.slotTypes[s.nr] === 'inhaal').length;
+    return this.slots.filter((s) => s.type === 'inhaal').length;
   }
   get vrijCount(): number {
-    return this.slots.filter((s) => this.slotTypes[s.nr] === 'vrij').length;
+    return this.slots.filter((s) => s.type === 'vrij').length;
   }
 
   private rebuildSlots(): void {
@@ -183,28 +242,42 @@ export class GenerateDialogComponent implements OnInit {
     const start = v.startDate ? new Date(v.startDate) : null;
     const interval = v.intervalDays ?? 7;
     if (n > 0 && start && !isNaN(start.getTime())) {
+      // Last 4 slots default to 'inhaal'; the rest are 'normaal'.
       this.slots = Array.from({ length: n }, (_, i) => {
         const d = new Date(start);
         d.setDate(d.getDate() + i * interval);
-        return { nr: i + 1, date: d };
+        return { nr: i + 1, date: d, type: i >= n - 4 ? 'inhaal' : 'normaal' };
       });
     } else {
       this.slots = [];
     }
-    for (let i = 1; i <= n; i++) {
-      if (!this.slotTypes[i]) this.slotTypes[i] = 'normaal';
-    }
+  }
+
+  /** Insert a vrij (vacation) slot after the slot at the given 0-based index. */
+  insertVrij(afterIndex: number): void {
+    const start = this.form.value.startDate ? new Date(this.form.value.startDate) : new Date();
+    const interval = this.form.value.intervalDays ?? 7;
+
+    const newSlots = [...this.slots];
+    newSlots.splice(afterIndex + 1, 0, { nr: 0, date: new Date(), type: 'vrij' });
+
+    // Renumber all slots and recompute dates from the start date.
+    this.slots = newSlots.map((s, i) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i * interval);
+      return { ...s, nr: i + 1, date: d };
+    });
   }
 
   submit(): void {
     if (!this.form.valid || this.regularCount === 0) return;
     const v = this.form.value;
-    const inhaalNrs = this.slots.filter((s) => this.slotTypes[s.nr] === 'inhaal').map((s) => s.nr);
-    const vrijeNrs = this.slots.filter((s) => this.slotTypes[s.nr] === 'vrij').map((s) => s.nr);
+    const inhaalNrs = this.slots.filter((s) => s.type === 'inhaal').map((s) => s.nr);
+    const vrijeNrs = this.slots.filter((s) => s.type === 'vrij').map((s) => s.nr);
     this.dialogRef.close({
       competitionName: v.competitionName,
       season: v.season,
-      numEvenings: v.numEvenings,
+      numEvenings: this.slots.length,
       startDate: v.startDate,
       intervalDays: v.intervalDays,
       inhaalNrs,
@@ -395,8 +468,12 @@ export class ImportSeasonDialogComponent {
         font-size: 13px;
       }
       @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
       }
     `,
   ],
@@ -450,7 +527,9 @@ export class ImportSeasonDialogComponent {
                 </div>
                 @if (editingSeasonId() !== s.id) {
                   @if (s.active) {
-                    <mat-icon style="color:#f9a825;margin:0 4px;vertical-align:middle" matTooltip="Actief seizoen">star</mat-icon>
+                    <mat-icon style="color:#f9a825;margin:0 4px;vertical-align:middle" matTooltip="Actief seizoen"
+                      >star</mat-icon
+                    >
                   } @else {
                     <button mat-icon-button (click)="setActiveSeason(s)" matTooltip="Als actief instellen">
                       <mat-icon>star_border</mat-icon>
@@ -477,7 +556,13 @@ export class ImportSeasonDialogComponent {
                   </button>
                 }
                 @if (editingSeasonId() !== s.id) {
-                  <button mat-icon-button color="warn" [disabled]="regeneratingId() !== ''" (click)="deleteSeason(s)" matTooltip="Seizoen verwijderen">
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    [disabled]="regeneratingId() !== ''"
+                    (click)="deleteSeason(s)"
+                    matTooltip="Seizoen verwijderen"
+                  >
                     <mat-icon>delete</mat-icon>
                   </button>
                 }
@@ -553,15 +638,15 @@ export class BeheerComponent implements OnInit {
 
   readonly renameInputRef = viewChild<ElementRef<HTMLInputElement>>('renameInput');
 
-  seasons          = signal<SeasonSummary[]>([]);
+  seasons = signal<SeasonSummary[]>([]);
   selectedFile: File | null = null;
-  loading          = signal(false);
-  editingSeasonId  = signal('');
-  renameDraft      = signal('');
-  regeneratingId   = signal('');
+  loading = signal(false);
+  editingSeasonId = signal('');
+  renameDraft = signal('');
+  regeneratingId = signal('');
 
   version = environment.version;
-  logs        = signal<string[]>([]);
+  logs = signal<string[]>([]);
   logsLoading = signal(false);
 
   ngOnInit(): void {
@@ -596,9 +681,12 @@ export class BeheerComponent implements OnInit {
     ref.afterClosed().subscribe((req: GenerateScheduleRequest | undefined) => {
       if (!req) return;
       const progressPct = signal(0);
-      const loadingRef = this.dialog.open(LoadingDialogComponent, { disableClose: true, data: { percent: progressPct } });
+      const loadingRef = this.dialog.open(LoadingDialogComponent, {
+        disableClose: true,
+        data: { percent: progressPct },
+      });
       const pollId = setInterval(() => {
-        this.scheduleService.getProgress().subscribe(p => progressPct.set(p.percent));
+        this.scheduleService.getProgress().subscribe((p) => progressPct.set(p.percent));
       }, 500);
       this.scheduleService.generate(req).subscribe({
         next: (s) => {
@@ -685,7 +773,7 @@ export class BeheerComponent implements OnInit {
     const progressPct = signal(0);
     const loadingRef = this.dialog.open(LoadingDialogComponent, { disableClose: true, data: { percent: progressPct } });
     const pollId = setInterval(() => {
-      this.scheduleService.getProgress().subscribe(p => progressPct.set(p.percent));
+      this.scheduleService.getProgress().subscribe((p) => progressPct.set(p.percent));
     }, 500);
     this.scheduleService.regenerate(s.id).subscribe({
       next: (sched) => {
