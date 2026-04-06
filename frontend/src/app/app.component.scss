@@ -65,22 +65,24 @@
 .toolbar-season-select {
   min-width: 160px;
   margin-right: 16px;
-  // White-tinted outline/label on primary background
+
+  // Outline border colours on primary background
   --mat-form-field-outlined-outline-color: rgba(255, 255, 255, 0.45);
   --mat-form-field-outlined-hover-outline-color: rgba(255, 255, 255, 0.75);
   --mat-form-field-outlined-focus-outline-color: #fff;
-  --mat-select-trigger-text-color: #fff;
-  --mat-select-arrow-foreground-color: rgba(255, 255, 255, 0.7);
 
-  ::ng-deep {
-    .mat-mdc-select-value-text {
-      font-weight: 500;
-    }
-    // Label text (floating + resting state)
-    .mdc-floating-label,
-    .mat-mdc-floating-label {
-      color: #fff !important;
-    }
+  // Label text colour (resting, hover and focused states)
+  --mat-form-field-outlined-label-text-color: rgba(255, 255, 255, 0.85);
+  --mat-form-field-outlined-hover-label-text-color: #fff;
+  --mat-form-field-outlined-focus-label-text-color: #fff;
+
+  // Selected-value and arrow colours
+  --mat-select-enabled-trigger-text-color: #fff;
+  --mat-select-enabled-arrow-color: rgba(255, 255, 255, 0.7);
+  --mat-select-focused-arrow-color: #fff;
+
+  ::ng-deep .mat-mdc-select-value-text {
+    font-weight: 500;
   }
 }
 
