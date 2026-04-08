@@ -1,7 +1,9 @@
 import {
   Component,
+  computed,
   inject,
   OnInit,
+  OnDestroy,
   Inject,
   ElementRef,
   ChangeDetectorRef,
@@ -37,28 +39,47 @@ import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-loading-dialog',
-  imports: [MatProgressSpinnerModule, MatProgressBarModule, CommonModule],
+  imports: [MatProgressBarModule, CommonModule],
   template: `
     <div
       style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px 56px;text-align:center;min-width:280px"
     >
-      @if (data.percent() < 5) {
-        <mat-spinner diameter="56"></mat-spinner>
-      } @else {
-        <div style="width:220px">
-          <mat-progress-bar mode="determinate" [value]="data.percent()"></mat-progress-bar>
-          <span style="font-size:13px;color:#555;margin-top:6px;display:block">{{ data.percent() }}%</span>
-        </div>
-      }
+      <div style="width:220px">
+        <mat-progress-bar mode="determinate" [value]="data.percent()"></mat-progress-bar>
+        <span style="font-size:13px;color:#555;margin-top:6px;display:block">{{ data.percent() }}%</span>
+      </div>
       <div>
         <p style="margin:0;font-size:16px;font-weight:500">Schema wordt berekend…</p>
-        <p style="margin:6px 0 0;font-size:13px;color:#9e9e9e">Dit kan een minuut duren.</p>
+        <p style="margin:6px 0 0;font-size:13px;color:#9e9e9e">{{ timeRemaining() || 'Dit kan een paar minuten duren.' }}</p>
       </div>
     </div>
   `,
 })
-export class LoadingDialogComponent {
+export class LoadingDialogComponent implements OnInit, OnDestroy {
   data = inject<{ percent: Signal<number> }>(MAT_DIALOG_DATA);
+
+  private startTime = Date.now();
+  private intervalId: ReturnType<typeof setInterval> | null = null;
+  private elapsed = signal(0);
+
+  timeRemaining = computed(() => {
+    const pct = this.data.percent();
+    const elapsedSec = this.elapsed();
+    if (pct <= 0 || elapsedSec < 3) return '';
+    const totalEstSec = (elapsedSec / pct) * 100;
+    const remainingSec = Math.max(0, Math.round(totalEstSec - elapsedSec));
+    if (remainingSec <= 5) return 'bijna klaar…';
+    if (remainingSec < 60) return `nog ~${remainingSec}s`;
+    return `nog ~${Math.ceil(remainingSec / 60)} min`;
+  });
+
+  ngOnInit(): void {
+    this.intervalId = setInterval(() => this.elapsed.set(Math.round((Date.now() - this.startTime) / 1000)), 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.intervalId) clearInterval(this.intervalId);
+  }
 }
 
 // ---------------------------------------------------------------------------
