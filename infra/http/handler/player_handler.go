@@ -104,6 +104,7 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] speler bijgewerkt nr=%s naam=%q", p.Nr, p.Name)
 	writeJSON(w, p)
 }
 
@@ -122,6 +123,7 @@ func (h *PlayerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] speler verwijderd id=%s", id)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -170,5 +172,6 @@ func (h *PlayerHandler) SetBuddies(w http.ResponseWriter, r *http.Request) {
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] buddy's ingesteld speler=%s aantal=%d", id, len(buddyIDs))
 	w.WriteHeader(http.StatusNoContent)
 }

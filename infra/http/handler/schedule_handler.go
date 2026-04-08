@@ -50,6 +50,7 @@ func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	GlobalProgress.Start(1_200_000) // initial estimate; updated to actual total on first progress callback
 	defer GlobalProgress.Done()
 
+	start := time.Now()
 	sched, err := h.uc.Generate(r.Context(), usecase.GenerateScheduleInput{
 		CompetitionName: req.CompetitionName,
 		Season:          req.Season,
@@ -67,7 +68,7 @@ func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		httpErrorDomain(w, err)
 		return
 	}
-	log.Printf("[INFO] schema gegenereerd seizoen=%q avonden=%d id=%s", sched.CompetitionName, len(sched.Evenings), sched.ID)
+	log.Printf("[INFO] schema gegenereerd seizoen=%q avonden=%d id=%s duur=%s", sched.CompetitionName, len(sched.Evenings), sched.ID, time.Since(start).Round(time.Millisecond))
 	writeJSON(w, sched)
 }
 
@@ -151,6 +152,7 @@ func (h *ScheduleHandler) AddCatchUpEvening(w http.ResponseWriter, r *http.Reque
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] inhaalavond toegevoegd schema=%s datum=%s", schedID, date.Format("2006-01-02"))
 	writeJSON(w, sched)
 }
 
@@ -165,6 +167,7 @@ func (h *ScheduleHandler) RegenerateSchedule(w http.ResponseWriter, r *http.Requ
 	GlobalProgress.Start(1_200_000) // initial estimate; updated to actual total on first progress callback
 	defer GlobalProgress.Done()
 
+	start := time.Now()
 	sched, err := h.uc.Regenerate(r.Context(), domain.ScheduleID(id), func(step, total int) {
 		GlobalProgress.SetTotal(total)
 		GlobalProgress.Update(step)
@@ -173,7 +176,7 @@ func (h *ScheduleHandler) RegenerateSchedule(w http.ResponseWriter, r *http.Requ
 		httpErrorDomain(w, err)
 		return
 	}
-	log.Printf("[INFO] schema herberekend id=%s", sched.ID)
+	log.Printf("[INFO] schema herberekend id=%s duur=%s", sched.ID, time.Since(start).Round(time.Millisecond))
 	writeJSON(w, sched)
 }
 
@@ -240,6 +243,7 @@ func (h *ScheduleHandler) DeleteEvening(w http.ResponseWriter, r *http.Request) 
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] avond verwijderd id=%s", id)
 	w.WriteHeader(http.StatusNoContent)
 }
 

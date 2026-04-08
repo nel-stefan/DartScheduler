@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	excelexport "DartScheduler/infra/excel"
@@ -34,7 +35,9 @@ func (h *ExportHandler) Excel(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `attachment; filename="schedule.xlsx"`)
 	if err := h.uc.Export(r.Context(), excelexport.Exporter{}, w); err != nil {
 		httpErrorDomain(w, err)
+		return
 	}
+	log.Printf("[INFO] export excel schema")
 }
 
 func (h *ExportHandler) PDF(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +45,9 @@ func (h *ExportHandler) PDF(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `attachment; filename="schedule.pdf"`)
 	if err := h.uc.Export(r.Context(), pdf.Exporter{}, w); err != nil {
 		httpErrorDomain(w, err)
+		return
 	}
+	log.Printf("[INFO] export pdf schema")
 }
 
 func (h *ExportHandler) EveningPrint(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +60,9 @@ func (h *ExportHandler) EveningPrint(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := h.uc.ExportEvening(r.Context(), h.htmlEvPrinter, id, w); err != nil {
 		httpErrorDomain(w, err)
+		return
 	}
+	log.Printf("[INFO] export html avondformulier id=%s", id)
 }
 
 func (h *ExportHandler) EveningPDF(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +82,9 @@ func (h *ExportHandler) EveningPDF(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 	if err := h.uc.ExportEvening(r.Context(), h.pdfEvExp, id, w); err != nil {
 		httpErrorDomain(w, err)
+		return
 	}
+	log.Printf("[INFO] export pdf avondformulier datum=%s", date.Format("2006-01-02"))
 }
 
 func (h *ExportHandler) EveningExcel(w http.ResponseWriter, r *http.Request) {
@@ -95,5 +104,7 @@ func (h *ExportHandler) EveningExcel(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 	if err := h.uc.ExportEvening(r.Context(), h.excelEvExp, id, w); err != nil {
 		httpErrorDomain(w, err)
+		return
 	}
+	log.Printf("[INFO] export excel avondformulier datum=%s", date.Format("2006-01-02"))
 }

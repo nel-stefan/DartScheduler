@@ -64,6 +64,7 @@ func (h *ScoreHandler) ReportAbsent(w http.ResponseWriter, r *http.Request) {
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] speler afgemeld avond=%s speler=%s door=%q", eveningID, playerID, req.ReportedBy)
 	w.WriteHeader(http.StatusNoContent)
 }
 

@@ -45,6 +45,12 @@ func main() {
 	scoreUC := usecase.NewScoreUseCase(matchRepo, eveningRepo, seasonStatRepo)
 	exportUC := usecase.NewExportUseCase(scheduleRepo, eveningRepo, matchRepo, playerRepo)
 
+	// Log database summary at startup
+	if players, err := playerUC.ListPlayers(context.Background()); err == nil {
+		schedules, _ := scheduleUC.ListSchedules(context.Background())
+		log.Printf("[INFO] database: %d spelers, %d seizoenen", len(players), len(schedules))
+	}
+
 	// Handlers
 	playerH := handler.NewPlayerHandler(playerUC)
 	schedH := handler.NewScheduleHandler(scheduleUC)
