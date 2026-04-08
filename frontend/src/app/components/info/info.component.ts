@@ -1317,17 +1317,19 @@ export class InfoComponent implements OnInit {
     const uid = (i: number) => `dart-${this.selectedPlayerId().slice(0, 8)}-${i}@grolzicht`;
 
     const events = this.playerMatchRows
-      .map((r, i) =>
-        [
+      .map((r, i) => {
+        const date = r.isCatchUp && r.playedDate ? r.playedDate : r.eveningDate;
+        const label = r.isCatchUp ? ` (inhaal)` : '';
+        return [
           'BEGIN:VEVENT',
           `UID:${uid(i)}`,
-          `DTSTART;VALUE=DATE:${toIcsDate(r.eveningDate)}`,
-          `DTEND;VALUE=DATE:${toIcsDate(r.eveningDate)}`,
-          `SUMMARY:Avond ${r.eveningNumber} – vs ${r.opponentName}`,
-          `DESCRIPTION:${compName}\\nAvond ${r.eveningNumber} – ${player.nr} ${player.name} vs ${r.opponentName}`,
+          `DTSTART;VALUE=DATE:${toIcsDate(date)}`,
+          `DTEND;VALUE=DATE:${toIcsDate(date)}`,
+          `SUMMARY:Avond ${r.eveningNumber}${label} – vs ${r.opponentName}`,
+          `DESCRIPTION:${compName}\\nAvond ${r.eveningNumber}${label} – ${player.nr} ${player.name} vs ${r.opponentName}`,
           'END:VEVENT',
-        ].join('\r\n')
-      )
+        ].join('\r\n');
+      })
       .join('\r\n');
 
     const ics = [
