@@ -22,7 +22,7 @@ func main() {
 
 	logBuf := logbuf.New(200)
 	log.SetOutput(io.MultiWriter(os.Stderr, logBuf))
-	log.Printf("config: port=%s db_type=%s db_path=%s club=%q title=%q logo=%q cors=%q",
+	log.Printf("[INFO] config: port=%s db_type=%s db_path=%s club=%q title=%q logo=%q cors=%q",
 		cfg.Port, cfg.DatabaseType, cfg.DatabasePath, cfg.ClubName, cfg.AppTitle, cfg.LogoPath, cfg.AllowedOrigin)
 
 	db, err := sqlite.Open(cfg.DatabasePath)
@@ -63,7 +63,7 @@ func main() {
 
 	serveErr := make(chan error, 1)
 	go func() {
-		log.Printf("listening on :%s", cfg.Port)
+		log.Printf("[INFO] listening on :%s", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			serveErr <- err
 		}

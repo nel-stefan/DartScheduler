@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"DartScheduler/domain"
@@ -101,5 +102,6 @@ func (h *ScoreHandler) Submit(w http.ResponseWriter, r *http.Request) {
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] score ingediend wedstrijd=%s", id)
 	w.WriteHeader(http.StatusNoContent)
 }
