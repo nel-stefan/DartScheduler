@@ -380,70 +380,7 @@ interface MatchRow {
               </mat-card>
             </div>
           </mat-tab>
-          <!-- Tab 2: Spelers -->
-          <mat-tab label="Spelers">
-            <div style="padding-top:16px">
-              <mat-card>
-                <mat-card-content>
-                  <table mat-table [dataSource]="playerRows()" style="width:100%">
-                    <ng-container matColumnDef="nr">
-                      <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
-                      <td mat-cell *matCellDef="let row">{{ row.player.nr }}</td>
-                    </ng-container>
-                    <ng-container matColumnDef="name">
-                      <th mat-header-cell *matHeaderCellDef>Naam</th>
-                      <td mat-cell *matCellDef="let row">
-                        <strong>{{ row.player.name }}</strong>
-                      </td>
-                    </ng-container>
-                    <ng-container matColumnDef="eveningCount">
-                      <th mat-header-cell *matHeaderCellDef style="width:90px;text-align:center">Avonden</th>
-                      <td mat-cell *matCellDef="let row" style="text-align:center">{{ row.eveningCount }}</td>
-                    </ng-container>
-                    <ng-container matColumnDef="totalMatches">
-                      <th mat-header-cell *matHeaderCellDef style="width:100px;text-align:center">Wedstrijden</th>
-                      <td mat-cell *matCellDef="let row" style="text-align:center;font-weight:600">
-                        {{ row.totalMatches }}
-                      </td>
-                    </ng-container>
-                    <ng-container matColumnDef="consecutive">
-                      <th mat-header-cell *matHeaderCellDef style="width:160px">Opeenvolgende avonden</th>
-                      <td mat-cell *matCellDef="let row">
-                        @for (streak of getStreaks(row); track streak) {
-                          <span style="margin-right:6px;font-size:12px;color:#e65100">
-                            Av.{{ streak.join(', ') }}
-                          </span>
-                        }
-                        @if (getStreaks(row).length === 0) {
-                          <span style="color:#bdbdbd;font-size:12px">—</span>
-                        }
-                      </td>
-                    </ng-container>
-                    <ng-container matColumnDef="buddy">
-                      <th mat-header-cell *matHeaderCellDef>Koppel</th>
-                      <td mat-cell *matCellDef="let row">
-                        @if (getBuddy(row.player.id); as pair) {
-                          <span style="font-size:13px"> {{ pair.partnerNr }} {{ pair.partnerName }} </span>
-                          @if (pair.eveningNrs.length > 0) {
-                            <div class="buddy-chip-row" style="margin-top:2px">
-                              @for (nr of pair.eveningNrs; track nr) {
-                                <span class="evening-chip">Av.{{ nr }}</span>
-                              }
-                            </div>
-                          }
-                        } @else {
-                          <span style="color:#bdbdbd;font-size:12px">—</span>
-                        }
-                      </td>
-                    </ng-container>
-                    <tr mat-header-row *matHeaderRowDef="summaryCols"></tr>
-                    <tr mat-row *matRowDef="let row; columns: summaryCols"></tr>
-                  </table>
-                </mat-card-content>
-              </mat-card>
-            </div>
-          </mat-tab>
-          <!-- Tab 3: Statistieken -->
+          <!-- Tab 2: Statistieken -->
           <mat-tab label="Statistieken">
             <div style="padding-top:16px">
               @if (statRows().length > 0) {
