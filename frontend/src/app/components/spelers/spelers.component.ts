@@ -17,7 +17,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { PlayerService } from '../../services/player.service';
 import { SeasonService } from '../../services/season.service';
 import { ScheduleService } from '../../services/schedule.service';
-import { Player } from '../../models';
+import { Player, PlayerList } from '../../models';
 
 // --- Edit dialog ---
 
@@ -174,6 +174,16 @@ export class BuddyDialogComponent {
   ],
   template: `
     <div style="margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      @if (playerLists().length > 1) {
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Ledenlijst</mat-label>
+          <mat-select [value]="selectedListId()" (selectionChange)="selectedListId.set($event.value)">
+            @for (list of playerLists(); track list.id) {
+              <mat-option [value]="list.id">{{ list.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
       <button mat-stroked-button [disabled]="players().length === 0" (click)="printClassList()">
         <mat-icon>print</mat-icon> Klasseindeling afdrukken
       </button>
@@ -298,6 +308,7 @@ export class SpelersComponent implements OnInit, OnDestroy {
   private dialog          = inject(MatDialog);
 
   players         = signal<Player[]>([]);
+  playerLists     = signal<PlayerList[]>([]);
   selectedListId  = signal<string | null>(null);
   filteredPlayers = computed(() => {
     const id = this.selectedListId();
@@ -314,6 +325,10 @@ export class SpelersComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadPlayers();
+    this.playerService.getPlayerLists().subscribe({
+      next: (lists) => this.playerLists.set(lists),
+      error: () => {},
+    });
     this.sub.add(
       this.seasonService.effectivePlayerListId$.subscribe((id) => this.selectedListId.set(id)),
     );

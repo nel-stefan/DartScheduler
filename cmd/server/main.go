@@ -56,7 +56,7 @@ func main() {
 	playerH := handler.NewPlayerHandler(playerUC)
 	schedH := handler.NewScheduleHandler(scheduleUC)
 	scoreH := handler.NewScoreHandler(scoreUC)
-	statsH := handler.NewStatsHandler(playerRepo, scoreUC)
+	statsH := handler.NewStatsHandler(playerRepo, scheduleRepo, scoreUC)
 	exportH := handler.NewExportHandler(exportUC, cfg.ClubName, cfg.LogoPath)
 	systemH := handler.NewSystemHandler(logBuf)
 	eveningStatH := handler.NewEveningStatHandler(eveningStatRepo)
