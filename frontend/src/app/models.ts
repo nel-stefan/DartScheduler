@@ -147,4 +147,11 @@ export interface GenerateScheduleRequest {
   intervalDays: number;
   inhaalNrs: number[];
   vrijeNrs: number[];
+  playerListId: string | null;
+}
+
+export interface PlayerList {
+  id: string;
+  name: string;
+  createdAt: string;
 }

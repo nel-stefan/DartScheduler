@@ -139,6 +139,9 @@ func (r *exportPlayerRepo) DeleteBuddiesForPlayer(_ context.Context, _ domain.Pl
 	return nil
 }
 func (r *exportPlayerRepo) DeleteAllBuddyPairs(_ context.Context) error { return nil }
+func (r *exportPlayerRepo) FindByList(_ context.Context, _ domain.PlayerListID) ([]domain.Player, error) {
+	return nil, nil
+}
 
 // ---------------------------------------------------------------------------
 // Tests

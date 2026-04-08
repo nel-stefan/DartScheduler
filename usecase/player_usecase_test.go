@@ -109,6 +109,10 @@ func (r *funcPlayerRepo) DeleteAllBuddyPairs(_ context.Context) error {
 	return nil
 }
 
+func (r *funcPlayerRepo) FindByList(_ context.Context, _ domain.PlayerListID) ([]domain.Player, error) {
+	return nil, nil
+}
+
 // errOnDeleteBuddyRepo wraps funcPlayerRepo and returns an error from DeleteBuddiesForPlayer.
 type errOnDeleteBuddyRepo struct {
 	funcPlayerRepo
@@ -174,7 +178,7 @@ func TestListPlayers_FormatsDisplayNames(t *testing.T) {
 	pA := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "1", Name: "Janssen, Jan"}
 	pB := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "2", Name: "NoComma"}
 	repo := &funcPlayerRepo{players: []domain.Player{pA, pB}}
-	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{})
+	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{}, nil)
 
 	players, err := uc.ListPlayers(context.Background())
 	if err != nil {
@@ -203,7 +207,7 @@ func TestListPlayers_FormatsDisplayNames(t *testing.T) {
 func TestListPlayers_NameWithoutCommaUnchanged(t *testing.T) {
 	p := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "5", Name: "NoComma"}
 	repo := &funcPlayerRepo{players: []domain.Player{p}}
-	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{})
+	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{}, nil)
 
 	players, err := uc.ListPlayers(context.Background())
 	if err != nil {
@@ -215,8 +219,8 @@ func TestListPlayers_NameWithoutCommaUnchanged(t *testing.T) {
 }
 
 func TestImportPlayers_EmptyInputReturnsError(t *testing.T) {
-	uc := usecase.NewPlayerUseCase(&funcPlayerRepo{}, &playerMatchRepo{})
-	err := uc.ImportPlayers(context.Background(), nil, nil)
+	uc := usecase.NewPlayerUseCase(&funcPlayerRepo{}, &playerMatchRepo{}, nil)
+	err := uc.ImportPlayers(context.Background(), nil, nil, "")
 	if err == nil {
 		t.Error("expected error for empty input, got nil")
 	}
@@ -224,13 +228,13 @@ func TestImportPlayers_EmptyInputReturnsError(t *testing.T) {
 
 func TestImportPlayers_SavesPlayers(t *testing.T) {
 	repo := &funcPlayerRepo{}
-	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{})
+	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{}, nil)
 
 	inputs := []usecase.PlayerInput{
 		{Nr: "1", Name: "Doe, John"},
 		{Nr: "2", Name: "Smith, Jane"},
 	}
-	if err := uc.ImportPlayers(context.Background(), inputs, nil); err != nil {
+	if err := uc.ImportPlayers(context.Background(), inputs, nil, ""); err != nil {
 		t.Fatalf("ImportPlayers error: %v", err)
 	}
 	if len(repo.players) != 2 {
@@ -240,13 +244,13 @@ func TestImportPlayers_SavesPlayers(t *testing.T) {
 
 func TestImportPlayers_BuddyFromExcelColumn(t *testing.T) {
 	repo := &funcPlayerRepo{}
-	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{})
+	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{}, nil)
 
 	inputs := []usecase.PlayerInput{
 		{Nr: "1", Name: "Alpha"},
 		{Nr: "2", Name: "Beta", BuddyNr: "1"},
 	}
-	if err := uc.ImportPlayers(context.Background(), inputs, nil); err != nil {
+	if err := uc.ImportPlayers(context.Background(), inputs, nil, ""); err != nil {
 		t.Fatalf("ImportPlayers error: %v", err)
 	}
 	if len(repo.buddies) == 0 {
@@ -259,7 +263,7 @@ func TestImportPlayers_BuddyFromExcelColumn(t *testing.T) {
 
 func TestImportPlayers_ManualBuddiesMerged(t *testing.T) {
 	repo := &funcPlayerRepo{}
-	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{})
+	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{}, nil)
 
 	pAID := domain.PlayerID(uuid.New())
 	pBID := domain.PlayerID(uuid.New())
@@ -269,7 +273,7 @@ func TestImportPlayers_ManualBuddiesMerged(t *testing.T) {
 		{Nr: "2", Name: "Beta"},
 	}
 	manual := []usecase.BuddyPairInput{{PlayerID: pAID, BuddyID: pBID}}
-	if err := uc.ImportPlayers(context.Background(), inputs, manual); err != nil {
+	if err := uc.ImportPlayers(context.Background(), inputs, manual, ""); err != nil {
 		t.Fatalf("ImportPlayers error: %v", err)
 	}
 	// Manual buddies that don't appear in excel should still be saved.
@@ -281,7 +285,7 @@ func TestImportPlayers_ManualBuddiesMerged(t *testing.T) {
 func TestUpdatePlayer_SavesChanges(t *testing.T) {
 	p := domain.Player{ID: domain.PlayerID(uuid.New()), Nr: "1", Name: "Test", Class: "B"}
 	repo := &funcPlayerRepo{players: []domain.Player{p}}
-	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{})
+	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{}, nil)
 
 	p.Class = "A"
 	if err := uc.UpdatePlayer(context.Background(), p); err != nil {
@@ -300,7 +304,7 @@ func TestGetBuddies_ReturnsBuddiesForPlayer(t *testing.T) {
 		{PlayerID: pA, BuddyID: pB},
 		{PlayerID: pC, BuddyID: pB}, // different player, should not appear
 	}}
-	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{})
+	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{}, nil)
 
 	buddies, err := uc.GetBuddies(context.Background(), pA)
 	if err != nil {
@@ -319,7 +323,7 @@ func TestDeletePlayer_DeletesMatchesBuddiesAndPlayer(t *testing.T) {
 		buddies: []domain.BuddyPreference{{PlayerID: pid, BuddyID: domain.PlayerID(uuid.New())}},
 	}
 	matchRepo := &playerMatchRepo{}
-	uc := usecase.NewPlayerUseCase(repo, matchRepo)
+	uc := usecase.NewPlayerUseCase(repo, matchRepo, nil)
 
 	if err := uc.DeletePlayer(context.Background(), pid); err != nil {
 		t.Fatalf("DeletePlayer error: %v", err)
@@ -345,7 +349,7 @@ func TestSetBuddies_ReplacesExistingBuddies(t *testing.T) {
 	repo := &funcPlayerRepo{buddies: []domain.BuddyPreference{
 		{PlayerID: pid, BuddyID: oldBuddy},
 	}}
-	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{})
+	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{}, nil)
 
 	if err := uc.SetBuddies(context.Background(), pid, []domain.PlayerID{newBuddy}); err != nil {
 		t.Fatalf("SetBuddies error: %v", err)
@@ -364,7 +368,7 @@ func TestSetBuddies_EmptyListClearsAll(t *testing.T) {
 	repo := &funcPlayerRepo{buddies: []domain.BuddyPreference{
 		{PlayerID: pid, BuddyID: domain.PlayerID(uuid.New())},
 	}}
-	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{})
+	uc := usecase.NewPlayerUseCase(repo, &playerMatchRepo{}, nil)
 
 	if err := uc.SetBuddies(context.Background(), pid, nil); err != nil {
 		t.Fatalf("SetBuddies error: %v", err)
@@ -393,7 +397,7 @@ func TestDeletePlayer_MatchDeleteError(t *testing.T) {
 
 	// Verify that DeleteBuddiesForPlayer error propagates through DeletePlayer.
 	errRepo := &errOnDeleteBuddyRepo{funcPlayerRepo: *playerRepo}
-	uc := usecase.NewPlayerUseCase(errRepo, matchRepo)
+	uc := usecase.NewPlayerUseCase(errRepo, matchRepo, nil)
 	err := uc.DeletePlayer(context.Background(), pid)
 	if err == nil {
 		t.Error("expected error from DeletePlayer when buddy delete fails, got nil")
@@ -404,7 +408,7 @@ func TestDeletePlayer_MatchDeleteError(t *testing.T) {
 func TestSetBuddies_DeleteErrorPropagated(t *testing.T) {
 	pid := domain.PlayerID(uuid.New())
 	errRepo := &errOnDeleteBuddyRepo{}
-	uc := usecase.NewPlayerUseCase(errRepo, &playerMatchRepo{})
+	uc := usecase.NewPlayerUseCase(errRepo, &playerMatchRepo{}, nil)
 	err := uc.SetBuddies(context.Background(), pid, nil)
 	if err == nil {
 		t.Error("expected error from SetBuddies when DeleteBuddiesForPlayer fails, got nil")

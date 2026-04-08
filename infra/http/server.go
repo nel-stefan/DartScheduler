@@ -41,6 +41,7 @@ func NewRouter(
 	seasonStatH *handler.SeasonStatHandler,
 	configH *handler.ConfigHandler,
 	progressH *handler.ProgressHandler,
+	playerListH *handler.PlayerListHandler,
 	allowedOrigin string,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -58,6 +59,7 @@ func NewRouter(
 
 		r.Post("/import", playerH.Import)
 		r.Get("/players", playerH.List)
+		r.Get("/player-lists", playerListH.List)
 		r.Put("/players/{id}", playerH.Update)
 		r.Delete("/players/{id}", playerH.Delete)
 		r.Get("/players/{id}/buddies", playerH.GetBuddies)

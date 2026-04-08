@@ -24,18 +24,19 @@ type PlayerID = uuid.UUID
 
 // Player represents a member of the dart club.
 type Player struct {
-	ID          PlayerID `json:"id"`
-	Nr          string   `json:"nr"`
-	Name        string   `json:"name"`
-	Email       string   `json:"email"`
-	Sponsor     string   `json:"sponsor"`
-	Address     string   `json:"address"`
-	PostalCode  string   `json:"postalCode"`
-	City        string   `json:"city"`
-	Phone       string   `json:"phone"`
-	Mobile      string   `json:"mobile"`
-	MemberSince string   `json:"memberSince"`
-	Class       string   `json:"class"`
+	ID          PlayerID   `json:"id"`
+	Nr          string     `json:"nr"`
+	Name        string     `json:"name"`
+	Email       string     `json:"email"`
+	Sponsor     string     `json:"sponsor"`
+	Address     string     `json:"address"`
+	PostalCode  string     `json:"postalCode"`
+	City        string     `json:"city"`
+	Phone       string     `json:"phone"`
+	Mobile      string     `json:"mobile"`
+	MemberSince string     `json:"memberSince"`
+	Class       string     `json:"class"`
+	ListID      *uuid.UUID `json:"listId,omitempty"`
 }
 
 // BuddyPreference indicates that two players prefer to play on the same evening.

@@ -24,13 +24,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ScheduleService } from '../../services/schedule.service';
 import { PlayerService } from '../../services/player.service';
 import { SeasonService } from '../../services/season.service';
 import { SystemService } from '../../services/system.service';
-import { SeasonSummary, GenerateScheduleRequest } from '../../models';
+import { SeasonSummary, GenerateScheduleRequest, PlayerList } from '../../models';
 import { environment } from '../../../environments/environment';
 
 // ---------------------------------------------------------------------------
@@ -210,6 +209,19 @@ export class ConstraintViolationDialogComponent {
         </mat-form-field>
       </form>
 
+      <!-- Spelers lijst -->
+      @if (playerLists().length > 0) {
+        <mat-form-field style="width: 100%; margin-bottom: 8px">
+          <mat-label>Spelers lijst</mat-label>
+          <mat-select formControlName="playerListId">
+            <mat-option [value]="null">— Alle spelers —</mat-option>
+            @for (list of playerLists(); track list.id) {
+              <mat-option [value]="list.id">{{ list.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+
       <!-- Avondenlijst -->
       @if (slots.length > 0) {
         <div style="margin-top:16px">
@@ -255,6 +267,8 @@ export class ConstraintViolationDialogComponent {
 export class GenerateDialogComponent implements OnInit {
   private dialogRef = inject(MatDialogRef<GenerateDialogComponent>);
   fb = inject(FormBuilder);
+  private playerService = inject(PlayerService);
+  playerLists = signal<PlayerList[]>([]);
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: null) {}
 
@@ -264,6 +278,7 @@ export class GenerateDialogComponent implements OnInit {
     numEvenings: [30, [Validators.required, Validators.min(1)]],
     startDate: ['2026-09-01', Validators.required],
     intervalDays: [7, [Validators.required, Validators.min(1)]],
+    playerListId: [null as string | null],
   });
 
   slots: { nr: number; date: Date; type: string }[] = [];
@@ -283,6 +298,11 @@ export class GenerateDialogComponent implements OnInit {
     });
 
     this.rebuildSlots();
+
+    this.playerService.getPlayerLists().subscribe({
+      next: (lists) => this.playerLists.set(lists),
+      error: () => {},
+    });
   }
 
   get regularCount(): number {
@@ -342,6 +362,7 @@ export class GenerateDialogComponent implements OnInit {
       intervalDays: v.intervalDays,
       inhaalNrs,
       vrijeNrs,
+      playerListId: v.playerListId ?? null,
     } as GenerateScheduleRequest);
   }
 }
@@ -648,6 +669,11 @@ export class ImportSeasonDialogComponent {
             @if (selectedFile) {
               <span style="color:#555">{{ selectedFile.name }}</span>
             }
+            <mat-form-field style="width: 220px; margin-left: 12px">
+              <mat-label>Lijst naam</mat-label>
+              <input matInput [value]="listName()" (input)="listName.set($any($event.target).value)"
+                     placeholder="bv. Ledenlijst 2026-2027" />
+            </mat-form-field>
             <button mat-raised-button color="accent" [disabled]="!selectedFile || loading()" (click)="upload()">
               {{ loading() ? 'Bezig…' : 'Importeren' }}
             </button>
@@ -725,6 +751,7 @@ export class BeheerComponent implements OnInit {
 
   seasons = signal<SeasonSummary[]>([]);
   selectedFile: File | null = null;
+  listName = signal('');
   loading = signal(false);
   editingSeasonId = signal('');
   renameDraft = signal('');
@@ -945,10 +972,11 @@ export class BeheerComponent implements OnInit {
   upload(): void {
     if (!this.selectedFile) return;
     this.loading.set(true);
-    this.playerService.import(this.selectedFile).subscribe({
+    this.playerService.import(this.selectedFile, this.listName() || undefined).subscribe({
       next: (res) => {
         this.snackBar.open(`${res.imported} spelers geïmporteerd`, 'OK', { duration: 3000 });
         this.selectedFile = null;
+        this.listName.set('');
         this.fileInputRef().nativeElement.value = '';
         this.loading.set(false);
       },

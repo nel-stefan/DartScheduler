@@ -23,13 +23,14 @@ func NewScheduleHandler(uc *usecase.ScheduleUseCase) *ScheduleHandler {
 }
 
 type generateRequest struct {
-	CompetitionName string `json:"competitionName"`
-	Season          string `json:"season"`
-	NumEvenings     int    `json:"numEvenings"`
-	StartDate       string `json:"startDate"` // "2026-04-01"
-	IntervalDays    int    `json:"intervalDays"`
-	CatchUpNrs      []int  `json:"inhaalNrs"`
-	SkipNrs         []int  `json:"vrijeNrs"`
+	CompetitionName string  `json:"competitionName"`
+	Season          string  `json:"season"`
+	NumEvenings     int     `json:"numEvenings"`
+	StartDate       string  `json:"startDate"` // "2026-04-01"
+	IntervalDays    int     `json:"intervalDays"`
+	CatchUpNrs      []int   `json:"inhaalNrs"`
+	SkipNrs         []int   `json:"vrijeNrs"`
+	PlayerListID    *string `json:"playerListId"`
 }
 
 func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +43,15 @@ func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httpError(w, err, http.StatusBadRequest)
 		return
+	}
+	var playerListID *uuid.UUID
+	if req.PlayerListID != nil && *req.PlayerListID != "" {
+		id, err := uuid.Parse(*req.PlayerListID)
+		if err != nil {
+			httpError(w, err, http.StatusBadRequest)
+			return
+		}
+		playerListID = &id
 	}
 	if req.IntervalDays <= 0 {
 		req.IntervalDays = 7
@@ -59,6 +69,7 @@ func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		IntervalDays:    req.IntervalDays,
 		CatchUpNrs:      req.CatchUpNrs,
 		SkipNrs:         req.SkipNrs,
+		PlayerListID:    playerListID,
 		ProgressFn: func(step, total int) {
 			GlobalProgress.SetTotal(total)
 			GlobalProgress.Update(step)

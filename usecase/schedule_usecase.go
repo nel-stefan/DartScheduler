@@ -39,7 +39,14 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 	log.Printf("[Generate] competition=%q season=%q numEvenings=%d startDate=%s intervalDays=%d catchUpNrs=%v skipNrs=%v",
 		in.CompetitionName, in.Season, in.NumEvenings, in.StartDate.Format("2006-01-02"),
 		in.IntervalDays, in.CatchUpNrs, in.SkipNrs)
-	allPlayers, err := uc.players.FindAll(ctx)
+	var allPlayers []domain.Player
+	var err error
+	if in.PlayerListID != nil {
+		allPlayers, err = uc.players.FindByList(ctx, *in.PlayerListID)
+		log.Printf("[Generate] spelers laden uit lijst id=%s", *in.PlayerListID)
+	} else {
+		allPlayers, err = uc.players.FindAll(ctx)
+	}
 	if err != nil {
 		return domain.Schedule{}, fmt.Errorf("load players: %w", err)
 	}

@@ -120,6 +120,9 @@ func (r *stubPlayerRepo) DeleteBuddiesForPlayer(_ context.Context, _ domain.Play
 	return nil
 }
 func (r *stubPlayerRepo) DeleteAllBuddyPairs(_ context.Context) error { return nil }
+func (r *stubPlayerRepo) FindByList(_ context.Context, _ domain.PlayerListID) ([]domain.Player, error) {
+	return nil, nil
+}
 
 // ---------------------------------------------------------------------------
 // hydrate tests

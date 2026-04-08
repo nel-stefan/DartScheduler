@@ -1,6 +1,8 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
 // PlayerRepository defines persistence operations for players and buddy preferences.
 // Implementations are in infra/sqlite.
@@ -11,6 +13,7 @@ type PlayerRepository interface {
 	FindAll(ctx context.Context) ([]Player, error)
 	Delete(ctx context.Context, id PlayerID) error
 	DeleteAll(ctx context.Context) error
+	FindByList(ctx context.Context, listID PlayerListID) ([]Player, error)
 	SaveBuddyPreference(ctx context.Context, bp BuddyPreference) error
 	FindBuddiesForPlayer(ctx context.Context, id PlayerID) ([]PlayerID, error)
 	FindAllBuddyPairs(ctx context.Context) ([]BuddyPreference, error)
@@ -56,4 +59,11 @@ type ScheduleRepository interface {
 	FindAll(ctx context.Context) ([]Schedule, error)
 	Delete(ctx context.Context, id ScheduleID) error
 	SetActive(ctx context.Context, id ScheduleID) error
+}
+
+// PlayerListRepository defines persistence operations for named player lists.
+type PlayerListRepository interface {
+	Save(ctx context.Context, list PlayerList) error
+	FindAll(ctx context.Context) ([]PlayerList, error)
+	FindByName(ctx context.Context, name string) (PlayerList, bool, error)
 }

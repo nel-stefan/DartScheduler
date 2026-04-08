@@ -33,13 +33,15 @@ func (h *PlayerHandler) Import(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	listName := r.FormValue("listName")
+
 	players, err := excel.ImportPlayers(file)
 	if err != nil {
 		httpError(w, err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.uc.ImportPlayers(r.Context(), players, nil); err != nil {
+	if err := h.uc.ImportPlayers(r.Context(), players, nil, listName); err != nil {
 		httpErrorDomain(w, err)
 		return
 	}

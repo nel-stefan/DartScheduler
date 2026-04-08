@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"DartScheduler/domain"
+
+	"github.com/google/uuid"
 )
 
 // --- Player ---
@@ -41,6 +43,9 @@ type GenerateScheduleInput struct {
 	// ProgressFn is called during annealing with (step, total) to report progress.
 	// If nil, no progress is reported.
 	ProgressFn func(step, total int)
+	// PlayerListID selects which named player list to use for generation.
+	// If nil, all players (FindAll) are used — backwards compatible.
+	PlayerListID *uuid.UUID
 }
 
 // --- Score ---
@@ -177,4 +182,11 @@ type SeasonMatchRow struct {
 	ScoreB     int
 	Secretary  string
 	Counter    string
+}
+
+// PlayerListSummary is a lightweight player list item returned by the API.
+type PlayerListSummary struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"createdAt"`
 }

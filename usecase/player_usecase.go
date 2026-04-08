@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"DartScheduler/domain"
 
@@ -14,18 +15,19 @@ import (
 )
 
 type PlayerUseCase struct {
-	repo    domain.PlayerRepository
-	matches domain.MatchRepository
+	repo     domain.PlayerRepository
+	matches  domain.MatchRepository
+	listRepo domain.PlayerListRepository
 }
 
-func NewPlayerUseCase(repo domain.PlayerRepository, matches domain.MatchRepository) *PlayerUseCase {
-	return &PlayerUseCase{repo: repo, matches: matches}
+func NewPlayerUseCase(repo domain.PlayerRepository, matches domain.MatchRepository, listRepo domain.PlayerListRepository) *PlayerUseCase {
+	return &PlayerUseCase{repo: repo, matches: matches, listRepo: listRepo}
 }
 
 // ImportPlayers upserts players by member number, preserving existing UUIDs so that
 // match references remain intact. Buddy preferences from the "samen" column replace
 // all existing buddy settings.
-func (uc *PlayerUseCase) ImportPlayers(ctx context.Context, inputs []PlayerInput, buddies []BuddyPairInput) error {
+func (uc *PlayerUseCase) ImportPlayers(ctx context.Context, inputs []PlayerInput, buddies []BuddyPairInput, listName string) error {
 	log.Printf("[ImportPlayers] count=%d", len(inputs))
 	if len(inputs) == 0 {
 		return fmt.Errorf("%w: no players provided", domain.ErrInvalidInput)
@@ -47,6 +49,28 @@ func (uc *PlayerUseCase) ImportPlayers(ctx context.Context, inputs []PlayerInput
 			MemberSince: in.MemberSince,
 			Class:       in.Class,
 		}
+	}
+
+	var listID *uuid.UUID
+	if listName != "" {
+		list, found, err := uc.listRepo.FindByName(ctx, listName)
+		if err != nil {
+			return fmt.Errorf("find player list: %w", err)
+		}
+		if !found {
+			list = domain.PlayerList{ID: uuid.New(), Name: listName, CreatedAt: time.Now()}
+			if err := uc.listRepo.Save(ctx, list); err != nil {
+				return fmt.Errorf("create player list: %w", err)
+			}
+			log.Printf("[ImportPlayers] ledenlijst aangemaakt naam=%q id=%s", listName, list.ID)
+		} else {
+			log.Printf("[ImportPlayers] ledenlijst gevonden naam=%q id=%s", listName, list.ID)
+		}
+		id := list.ID
+		listID = &id
+	}
+	for i := range players {
+		players[i].ListID = listID
 	}
 
 	if err := uc.repo.SaveBatch(ctx, players); err != nil {
@@ -162,4 +186,17 @@ func (uc *PlayerUseCase) SetBuddies(ctx context.Context, playerID domain.PlayerI
 		}
 	}
 	return nil
+}
+
+// ListPlayerLists returns all named player lists.
+func (uc *PlayerUseCase) ListPlayerLists(ctx context.Context) ([]PlayerListSummary, error) {
+	lists, err := uc.listRepo.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]PlayerListSummary, len(lists))
+	for i, l := range lists {
+		result[i] = PlayerListSummary{ID: l.ID.String(), Name: l.Name, CreatedAt: l.CreatedAt}
+	}
+	return result, nil
 }

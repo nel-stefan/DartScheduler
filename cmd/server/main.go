@@ -38,9 +38,10 @@ func main() {
 	matchRepo := sqlite.NewMatchRepo(db)
 	eveningStatRepo := sqlite.NewEveningPlayerStatRepo(db)
 	seasonStatRepo := sqlite.NewSeasonPlayerStatRepo(db)
+	playerListRepo := sqlite.NewPlayerListRepo(db)
 
 	// Use cases
-	playerUC := usecase.NewPlayerUseCase(playerRepo, matchRepo)
+	playerUC := usecase.NewPlayerUseCase(playerRepo, matchRepo, playerListRepo)
 	scheduleUC := usecase.NewScheduleUseCase(playerRepo, scheduleRepo, eveningRepo, matchRepo)
 	scoreUC := usecase.NewScoreUseCase(matchRepo, eveningRepo, seasonStatRepo)
 	exportUC := usecase.NewExportUseCase(scheduleRepo, eveningRepo, matchRepo, playerRepo)
@@ -62,8 +63,9 @@ func main() {
 	seasonStatH := handler.NewSeasonStatHandler(seasonStatRepo)
 	configH := handler.NewConfigHandler(cfg.AppTitle, cfg.ClubName, cfg.PrimaryColor)
 	progressH := handler.NewProgressHandler()
+	playerListH := handler.NewPlayerListHandler(playerUC)
 
-	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH, eveningStatH, seasonStatH, configH, progressH, cfg.AllowedOrigin)
+	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH, eveningStatH, seasonStatH, configH, progressH, playerListH, cfg.AllowedOrigin)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 

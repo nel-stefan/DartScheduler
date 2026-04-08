@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Player } from '../models';
+import { Player, PlayerList } from '../models';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -29,9 +29,14 @@ export class PlayerService {
     return this.http.put<void>(`${this.base}/players/${playerId}/buddies`, { buddyIds });
   }
 
-  import(file: File): Observable<{ imported: number }> {
+  import(file: File, listName?: string): Observable<{ imported: number }> {
     const fd = new FormData();
     fd.append('file', file);
+    if (listName) fd.append('listName', listName);
     return this.http.post<{ imported: number }>(`${this.base}/import`, fd);
+  }
+
+  getPlayerLists(): Observable<PlayerList[]> {
+    return this.http.get<PlayerList[]>(`${this.base}/player-lists`);
   }
 }
