@@ -16,6 +16,12 @@ CREATE TABLE IF NOT EXISTS evenings (
     is_inhaal_avond  INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS player_lists (
+    id         TEXT PRIMARY KEY,
+    name       TEXT NOT NULL UNIQUE,
+    created_at DATETIME NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS players (
     id           TEXT PRIMARY KEY,
     schedule_id  TEXT REFERENCES schedules(id),
