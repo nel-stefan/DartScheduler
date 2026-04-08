@@ -1309,9 +1309,9 @@ export class InfoComponent implements OnInit {
     const compName = this.schedule()?.competitionName ?? 'Dartclub';
 
     const pad = (n: number) => String(n).padStart(2, '0');
-    const toIcsDate = (iso: string) => {
+    const toIcsDateTime = (iso: string, hour: number) => {
       const d = new Date(iso);
-      return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+      return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(hour)}0000`;
     };
     // Simple UID generator
     const uid = (i: number) => `dart-${this.selectedPlayerId().slice(0, 8)}-${i}@grolzicht`;
@@ -1323,8 +1323,8 @@ export class InfoComponent implements OnInit {
         [
           'BEGIN:VEVENT',
           `UID:${uid(i)}`,
-          `DTSTART;VALUE=DATE:${toIcsDate(r.eveningDate)}`,
-          `DTEND;VALUE=DATE:${toIcsDate(r.eveningDate)}`,
+          `DTSTART:${toIcsDateTime(r.eveningDate, 21)}`,
+          `DTEND:${toIcsDateTime(r.eveningDate, 23)}`,
           `SUMMARY:Avond ${r.eveningNumber} – vs ${r.opponentName}`,
           `DESCRIPTION:${compName}\\nAvond ${r.eveningNumber} – ${player.nr} ${player.name} vs ${r.opponentName}`,
           'END:VEVENT',
@@ -1338,8 +1338,8 @@ export class InfoComponent implements OnInit {
         [
           'BEGIN:VEVENT',
           `UID:inhaal-${ev.id.slice(0, 8)}-${this.selectedPlayerId().slice(0, 8)}@grolzicht`,
-          `DTSTART;VALUE=DATE:${toIcsDate(ev.date)}`,
-          `DTEND;VALUE=DATE:${toIcsDate(ev.date)}`,
+          `DTSTART:${toIcsDateTime(ev.date, 21)}`,
+          `DTEND:${toIcsDateTime(ev.date, 23)}`,
           'SUMMARY:Inhaalavond',
           `DESCRIPTION:${compName}\\nInhaalavond`,
           'END:VEVENT',
