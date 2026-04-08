@@ -62,6 +62,7 @@ export interface SeasonSummary {
   active: boolean;
   createdAt: string;
   eveningCount: number;
+  playerListId?: string;
 }
 
 export interface PlayerStats {

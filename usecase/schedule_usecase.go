@@ -118,6 +118,7 @@ func (uc *ScheduleUseCase) Generate(ctx context.Context, in GenerateScheduleInpu
 	}
 
 	sched.Season = in.Season
+	sched.PlayerListID = in.PlayerListID
 	if err := uc.schedules.Save(ctx, sched); err != nil {
 		return domain.Schedule{}, fmt.Errorf("save schedule: %w", err)
 	}
@@ -292,7 +293,7 @@ func (uc *ScheduleUseCase) ListSchedules(ctx context.Context) ([]SeasonSummary, 
 		if err != nil {
 			return nil, err
 		}
-		out[i] = SeasonSummary{
+		sum := SeasonSummary{
 			ID:              s.ID.String(),
 			CompetitionName: s.CompetitionName,
 			Season:          s.Season,
@@ -300,6 +301,11 @@ func (uc *ScheduleUseCase) ListSchedules(ctx context.Context) ([]SeasonSummary, 
 			CreatedAt:       s.CreatedAt,
 			EveningCount:    len(evenings),
 		}
+		if s.PlayerListID != nil {
+			v := s.PlayerListID.String()
+			sum.PlayerListID = &v
+		}
+		out[i] = sum
 	}
 	return out, nil
 }

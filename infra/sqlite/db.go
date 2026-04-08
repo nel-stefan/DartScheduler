@@ -52,6 +52,7 @@ var alterations = []string{
 	`ALTER TABLE matches ADD COLUMN played_date TEXT NOT NULL DEFAULT ''`,
 	`ALTER TABLE schedules ADD COLUMN active INTEGER NOT NULL DEFAULT 0`,
 	`ALTER TABLE players ADD COLUMN list_id TEXT REFERENCES player_lists(id)`,
+	`ALTER TABLE schedules ADD COLUMN player_list_id TEXT REFERENCES player_lists(id)`,
 }
 
 // dataMigrations are named, one-time data migrations run after schema setup.

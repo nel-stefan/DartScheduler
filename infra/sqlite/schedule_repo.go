@@ -20,28 +20,34 @@ func (r *ScheduleRepo) Save(ctx context.Context, s domain.Schedule) error {
 	if s.Active {
 		active = 1
 	}
+	var listIDStr *string
+	if s.PlayerListID != nil {
+		v := s.PlayerListID.String()
+		listIDStr = &v
+	}
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO schedules(id,competition_name,season,active,created_at) VALUES(?,?,?,?,?)
-         ON CONFLICT(id) DO UPDATE SET competition_name=excluded.competition_name,season=excluded.season,active=excluded.active`,
-		s.ID.String(), s.CompetitionName, s.Season, active, s.CreatedAt)
+		`INSERT INTO schedules(id,competition_name,season,active,created_at,player_list_id) VALUES(?,?,?,?,?,?)
+         ON CONFLICT(id) DO UPDATE SET competition_name=excluded.competition_name,season=excluded.season,
+           active=excluded.active,player_list_id=excluded.player_list_id`,
+		s.ID.String(), s.CompetitionName, s.Season, active, s.CreatedAt, listIDStr)
 	return err
 }
 
 func (r *ScheduleRepo) FindLatest(ctx context.Context) (domain.Schedule, error) {
 	row := r.db.QueryRowContext(ctx,
-		`SELECT id,competition_name,season,active,created_at FROM schedules ORDER BY created_at DESC LIMIT 1`)
+		`SELECT id,competition_name,season,active,created_at,player_list_id FROM schedules ORDER BY created_at DESC LIMIT 1`)
 	return scanSchedule(row)
 }
 
 func (r *ScheduleRepo) FindByID(ctx context.Context, id domain.ScheduleID) (domain.Schedule, error) {
 	row := r.db.QueryRowContext(ctx,
-		`SELECT id,competition_name,season,active,created_at FROM schedules WHERE id=?`, id.String())
+		`SELECT id,competition_name,season,active,created_at,player_list_id FROM schedules WHERE id=?`, id.String())
 	return scanSchedule(row)
 }
 
 func (r *ScheduleRepo) FindAll(ctx context.Context) ([]domain.Schedule, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id,competition_name,season,active,created_at FROM schedules ORDER BY created_at DESC`)
+		`SELECT id,competition_name,season,active,created_at,player_list_id FROM schedules ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +88,8 @@ func scanSchedule(s scanner) (domain.Schedule, error) {
 	var sc domain.Schedule
 	var idStr string
 	var active int
-	if err := s.Scan(&idStr, &sc.CompetitionName, &sc.Season, &active, &sc.CreatedAt); err != nil {
+	var listIDStr *string
+	if err := s.Scan(&idStr, &sc.CompetitionName, &sc.Season, &active, &sc.CreatedAt, &listIDStr); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return sc, domain.ErrNotFound
 		}
@@ -94,5 +101,11 @@ func scanSchedule(s scanner) (domain.Schedule, error) {
 		return sc, fmt.Errorf("invalid schedule id %q: %w", idStr, err)
 	}
 	sc.ID = uid
+	if listIDStr != nil {
+		lid, err := uuid.Parse(*listIDStr)
+		if err == nil {
+			sc.PlayerListID = &lid
+		}
+	}
 	return sc, nil
 }

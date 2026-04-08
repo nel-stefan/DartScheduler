@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, Inject, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, Inject, signal, computed } from '@angular/core';
+import { Subscription } from 'rxjs';
 
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -16,7 +17,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { PlayerService } from '../../services/player.service';
 import { SeasonService } from '../../services/season.service';
 import { ScheduleService } from '../../services/schedule.service';
-import { Player, PlayerList } from '../../models';
+import { Player } from '../../models';
 
 // --- Edit dialog ---
 
@@ -176,16 +177,6 @@ export class BuddyDialogComponent {
       <button mat-stroked-button [disabled]="players().length === 0" (click)="printClassList()">
         <mat-icon>print</mat-icon> Klasseindeling afdrukken
       </button>
-      @if (playerLists().length > 1) {
-        <mat-form-field subscriptSizing="dynamic" style="min-width:220px">
-          <mat-label>Lijst</mat-label>
-          <mat-select [value]="selectedListId()" (valueChange)="selectedListId.set($event)">
-            @for (list of playerLists(); track list.id) {
-              <mat-option [value]="list.id">{{ list.name }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      }
     </div>
 
     @if (filteredPlayers().length > 0) {
@@ -299,7 +290,7 @@ export class BuddyDialogComponent {
     }
   `,
 })
-export class SpelersComponent implements OnInit {
+export class SpelersComponent implements OnInit, OnDestroy {
   private playerService   = inject(PlayerService);
   private seasonService   = inject(SeasonService);
   private scheduleService = inject(ScheduleService);
@@ -307,7 +298,6 @@ export class SpelersComponent implements OnInit {
   private dialog          = inject(MatDialog);
 
   players         = signal<Player[]>([]);
-  playerLists     = signal<PlayerList[]>([]);
   selectedListId  = signal<string | null>(null);
   filteredPlayers = computed(() => {
     const id = this.selectedListId();
@@ -320,16 +310,17 @@ export class SpelersComponent implements OnInit {
     'Als je een avond niet kunt gooien dien je je uiterlijk donderdagavond voor 8u af te ' +
     'melden bij je tegenstander en bij de wedstrijdleider: Stefan Marchal 06-24201115';
   cols = ['select', 'nr', 'name', 'class', 'city', 'buddies', 'actions'];
+  private sub = new Subscription();
 
   ngOnInit(): void {
     this.loadPlayers();
-    this.playerService.getPlayerLists().subscribe({
-      next: (lists) => {
-        this.playerLists.set(lists);
-        if (lists.length > 0) this.selectedListId.set(lists[0].id);
-      },
-      error: () => {},
-    });
+    this.sub.add(
+      this.seasonService.effectivePlayerListId$.subscribe((id) => this.selectedListId.set(id)),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.sub.unsubscribe();
   }
 
   loadPlayers(): void {

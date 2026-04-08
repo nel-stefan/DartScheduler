@@ -18,4 +18,5 @@ type Schedule struct {
 	Active          bool       `json:"active"`
 	Evenings        []Evening  `json:"evenings"`
 	CreatedAt       time.Time  `json:"createdAt"`
+	PlayerListID    *uuid.UUID `json:"playerListId,omitempty"`
 }

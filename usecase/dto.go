@@ -113,6 +113,7 @@ type SeasonSummary struct {
 	Active          bool      `json:"active"`
 	CreatedAt       time.Time `json:"createdAt"`
 	EveningCount    int       `json:"eveningCount"`
+	PlayerListID    *string   `json:"playerListId,omitempty"`
 }
 
 // CatchUpEvening represents a catch-up evening with no pre-assigned matches.
