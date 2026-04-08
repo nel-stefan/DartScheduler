@@ -26,8 +26,19 @@ func NewStatsHandler(players domain.PlayerRepository, schedules domain.ScheduleR
 	return &StatsHandler{players: players, schedules: schedules, uc: uc}
 }
 
-// playersForSchedule loads the player list scoped to the schedule's PlayerListID when set.
-func (h *StatsHandler) playersForSchedule(r *http.Request, schedID *domain.ScheduleID) ([]domain.Player, error) {
+// playersForRequest loads the player list using listId param first, then falls back
+// to the schedule's own PlayerListID, then to FindAll.
+func (h *StatsHandler) playersForRequest(r *http.Request, schedID *domain.ScheduleID) ([]domain.Player, error) {
+	// Explicit listId param from frontend (handles schedule-less fallback via SeasonService)
+	if lidStr := r.URL.Query().Get("listId"); lidStr != "" {
+		lid, err := uuid.Parse(lidStr)
+		if err != nil {
+			return nil, err
+		}
+		listID := domain.PlayerListID(lid)
+		return h.players.FindByList(r.Context(), listID)
+	}
+	// Fall back to the schedule's own PlayerListID
 	if schedID != nil {
 		sched, err := h.schedules.FindByID(r.Context(), *schedID)
 		if err == nil && sched.PlayerListID != nil {
@@ -48,7 +59,7 @@ func (h *StatsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		sid := domain.ScheduleID(uid)
 		schedID = &sid
 	}
-	players, err := h.playersForSchedule(r, schedID)
+	players, err := h.playersForRequest(r, schedID)
 	if err != nil {
 		httpError(w, err, http.StatusInternalServerError)
 		return
@@ -72,7 +83,7 @@ func (h *StatsHandler) GetDuties(w http.ResponseWriter, r *http.Request) {
 		sid := domain.ScheduleID(uid)
 		schedID = &sid
 	}
-	players, err := h.playersForSchedule(r, schedID)
+	players, err := h.playersForRequest(r, schedID)
 	if err != nil {
 		httpError(w, err, http.StatusInternalServerError)
 		return

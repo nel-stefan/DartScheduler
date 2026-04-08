@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, DestroyRef, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { distinctUntilChanged, filter, forkJoin } from 'rxjs';
+import { combineLatest, distinctUntilChanged, filter, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -893,13 +893,13 @@ export class InfoComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.seasonService.selectedId$
+    combineLatest([this.seasonService.selectedId$, this.seasonService.effectivePlayerListId$])
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        distinctUntilChanged(),
-        filter((id) => !!id)
+        distinctUntilChanged((a, b) => a[0] === b[0] && a[1] === b[1]),
+        filter(([id]) => !!id)
       )
-      .subscribe((id) => this.load(id));
+      .subscribe(([id, listId]) => this.load(id, listId));
   }
 
   get sortedPlayers(): PlayerInfoItem[] {
@@ -1021,12 +1021,12 @@ export class InfoComponent implements OnInit {
     return rows;
   }
 
-  private load(scheduleId: string): void {
+  private load(scheduleId: string, listId?: string | null): void {
     forkJoin({
-      info: this.scheduleService.getInfo(scheduleId),
+      info: this.scheduleService.getInfo(scheduleId, listId),
       schedule: this.scheduleService.getById(scheduleId),
-      stats: this.scoreService.getStats(scheduleId),
-      duties: this.scoreService.getDutyStats(scheduleId),
+      stats: this.scoreService.getStats(scheduleId, listId),
+      duties: this.scoreService.getDutyStats(scheduleId, listId),
     }).subscribe({
       next: ({ info, schedule, stats, duties }) => {
         this.info.set(info);

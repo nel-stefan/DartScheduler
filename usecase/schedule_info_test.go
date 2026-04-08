@@ -75,7 +75,7 @@ func TestGetInfo_ReturnsMatrix(t *testing.T) {
 
 	uc := usecase.NewScheduleUseCase(playerRepo, &trackingScheduleRepo{sched: sched}, eveningRepo, matchRepo)
 
-	result, err := uc.GetInfo(ctx, schedID)
+	result, err := uc.GetInfo(ctx, schedID, nil)
 	if err != nil {
 		t.Fatalf("GetInfo error: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestGetInfo_CatchUpEveningExcludedFromMatrix(t *testing.T) {
 
 	uc := usecase.NewScheduleUseCase(playerRepo, &trackingScheduleRepo{sched: sched}, eveningRepo, matchRepo)
 
-	result, err := uc.GetInfo(ctx, schedID)
+	result, err := uc.GetInfo(ctx, schedID, nil)
 	if err != nil {
 		t.Fatalf("GetInfo error: %v", err)
 	}
@@ -173,7 +173,7 @@ func TestGetInfo_BuddyPairsIncludeSharedEvenings(t *testing.T) {
 
 	uc := usecase.NewScheduleUseCase(playerRepo, &trackingScheduleRepo{sched: sched}, eveningRepo, matchRepo)
 
-	result, err := uc.GetInfo(ctx, schedID)
+	result, err := uc.GetInfo(ctx, schedID, nil)
 	if err != nil {
 		t.Fatalf("GetInfo error: %v", err)
 	}
@@ -201,7 +201,7 @@ func TestGetInfo_NoPlayers(t *testing.T) {
 		newInfoMatchRepo(),
 	)
 
-	result, err := uc.GetInfo(ctx, schedID)
+	result, err := uc.GetInfo(ctx, schedID, nil)
 	if err != nil {
 		t.Fatalf("GetInfo error: %v", err)
 	}

@@ -36,13 +36,17 @@ export class ScoreService {
     return this.http.post<void>(`${this.base}/evenings/${eveningId}/report-absent`, { playerId, reportedBy });
   }
 
-  getStats(scheduleId?: string): Observable<PlayerStats[]> {
-    const params = scheduleId ? new HttpParams().set('scheduleId', scheduleId) : {};
+  getStats(scheduleId?: string, listId?: string | null): Observable<PlayerStats[]> {
+    let params = new HttpParams();
+    if (scheduleId) params = params.set('scheduleId', scheduleId);
+    if (listId) params = params.set('listId', listId);
     return this.http.get<PlayerStats[]>(`${this.base}/stats`, { params });
   }
 
-  getDutyStats(scheduleId?: string): Observable<DutyStats[]> {
-    const params = scheduleId ? new HttpParams().set('scheduleId', scheduleId) : {};
+  getDutyStats(scheduleId?: string, listId?: string | null): Observable<DutyStats[]> {
+    let params = new HttpParams();
+    if (scheduleId) params = params.set('scheduleId', scheduleId);
+    if (listId) params = params.set('listId', listId);
     return this.http.get<DutyStats[]>(`${this.base}/stats/duties`, { params });
   }
 }

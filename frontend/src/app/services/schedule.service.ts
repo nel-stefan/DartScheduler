@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Schedule, SeasonSummary, GenerateScheduleRequest, ScheduleInfo, Evening } from '../models';
 import { environment } from '../../environments/environment';
@@ -45,8 +45,10 @@ export class ScheduleService {
     return this.http.get<Evening>(`${this.base}/schedule/evening/${id}`);
   }
 
-  getInfo(scheduleId: string): Observable<ScheduleInfo> {
-    return this.http.get<ScheduleInfo>(`${this.base}/schedules/${scheduleId}/info`);
+  getInfo(scheduleId: string, listId?: string | null): Observable<ScheduleInfo> {
+    let params = new HttpParams();
+    if (listId) params = params.set('listId', listId);
+    return this.http.get<ScheduleInfo>(`${this.base}/schedules/${scheduleId}/info`, { params });
   }
 
   regenerate(id: string): Observable<Schedule> {

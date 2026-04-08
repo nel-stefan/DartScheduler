@@ -265,7 +265,16 @@ func (h *ScheduleHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 		httpError(w, err, http.StatusBadRequest)
 		return
 	}
-	info, err := h.uc.GetInfo(r.Context(), domain.ScheduleID(id))
+	var listID *uuid.UUID
+	if lidStr := r.URL.Query().Get("listId"); lidStr != "" {
+		lid, err := uuid.Parse(lidStr)
+		if err != nil {
+			httpError(w, err, http.StatusBadRequest)
+			return
+		}
+		listID = &lid
+	}
+	info, err := h.uc.GetInfo(r.Context(), domain.ScheduleID(id), listID)
 	if err != nil {
 		httpErrorDomain(w, err)
 		return

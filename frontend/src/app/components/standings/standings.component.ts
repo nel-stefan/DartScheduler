@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, DestroyRef, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { distinctUntilChanged } from 'rxjs';
+import { combineLatest, distinctUntilChanged } from 'rxjs';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -463,21 +463,30 @@ export class StandingsComponent implements OnInit {
     }));
   });
 
+  private effectiveListId: string | null = null;
+
   ngOnInit(): void {
-    this.seasonService.selectedId$
-      .pipe(takeUntilDestroyed(this.destroyRef), distinctUntilChanged())
-      .subscribe(() => this.loadStats());
+    combineLatest([this.seasonService.selectedId$, this.seasonService.effectivePlayerListId$])
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        distinctUntilChanged((a, b) => a[0] === b[0] && a[1] === b[1])
+      )
+      .subscribe(([, listId]) => {
+        this.effectiveListId = listId;
+        this.loadStats();
+      });
   }
 
   private loadStats(): void {
     const sid = this.seasonService.selectedId$.value || undefined;
+    const listId = this.effectiveListId || undefined;
     // Hide the tab group while data is in flight so that MatTabGroup is only
     // instantiated once the full tab list (Klasse tabs + static tab) is ready.
     // This avoids the race where the static "Schrijver / Teller" tab temporarily
     // occupies index 0 and then triggers selectedIndexChange when Klasse tabs are
     // prepended, causing the two-way binding to overwrite our desired index.
     this.loading.set(true);
-    this.scoreService.getStats(sid).subscribe((s) => {
+    this.scoreService.getStats(sid, listId).subscribe((s) => {
       this.allStats.set(s);
       this.classes.set(this.buildClasses(s));
       const withMinTurns = s.filter((x) => x.minTurns > 0);
@@ -490,7 +499,7 @@ export class StandingsComponent implements OnInit {
       );
       this.loading.set(false);
     });
-    this.scoreService.getDutyStats(sid).subscribe((d) => {
+    this.scoreService.getDutyStats(sid, listId).subscribe((d) => {
       this.dutyStats.set(d.sort((a, b) => b.count - a.count));
     });
   }

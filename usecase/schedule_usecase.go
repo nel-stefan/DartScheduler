@@ -486,7 +486,10 @@ func (uc *ScheduleUseCase) AddCatchUpEvening(ctx context.Context, scheduleID dom
 }
 
 // GetInfo returns analytics for a schedule: player×evening matrix, buddy pair shared evenings.
-func (uc *ScheduleUseCase) GetInfo(ctx context.Context, scheduleID domain.ScheduleID) (ScheduleInfoResult, error) {
+// GetInfo returns schedule info, player list, matrix and buddy pairs.
+// listIDOverride (from the frontend's effective list resolution) takes precedence over
+// the schedule's own PlayerListID. If neither is set, all players are returned.
+func (uc *ScheduleUseCase) GetInfo(ctx context.Context, scheduleID domain.ScheduleID, listIDOverride *uuid.UUID) (ScheduleInfoResult, error) {
 	log.Printf("[GetInfo] scheduleID=%s", scheduleID)
 
 	sched, err := uc.schedules.FindByID(ctx, scheduleID)
@@ -494,10 +497,16 @@ func (uc *ScheduleUseCase) GetInfo(ctx context.Context, scheduleID domain.Schedu
 		return ScheduleInfoResult{}, err
 	}
 
+	// Determine which list to use: explicit override > schedule's own list > all players
+	effectiveListID := listIDOverride
+	if effectiveListID == nil {
+		effectiveListID = sched.PlayerListID
+	}
+
 	var allPlayers []domain.Player
-	if sched.PlayerListID != nil {
-		allPlayers, err = uc.players.FindByList(ctx, *sched.PlayerListID)
-		log.Printf("[GetInfo] spelers laden uit lijst id=%s", *sched.PlayerListID)
+	if effectiveListID != nil {
+		allPlayers, err = uc.players.FindByList(ctx, *effectiveListID)
+		log.Printf("[GetInfo] spelers laden uit lijst id=%s", *effectiveListID)
 	} else {
 		allPlayers, err = uc.players.FindAll(ctx)
 	}
