@@ -19,6 +19,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -419,6 +420,7 @@ export class ImportSeasonDialogComponent {
     MatTooltipModule,
     MatFormFieldModule,
     MatInputModule,
+    MatTabsModule,
   ],
   styles: [
     `
@@ -644,18 +646,42 @@ export class ImportSeasonDialogComponent {
           @if (logsLoading()) {
             <div style="color:#9e9e9e;font-size:13px">Laden...</div>
           }
-          @if (!logsLoading() && logs().length === 0) {
-            <div class="log-empty">Nog geen log regels.</div>
-          }
-          @if (!logsLoading() && logs().length > 0) {
-            <div class="log-box">
-              {{
-                logs().join(
-                  '
-'
-                )
-              }}
-            </div>
+          @if (!logsLoading()) {
+            <mat-tab-group>
+              <mat-tab [label]="'Routing/API (' + httpLogs.length + ')'">
+                @if (httpLogs.length === 0) {
+                  <div class="log-empty" style="padding:12px 0">Geen HTTP logs.</div>
+                } @else {
+                  <div class="log-box">
+                    @for (line of httpLogs; track line) {
+                      <div [style.color]="httpLogColor(line)">{{ line }}</div>
+                    }
+                  </div>
+                }
+              </mat-tab>
+              <mat-tab [label]="'Debug/Error (' + errorLogs.length + ')'">
+                @if (errorLogs.length === 0) {
+                  <div class="log-empty" style="padding:12px 0">Geen fout-logs.</div>
+                } @else {
+                  <div class="log-box">
+                    @for (line of errorLogs; track line) {
+                      <div style="color:#f44336">{{ line }}</div>
+                    }
+                  </div>
+                }
+              </mat-tab>
+              <mat-tab [label]="'Info (' + infoLogs.length + ')'">
+                @if (infoLogs.length === 0) {
+                  <div class="log-empty" style="padding:12px 0">Geen info-logs.</div>
+                } @else {
+                  <div class="log-box">
+                    @for (line of infoLogs; track line) {
+                      <div>{{ line }}</div>
+                    }
+                  </div>
+                }
+              </mat-tab>
+            </mat-tab-group>
           }
         </mat-card-content>
       </mat-card>
@@ -685,6 +711,27 @@ export class BeheerComponent implements OnInit {
   version = environment.version;
   logs = signal<string[]>([]);
   logsLoading = signal(false);
+
+  get httpLogs(): string[] {
+    return this.logs().filter((l) => l.startsWith('[HTTP]'));
+  }
+
+  get errorLogs(): string[] {
+    return this.logs().filter((l) => l.startsWith('[ERROR]'));
+  }
+
+  get infoLogs(): string[] {
+    return this.logs().filter((l) => !l.startsWith('[HTTP]') && !l.startsWith('[ERROR]'));
+  }
+
+  httpLogColor(line: string): string {
+    const parts = line.split(' ');
+    const status = parseInt(parts[3], 10);
+    if (status >= 500) return '#f44336';
+    if (status >= 400) return '#ff9800';
+    if (status >= 200) return '#4caf50';
+    return '#d4d4d4';
+  }
 
   ngOnInit(): void {
     this.loadSeasons();
