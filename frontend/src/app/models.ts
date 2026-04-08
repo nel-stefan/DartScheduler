@@ -11,6 +11,7 @@ export interface Player {
   mobile: string;
   memberSince: string;
   class: string;
+  listId?: string;
 }
 
 export interface Match {

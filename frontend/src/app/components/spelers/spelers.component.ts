@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Inject, signal } from '@angular/core';
+import { Component, inject, OnInit, Inject, signal, computed } from '@angular/core';
 
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -16,7 +16,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { PlayerService } from '../../services/player.service';
 import { SeasonService } from '../../services/season.service';
 import { ScheduleService } from '../../services/schedule.service';
-import { Player } from '../../models';
+import { Player, PlayerList } from '../../models';
 
 // --- Edit dialog ---
 
@@ -172,16 +172,27 @@ export class BuddyDialogComponent {
     `,
   ],
   template: `
-    <div style="margin-bottom:16px">
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <button mat-stroked-button [disabled]="players().length === 0" (click)="printClassList()">
         <mat-icon>print</mat-icon> Klasseindeling afdrukken
       </button>
+      @if (playerLists().length > 0) {
+        <mat-form-field subscriptSizing="dynamic" style="min-width:220px">
+          <mat-label>Lijst</mat-label>
+          <mat-select [value]="selectedListId()" (valueChange)="selectedListId.set($event)">
+            <mat-option [value]="null">— Alle spelers —</mat-option>
+            @for (list of playerLists(); track list.id) {
+              <mat-option [value]="list.id">{{ list.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
     </div>
 
-    @if (players().length > 0) {
+    @if (filteredPlayers().length > 0) {
       <mat-card>
         <mat-card-header>
-          <mat-card-title>Spelers ({{ players().length }})</mat-card-title>
+          <mat-card-title>Spelers ({{ filteredPlayers().length }})</mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <!-- Batch action bar -->
@@ -200,7 +211,7 @@ export class BuddyDialogComponent {
               <button mat-button (click)="selection.clear()">Deselecteer</button>
             </div>
           }
-          <table mat-table [dataSource]="players()">
+          <table mat-table [dataSource]="filteredPlayers()">
             <!-- Checkbox column -->
             <ng-container matColumnDef="select">
               <th mat-header-cell *matHeaderCellDef style="width:40px">
@@ -282,8 +293,10 @@ export class BuddyDialogComponent {
       </mat-card>
     }
 
-    @if (players().length === 0) {
-      <p style="color:#888;text-align:center;padding:32px 0">Nog geen spelers geïmporteerd.</p>
+    @if (filteredPlayers().length === 0) {
+      <p style="color:#888;text-align:center;padding:32px 0">
+        {{ players().length === 0 ? 'Nog geen spelers geïmporteerd.' : 'Geen spelers in deze lijst.' }}
+      </p>
     }
   `,
 })
@@ -294,7 +307,14 @@ export class SpelersComponent implements OnInit {
   private snackBar        = inject(MatSnackBar);
   private dialog          = inject(MatDialog);
 
-  players       = signal<Player[]>([]);
+  players         = signal<Player[]>([]);
+  playerLists     = signal<PlayerList[]>([]);
+  selectedListId  = signal<string | null>(null);
+  filteredPlayers = computed(() => {
+    const id = this.selectedListId();
+    if (!id) return this.players();
+    return this.players().filter((p) => p.listId === id);
+  });
   buddyMap      = signal<Record<string, string[]>>({});
   selection     = new Set<string>();
   batchClass    = signal('');
@@ -305,6 +325,10 @@ export class SpelersComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPlayers();
+    this.playerService.getPlayerLists().subscribe({
+      next: (lists) => this.playerLists.set(lists),
+      error: () => {},
+    });
   }
 
   loadPlayers(): void {
@@ -334,11 +358,11 @@ export class SpelersComponent implements OnInit {
   }
 
   allSelected(): boolean {
-    return this.players().length > 0 && this.selection.size === this.players().length;
+    return this.filteredPlayers().length > 0 && this.selection.size === this.filteredPlayers().length;
   }
 
   toggleAll(checked: boolean): void {
-    if (checked) this.players().forEach((p) => this.selection.add(p.id));
+    if (checked) this.filteredPlayers().forEach((p) => this.selection.add(p.id));
     else this.selection.clear();
   }
 
