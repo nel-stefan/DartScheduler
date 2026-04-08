@@ -44,9 +44,10 @@ func (h *PlayerHandler) Import(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("[INFO] %d spelers geïmporteerd", len(players))
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(map[string]int{"imported": len(players)}); err != nil {
-		log.Printf("encode response: %v", err)
+		log.Printf("[ERROR] encode response: %v", err)
 	}
 }
 
