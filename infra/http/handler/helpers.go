@@ -12,7 +12,7 @@ import (
 func writeJSON(w http.ResponseWriter, v any) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		log.Printf("[writeJSON] encode error: %v", err)
+		log.Printf("[ERROR] [writeJSON] encode error: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -21,7 +21,7 @@ func writeJSON(w http.ResponseWriter, v any) {
 }
 
 func httpError(w http.ResponseWriter, err error, code int) {
-	log.Printf("[httpError] status=%d err=%v", code, err)
+	log.Printf("[ERROR] status=%d err=%v", code, err)
 	http.Error(w, err.Error(), code)
 }
 
@@ -41,7 +41,7 @@ func httpErrorDomain(w http.ResponseWriter, err error) {
 	default:
 		code = http.StatusInternalServerError
 	}
-	log.Printf("[httpErrorDomain] status=%d err=%v", code, err)
+	log.Printf("[ERROR] status=%d err=%v", code, err)
 	if code >= 500 {
 		http.Error(w, "internal server error", code)
 	} else {
