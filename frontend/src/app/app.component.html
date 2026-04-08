@@ -1,5 +1,6 @@
 @if (!isMobile) {
-  <mat-toolbar color="primary" class="app-toolbar">
+  <mat-toolbar color="primary" class="app-toolbar"
+    [style.background-color]="(configService.primaryColor$ | async) || null">
     <img src="assets/logo.svg" alt="dart" class="toolbar-logo" />
     <a class="toolbar-title" routerLink="/">{{ configService.clubName$ | async }}</a>
     <span class="toolbar-spacer"></span>

@@ -12,6 +12,7 @@ services:
       - APP_TITLE=Demo Darts
       # - LOGO_PATH=/data/logo.png
       - PORT=8090
+      - PRIMARY_COLOR=#e65100
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8090/health"]

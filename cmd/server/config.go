@@ -31,6 +31,11 @@ type AppConfig struct {
 	// AllowedOrigin is the value of the Access-Control-Allow-Origin header.
 	// Use "*" for development; set to your frontend origin in production.
 	AllowedOrigin string
+
+	// PrimaryColor is an optional CSS colour (e.g. "#e65100") that overrides
+	// the toolbar background. Leave empty to use the default theme colour.
+	// Useful for distinguishing demo from production deployments.
+	PrimaryColor string
 }
 
 func loadConfig() AppConfig {
@@ -64,6 +69,9 @@ func loadConfig() AppConfig {
 	}
 	if v := os.Getenv("ALLOWED_ORIGIN"); v != "" {
 		cfg.AllowedOrigin = v
+	}
+	if v := os.Getenv("PRIMARY_COLOR"); v != "" {
+		cfg.PrimaryColor = v
 	}
 	return cfg
 }
