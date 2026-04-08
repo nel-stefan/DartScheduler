@@ -437,7 +437,7 @@ export class SpelersComponent implements OnInit, OnDestroy {
     const ref = this.dialog.open(BuddyDialogComponent, {
       data: {
         player,
-        others: this.players().filter((p) => p.id !== player.id),
+        others: this.filteredPlayers().filter((p) => p.id !== player.id),
         currentBuddyIds,
       },
     });
