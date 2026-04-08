@@ -207,20 +207,20 @@ export class ConstraintViolationDialogComponent {
           ><mat-label>Startdatum (YYYY-MM-DD)</mat-label>
           <input matInput formControlName="startDate" placeholder="2026-09-01" />
         </mat-form-field>
-      </form>
 
-      <!-- Spelers lijst -->
-      @if (playerLists().length > 0) {
-        <mat-form-field style="width: 100%; margin-bottom: 8px">
-          <mat-label>Spelers lijst</mat-label>
-          <mat-select formControlName="playerListId">
-            <mat-option [value]="null">— Alle spelers —</mat-option>
-            @for (list of playerLists(); track list.id) {
-              <mat-option [value]="list.id">{{ list.name }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      }
+        <!-- Spelers lijst -->
+        @if (playerLists().length > 0) {
+          <mat-form-field style="grid-column:1/-1">
+            <mat-label>Spelers lijst</mat-label>
+            <mat-select formControlName="playerListId">
+              <mat-option [value]="null">— Alle spelers —</mat-option>
+              @for (list of playerLists(); track list.id) {
+                <mat-option [value]="list.id">{{ list.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      </form>
 
       <!-- Avondenlijst -->
       @if (slots.length > 0) {
