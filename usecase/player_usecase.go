@@ -171,18 +171,46 @@ func (uc *PlayerUseCase) DeletePlayer(ctx context.Context, id domain.PlayerID) e
 	return nil
 }
 
-// SetBuddies replaces all buddy preferences for the given player.
+// SetBuddies replaces all buddy preferences for the given player and keeps the
+// reverse links in sync: adding B as buddy of A also adds A as buddy of B;
+// removing B from A's list also removes A from B's list.
 func (uc *PlayerUseCase) SetBuddies(ctx context.Context, playerID domain.PlayerID, buddyIDs []domain.PlayerID) error {
 	log.Printf("[SetBuddies] playerID=%s count=%d", playerID, len(buddyIDs))
+
+	// Remember old buddies so we can remove reverse links for those dropped.
+	oldBuddies, err := uc.repo.FindBuddiesForPlayer(ctx, playerID)
+	if err != nil {
+		return err
+	}
+
+	// Replace forward links for this player.
 	if err := uc.repo.DeleteBuddiesForPlayer(ctx, playerID); err != nil {
 		return err
 	}
+	newSet := make(map[domain.PlayerID]bool, len(buddyIDs))
 	for _, bid := range buddyIDs {
+		newSet[bid] = true
 		if err := uc.repo.SaveBuddyPreference(ctx, domain.BuddyPreference{
 			PlayerID: playerID,
 			BuddyID:  bid,
 		}); err != nil {
 			return err
+		}
+		// Mirror: ensure the buddy also lists this player.
+		if err := uc.repo.SaveBuddyPreference(ctx, domain.BuddyPreference{
+			PlayerID: bid,
+			BuddyID:  playerID,
+		}); err != nil {
+			return err
+		}
+	}
+
+	// Remove reverse links for buddies that were dropped.
+	for _, old := range oldBuddies {
+		if !newSet[old] {
+			if err := uc.repo.DeleteSpecificBuddyPair(ctx, old, playerID); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

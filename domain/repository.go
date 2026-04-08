@@ -18,6 +18,7 @@ type PlayerRepository interface {
 	FindBuddiesForPlayer(ctx context.Context, id PlayerID) ([]PlayerID, error)
 	FindAllBuddyPairs(ctx context.Context) ([]BuddyPreference, error)
 	DeleteBuddiesForPlayer(ctx context.Context, id PlayerID) error
+	DeleteSpecificBuddyPair(ctx context.Context, playerID, buddyID PlayerID) error
 	DeleteAllBuddyPairs(ctx context.Context) error
 }
 

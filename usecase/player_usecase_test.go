@@ -103,6 +103,17 @@ func (r *funcPlayerRepo) DeleteBuddiesForPlayer(_ context.Context, id domain.Pla
 	return nil
 }
 
+func (r *funcPlayerRepo) DeleteSpecificBuddyPair(_ context.Context, playerID, buddyID domain.PlayerID) error {
+	var remaining []domain.BuddyPreference
+	for _, bp := range r.buddies {
+		if bp.PlayerID != playerID || bp.BuddyID != buddyID {
+			remaining = append(remaining, bp)
+		}
+	}
+	r.buddies = remaining
+	return nil
+}
+
 func (r *funcPlayerRepo) DeleteAllBuddyPairs(_ context.Context) error {
 	r.deleteAllBuddyCalls++
 	r.buddies = nil

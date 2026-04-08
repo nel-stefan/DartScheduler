@@ -134,6 +134,13 @@ func (r *PlayerRepo) DeleteBuddiesForPlayer(ctx context.Context, id domain.Playe
 	return err
 }
 
+func (r *PlayerRepo) DeleteSpecificBuddyPair(ctx context.Context, playerID, buddyID domain.PlayerID) error {
+	_, err := r.db.ExecContext(ctx,
+		`DELETE FROM buddy_preferences WHERE player_id = ? AND buddy_id = ?`,
+		playerID.String(), buddyID.String())
+	return err
+}
+
 func (r *PlayerRepo) DeleteAllBuddyPairs(ctx context.Context) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM buddy_preferences`)
 	return err

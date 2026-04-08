@@ -119,6 +119,9 @@ func (r *stubPlayerRepo) FindAllBuddyPairs(_ context.Context) ([]domain.BuddyPre
 func (r *stubPlayerRepo) DeleteBuddiesForPlayer(_ context.Context, _ domain.PlayerID) error {
 	return nil
 }
+func (r *stubPlayerRepo) DeleteSpecificBuddyPair(_ context.Context, _, _ domain.PlayerID) error {
+	return nil
+}
 func (r *stubPlayerRepo) DeleteAllBuddyPairs(_ context.Context) error { return nil }
 func (r *stubPlayerRepo) FindByList(_ context.Context, _ domain.PlayerListID) ([]domain.Player, error) {
 	return nil, nil
