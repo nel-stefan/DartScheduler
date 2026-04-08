@@ -176,11 +176,10 @@ export class BuddyDialogComponent {
       <button mat-stroked-button [disabled]="players().length === 0" (click)="printClassList()">
         <mat-icon>print</mat-icon> Klasseindeling afdrukken
       </button>
-      @if (playerLists().length > 0) {
+      @if (playerLists().length > 1) {
         <mat-form-field subscriptSizing="dynamic" style="min-width:220px">
           <mat-label>Lijst</mat-label>
           <mat-select [value]="selectedListId()" (valueChange)="selectedListId.set($event)">
-            <mat-option [value]="null">— Alle spelers —</mat-option>
             @for (list of playerLists(); track list.id) {
               <mat-option [value]="list.id">{{ list.name }}</mat-option>
             }
@@ -312,8 +311,7 @@ export class SpelersComponent implements OnInit {
   selectedListId  = signal<string | null>(null);
   filteredPlayers = computed(() => {
     const id = this.selectedListId();
-    if (!id) return this.players();
-    return this.players().filter((p) => p.listId === id);
+    return id ? this.players().filter((p) => p.listId === id) : this.players();
   });
   buddyMap      = signal<Record<string, string[]>>({});
   selection     = new Set<string>();
@@ -326,7 +324,10 @@ export class SpelersComponent implements OnInit {
   ngOnInit(): void {
     this.loadPlayers();
     this.playerService.getPlayerLists().subscribe({
-      next: (lists) => this.playerLists.set(lists),
+      next: (lists) => {
+        this.playerLists.set(lists);
+        if (lists.length > 0) this.selectedListId.set(lists[0].id);
+      },
       error: () => {},
     });
   }
