@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
 )
 
@@ -62,6 +63,10 @@ var dataMigrations = []struct {
 	{
 		name: "migrate_180s_hf_to_season_player_stats",
 		fn:   migrate180sToSeasonStats,
+	},
+	{
+		name: "assign_orphan_players_to_backup_list",
+		fn:   assignOrphanPlayersToBackupList,
 	},
 }
 
@@ -173,4 +178,28 @@ func migrate180sToSeasonStats(ctx context.Context, db *sql.DB) error {
 	}
 
 	return tx.Commit()
+}
+
+// assignOrphanPlayersToBackupList moves all players without a list_id into a
+// new "Oud" player list so that future imports cannot overwrite them.
+func assignOrphanPlayersToBackupList(ctx context.Context, db *sql.DB) error {
+	var count int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM players WHERE list_id IS NULL`).Scan(&count); err != nil {
+		return err
+	}
+	if count == 0 {
+		return nil // nothing to migrate
+	}
+
+	listID := uuid.New()
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO player_lists(id, name, created_at) VALUES(?, 'Oud', datetime('now'))`,
+		listID.String()); err != nil {
+		return err
+	}
+	if _, err := db.ExecContext(ctx,
+		`UPDATE players SET list_id = ? WHERE list_id IS NULL`, listID.String()); err != nil {
+		return err
+	}
+	return nil
 }

@@ -29,8 +29,17 @@ func (r *PlayerRepo) Save(ctx context.Context, p domain.Player) error {
 
 func (r *PlayerRepo) SaveBatch(ctx context.Context, players []domain.Player) error {
 	// Build nr → existing UUID map so we preserve IDs (match references stay valid).
-	existingRows, err := r.db.QueryContext(ctx,
-		`SELECT id, nr FROM players WHERE nr != ''`)
+	// Scope the lookup to the same list so players from different lists never share UUIDs.
+	var existingRows *sql.Rows
+	var err error
+	if len(players) > 0 && players[0].ListID != nil {
+		existingRows, err = r.db.QueryContext(ctx,
+			`SELECT id, nr FROM players WHERE nr != '' AND list_id = ?`,
+			players[0].ListID.String())
+	} else {
+		existingRows, err = r.db.QueryContext(ctx,
+			`SELECT id, nr FROM players WHERE nr != '' AND list_id IS NULL`)
+	}
 	if err != nil {
 		return err
 	}
