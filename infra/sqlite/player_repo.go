@@ -55,13 +55,13 @@ func (r *PlayerRepo) SaveBatch(ctx context.Context, players []domain.Player) err
 	defer tx.Rollback()
 
 	stmt, err := tx.PrepareContext(ctx,
-		`INSERT INTO players(id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class)
-         VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+		`INSERT INTO players(id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class,list_id)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
          ON CONFLICT(id) DO UPDATE SET
            nr=excluded.nr, name=excluded.name, email=excluded.email, sponsor=excluded.sponsor,
            address=excluded.address, postal_code=excluded.postal_code, city=excluded.city,
            phone=excluded.phone, mobile=excluded.mobile, member_since=excluded.member_since,
-           class=excluded.class`)
+           class=excluded.class, list_id=excluded.list_id`)
 	if err != nil {
 		return err
 	}
@@ -74,8 +74,13 @@ func (r *PlayerRepo) SaveBatch(ctx context.Context, players []domain.Player) err
 				id = existing // reuse existing UUID to preserve match references
 			}
 		}
+		var listIDStr *string
+		if p.ListID != nil {
+			s := p.ListID.String()
+			listIDStr = &s
+		}
 		if _, err := stmt.ExecContext(ctx, id, p.Nr, p.Name, p.Email, p.Sponsor,
-			p.Address, p.PostalCode, p.City, p.Phone, p.Mobile, p.MemberSince, p.Class); err != nil {
+			p.Address, p.PostalCode, p.City, p.Phone, p.Mobile, p.MemberSince, p.Class, listIDStr); err != nil {
 			return err
 		}
 	}
@@ -84,26 +89,18 @@ func (r *PlayerRepo) SaveBatch(ctx context.Context, players []domain.Player) err
 
 func (r *PlayerRepo) FindByID(ctx context.Context, id domain.PlayerID) (domain.Player, error) {
 	row := r.db.QueryRowContext(ctx,
-		`SELECT id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class FROM players WHERE id=?`, id.String())
+		`SELECT id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class,list_id FROM players WHERE id=?`, id.String())
 	return scanPlayer(row)
 }
 
 func (r *PlayerRepo) FindAll(ctx context.Context) ([]domain.Player, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class FROM players ORDER BY CAST(nr AS INTEGER), nr, name`)
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class,list_id FROM players ORDER BY CAST(nr AS INTEGER), nr, name`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
-	out := make([]domain.Player, 0)
-	for rows.Next() {
-		p, err := scanPlayer(rows)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, p)
-	}
-	return out, rows.Err()
+	return scanPlayers(rows)
 }
 
 func (r *PlayerRepo) Delete(ctx context.Context, id domain.PlayerID) error {
@@ -182,6 +179,17 @@ func (r *PlayerRepo) FindAllBuddyPairs(ctx context.Context) ([]domain.BuddyPrefe
 	return out, rows.Err()
 }
 
+func (r *PlayerRepo) FindByList(ctx context.Context, listID domain.PlayerListID) ([]domain.Player, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id,nr,name,email,sponsor,address,postal_code,city,phone,mobile,member_since,class,list_id
+         FROM players WHERE list_id = ?`, listID.String())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanPlayers(rows)
+}
+
 // scanPlayer works for both *sql.Row and *sql.Rows via a shared interface.
 type scanner interface {
 	Scan(dest ...any) error
@@ -190,7 +198,8 @@ type scanner interface {
 func scanPlayer(s scanner) (domain.Player, error) {
 	var p domain.Player
 	var idStr string
-	if err := s.Scan(&idStr, &p.Nr, &p.Name, &p.Email, &p.Sponsor, &p.Address, &p.PostalCode, &p.City, &p.Phone, &p.Mobile, &p.MemberSince, &p.Class); err != nil {
+	var listIDStr *string
+	if err := s.Scan(&idStr, &p.Nr, &p.Name, &p.Email, &p.Sponsor, &p.Address, &p.PostalCode, &p.City, &p.Phone, &p.Mobile, &p.MemberSince, &p.Class, &listIDStr); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return p, domain.ErrNotFound
 		}
@@ -201,5 +210,30 @@ func scanPlayer(s scanner) (domain.Player, error) {
 		return p, fmt.Errorf("invalid player id %q: %w", idStr, err)
 	}
 	p.ID = uid
+	if listIDStr != nil {
+		id, _ := uuid.Parse(*listIDStr)
+		p.ListID = &id
+	}
 	return p, nil
+}
+
+func scanPlayers(rows *sql.Rows) ([]domain.Player, error) {
+	var players []domain.Player
+	for rows.Next() {
+		var p domain.Player
+		var idStr string
+		var listIDStr *string
+		if err := rows.Scan(&idStr, &p.Nr, &p.Name, &p.Email, &p.Sponsor,
+			&p.Address, &p.PostalCode, &p.City, &p.Phone, &p.Mobile,
+			&p.MemberSince, &p.Class, &listIDStr); err != nil {
+			return nil, err
+		}
+		p.ID, _ = uuid.Parse(idStr)
+		if listIDStr != nil {
+			id, _ := uuid.Parse(*listIDStr)
+			p.ListID = &id
+		}
+		players = append(players, p)
+	}
+	return players, rows.Err()
 }
