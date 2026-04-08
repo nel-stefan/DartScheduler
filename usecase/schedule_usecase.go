@@ -488,7 +488,19 @@ func (uc *ScheduleUseCase) AddCatchUpEvening(ctx context.Context, scheduleID dom
 // GetInfo returns analytics for a schedule: player×evening matrix, buddy pair shared evenings.
 func (uc *ScheduleUseCase) GetInfo(ctx context.Context, scheduleID domain.ScheduleID) (ScheduleInfoResult, error) {
 	log.Printf("[GetInfo] scheduleID=%s", scheduleID)
-	allPlayers, err := uc.players.FindAll(ctx)
+
+	sched, err := uc.schedules.FindByID(ctx, scheduleID)
+	if err != nil {
+		return ScheduleInfoResult{}, err
+	}
+
+	var allPlayers []domain.Player
+	if sched.PlayerListID != nil {
+		allPlayers, err = uc.players.FindByList(ctx, *sched.PlayerListID)
+		log.Printf("[GetInfo] spelers laden uit lijst id=%s", *sched.PlayerListID)
+	} else {
+		allPlayers, err = uc.players.FindAll(ctx)
+	}
 	if err != nil {
 		return ScheduleInfoResult{}, err
 	}
