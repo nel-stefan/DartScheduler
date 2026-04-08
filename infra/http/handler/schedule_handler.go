@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -66,6 +67,7 @@ func (h *ScheduleHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] schema gegenereerd seizoen=%q avonden=%d id=%s", sched.CompetitionName, len(sched.Evenings), sched.ID)
 	writeJSON(w, sched)
 }
 
@@ -171,6 +173,7 @@ func (h *ScheduleHandler) RegenerateSchedule(w http.ResponseWriter, r *http.Requ
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] schema herberekend id=%s", sched.ID)
 	writeJSON(w, sched)
 }
 
@@ -192,6 +195,7 @@ func (h *ScheduleHandler) RenameSchedule(w http.ResponseWriter, r *http.Request)
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] seizoen hernoemd id=%s naam=%q", id, body.CompetitionName)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -206,6 +210,7 @@ func (h *ScheduleHandler) DeleteSchedule(w http.ResponseWriter, r *http.Request)
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] schema verwijderd id=%s", id)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -220,6 +225,7 @@ func (h *ScheduleHandler) SetActive(w http.ResponseWriter, r *http.Request) {
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] actief seizoen ingesteld id=%s", id)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -311,5 +317,6 @@ func (h *ScheduleHandler) ImportSeason(w http.ResponseWriter, r *http.Request) {
 		httpErrorDomain(w, err)
 		return
 	}
+	log.Printf("[INFO] seizoen geïmporteerd naam=%q avonden=%d", competitionName, len(sched.Evenings))
 	writeJSON(w, sched)
 }
