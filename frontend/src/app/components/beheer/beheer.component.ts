@@ -284,7 +284,8 @@ export class GenerateDialogComponent implements OnInit {
       this.slots = Array.from({ length: n }, (_, i) => {
         const d = new Date(start);
         d.setDate(d.getDate() + i * interval);
-        return { nr: i + 1, date: d, type: i >= n - 4 ? 'inhaal' : 'normaal' };
+        const nr = i + 1;
+        return { nr, date: d, type: [8, 15, 23, 30].includes(nr) ? 'inhaal' : 'normaal' };
       });
     } else {
       this.slots = [];
