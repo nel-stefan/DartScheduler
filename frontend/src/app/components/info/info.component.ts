@@ -1316,21 +1316,37 @@ export class InfoComponent implements OnInit {
     // Simple UID generator
     const uid = (i: number) => `dart-${this.selectedPlayerId().slice(0, 8)}-${i}@grolzicht`;
 
-    const events = this.playerMatchRows
-      .map((r, i) => {
-        const date = r.isCatchUp && r.playedDate ? r.playedDate : r.eveningDate;
-        const label = r.isCatchUp ? ` (inhaal)` : '';
-        return [
+    // Regular matches only (no catch-up matches)
+    const matchEvents = this.playerMatchRows
+      .filter((r) => !r.isCatchUp)
+      .map((r, i) =>
+        [
           'BEGIN:VEVENT',
           `UID:${uid(i)}`,
-          `DTSTART;VALUE=DATE:${toIcsDate(date)}`,
-          `DTEND;VALUE=DATE:${toIcsDate(date)}`,
-          `SUMMARY:Avond ${r.eveningNumber}${label} – vs ${r.opponentName}`,
-          `DESCRIPTION:${compName}\\nAvond ${r.eveningNumber}${label} – ${player.nr} ${player.name} vs ${r.opponentName}`,
+          `DTSTART;VALUE=DATE:${toIcsDate(r.eveningDate)}`,
+          `DTEND;VALUE=DATE:${toIcsDate(r.eveningDate)}`,
+          `SUMMARY:Avond ${r.eveningNumber} – vs ${r.opponentName}`,
+          `DESCRIPTION:${compName}\\nAvond ${r.eveningNumber} – ${player.nr} ${player.name} vs ${r.opponentName}`,
           'END:VEVENT',
-        ].join('\r\n');
-      })
-      .join('\r\n');
+        ].join('\r\n')
+      );
+
+    // One "Inhaalavond" per catch-up evening, always present regardless of matches
+    const catchUpEvents = (this.schedule()?.evenings ?? [])
+      .filter((ev) => ev.isInhaalAvond)
+      .map((ev) =>
+        [
+          'BEGIN:VEVENT',
+          `UID:inhaal-${ev.id.slice(0, 8)}-${this.selectedPlayerId().slice(0, 8)}@grolzicht`,
+          `DTSTART;VALUE=DATE:${toIcsDate(ev.date)}`,
+          `DTEND;VALUE=DATE:${toIcsDate(ev.date)}`,
+          'SUMMARY:Inhaalavond',
+          `DESCRIPTION:${compName}\\nInhaalavond`,
+          'END:VEVENT',
+        ].join('\r\n')
+      );
+
+    const events = [...matchEvents, ...catchUpEvents].join('\r\n');
 
     const ics = [
       'BEGIN:VCALENDAR',
