@@ -713,19 +713,21 @@ export class BeheerComponent implements OnInit {
   logsLoading = signal(false);
 
   get httpLogs(): string[] {
-    return this.logs().filter((l) => l.startsWith('[HTTP]'));
+    return this.logs().filter((l) => l.includes('[HTTP]'));
   }
 
   get errorLogs(): string[] {
-    return this.logs().filter((l) => l.startsWith('[ERROR]'));
+    return this.logs().filter((l) => l.includes('[ERROR]'));
   }
 
   get infoLogs(): string[] {
-    return this.logs().filter((l) => !l.startsWith('[HTTP]') && !l.startsWith('[ERROR]'));
+    return this.logs().filter((l) => !l.includes('[HTTP]') && !l.includes('[ERROR]'));
   }
 
   httpLogColor(line: string): string {
-    const parts = line.split(' ');
+    // Format: "2026/04/08 13:20:21 [HTTP] GET /path 200 duration"
+    const idx = line.indexOf('[HTTP]');
+    const parts = idx >= 0 ? line.slice(idx).split(' ') : [];
     const status = parseInt(parts[3], 10);
     if (status >= 500) return '#f44336';
     if (status >= 400) return '#ff9800';
