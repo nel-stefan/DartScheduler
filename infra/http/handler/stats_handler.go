@@ -106,7 +106,7 @@ func (h *StatsHandler) StandingsPDF(w http.ResponseWriter, r *http.Request) {
 	// Sort duty stats by count descending (same as frontend)
 	sort.Slice(dutyStats, func(i, j int) bool { return dutyStats[i].Count > dutyStats[j].Count })
 
-	filename := fmt.Sprintf("Stand_%s", time.Now().Format("2006_01_02"))
+	filename := fmt.Sprintf("Stand_%s", time.Now().Format("2006-01-02"))
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.pdf"`, filename))
 	if err := pdf.ExportStandings(stats, dutyStats, w); err != nil {
