@@ -19,7 +19,7 @@ type standingsClassGroup struct {
 // ExportStandings writes a klassement PDF (landscape A4) to w.
 // Klasse 1 and Klasse 2 are rendered side-by-side on the first page;
 // any additional classes each get their own page. Duty stats follow on a portrait page.
-func ExportStandings(competitionName string, stats []usecase.PlayerStats, dutyStats []usecase.DutyStats, w io.Writer) error {
+func ExportStandings(stats []usecase.PlayerStats, dutyStats []usecase.DutyStats, w io.Writer) error {
 	f := gofpdf.New("L", "mm", "A4", "")
 	f.SetMargins(14, 14, 14)
 	f.SetAutoPageBreak(false, 0)
@@ -51,30 +51,6 @@ func ExportStandings(competitionName string, stats []usecase.PlayerStats, dutySt
 	setHeaderFill := func() { f.SetFillColor(52, 73, 94) } // dark blue-grey
 	setAltFill := func() { f.SetFillColor(236, 240, 241) } // very light grey
 	setClearFill := func() { f.SetFillColor(255, 255, 255) }
-
-	// drawPageHeader draws a title bar and section label. Returns Y below header.
-	drawPageHeader := func(pageUsableW float64, subtitle string) float64 {
-		startY := float64(marginL)
-
-		// Title bar background
-		f.SetFillColor(52, 73, 94)
-		f.Rect(marginL, startY, pageUsableW, 10, "F")
-
-		// Competition name — bold, white, left
-		f.SetFont("Verdana", "B", 14)
-		f.SetTextColor(255, 255, 255)
-		f.SetXY(marginL+2, startY)
-		f.CellFormat(pageUsableW-4, 10, competitionName, "", 1, "L", false, 0, "")
-
-		// Section label — italic grey below the bar
-		f.SetFont("Verdana", "I", 9)
-		f.SetTextColor(90, 90, 90)
-		f.SetXY(marginL, startY+11)
-		f.CellFormat(pageUsableW, 6, subtitle, "", 1, "L", false, 0, "")
-
-		f.SetTextColor(0, 0, 0)
-		return startY + 11 + 6 + 2 // Y below header + gap
-	}
 
 	// drawClassTable draws one standings table at (x, y). Returns Y after last row.
 	drawClassTable := func(cg *standingsClassGroup, x, y float64) float64 {
@@ -171,14 +147,14 @@ func ExportStandings(competitionName string, stats []usecase.PlayerStats, dutySt
 	// --- Render landscape pages (pairs of classes side-by-side) ---
 	for i := 0; i < len(classOrder); i += 2 {
 		f.AddPage()
-		headerY := drawPageHeader(usableW, "Klassement")
+		startY := float64(marginL)
 
 		leftCls := classMap[classOrder[i]]
-		drawClassTable(leftCls, marginL, headerY)
+		drawClassTable(leftCls, marginL, startY)
 
 		if i+1 < len(classOrder) {
 			rightCls := classMap[classOrder[i+1]]
-			drawClassTable(rightCls, col2X, headerY)
+			drawClassTable(rightCls, col2X, startY)
 		}
 	}
 
@@ -190,14 +166,7 @@ func ExportStandings(competitionName string, stats []usecase.PlayerStats, dutySt
 	dutyA := []string{"C", "C", "L", "C"}
 
 	f.AddPageFormat("P", gofpdf.SizeType{Wd: 210, Ht: 297})
-	headerY := drawPageHeader(portraitUsableW, "Schrijver / Teller")
-
-	// Subtitle note
-	f.SetFont("Verdana", "I", 8)
-	f.SetTextColor(100, 100, 100)
-	f.SetXY(marginL, headerY)
-	f.CellFormat(portraitUsableW, 5, "Totaal aantal keer als schrijver of teller ingezet (gecombineerd).", "", 1, "L", false, 0, "")
-	headerY += 6
+	headerY := float64(marginL)
 
 	// Header row
 	setHeaderFill()

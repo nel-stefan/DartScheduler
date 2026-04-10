@@ -105,11 +105,10 @@ func (h *StatsHandler) StandingsPDF(w http.ResponseWriter, r *http.Request) {
 	// Sort duty stats by count descending (same as frontend)
 	sort.Slice(dutyStats, func(i, j int) bool { return dutyStats[i].Count > dutyStats[j].Count })
 
-	// Look up competition name and season for the PDF header
-	competitionName, season := "", ""
+	// Look up season for the PDF filename
+	season := ""
 	if schedID != nil {
 		if sched, err := h.schedules.FindByID(r.Context(), *schedID); err == nil {
-			competitionName = sched.CompetitionName
 			season = sched.Season
 		}
 	}
@@ -120,7 +119,7 @@ func (h *StatsHandler) StandingsPDF(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.pdf"`, filename))
-	if err := pdf.ExportStandings(competitionName, stats, dutyStats, w); err != nil {
+	if err := pdf.ExportStandings(stats, dutyStats, w); err != nil {
 		httpError(w, err, http.StatusInternalServerError)
 	}
 }
