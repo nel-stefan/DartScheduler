@@ -11,6 +11,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ScoreService } from '../../services/score.service';
 import { SeasonService } from '../../services/season.service';
+import { ExportService } from '../../services/export.service';
 import { PlayerStats, DutyStats } from '../../models';
 import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-stat-dialog.component';
 
@@ -128,7 +129,10 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
     <div style="padding:24px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
         <h2 style="margin:0">Klassement</h2>
-        <button mat-stroked-button (click)="print()" class="screen-only"><mat-icon>print</mat-icon> Afdrukken</button>
+        <div style="display:flex;gap:8px" class="screen-only">
+          <button mat-stroked-button (click)="downloadPdf()"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
+          <button mat-stroked-button (click)="print()"><mat-icon>print</mat-icon> Afdrukken</button>
+        </div>
       </div>
 
       <!-- Records: minste beurten + hoogste finish (overkoepelend) -->
@@ -421,6 +425,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
 export class StandingsComponent implements OnInit {
   private scoreService = inject(ScoreService);
   private seasonService = inject(SeasonService);
+  private exportService = inject(ExportService);
   private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
 
@@ -550,6 +555,11 @@ export class StandingsComponent implements OnInit {
       const diffB = b.pointsFor - b.pointsAgainst;
       return diffB - diffA;
     });
+  }
+
+  downloadPdf(): void {
+    const sid = this.seasonService.selectedId$.value || undefined;
+    this.exportService.downloadStandingsPdf(sid, this.effectiveListId);
   }
 
   print(): void {

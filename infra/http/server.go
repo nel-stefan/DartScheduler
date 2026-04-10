@@ -13,6 +13,7 @@
 //	PUT    /api/matches/{id}/score            — submit a match score
 //	GET    /api/stats                         — get standings
 //	GET    /api/stats/duties                  — get secretary/counter duty statistics
+//	GET    /api/stats/pdf                     — download standings as PDF
 //	GET    /api/export/excel                  — download schedule as Excel
 //	GET    /api/export/pdf                    — download schedule as PDF
 //	GET    /api/export/evening/{id}/excel     — download a single evening as match form Excel
@@ -88,6 +89,7 @@ func NewRouter(
 
 		r.Get("/stats", statsH.Get)
 		r.Get("/stats/duties", statsH.GetDuties)
+		r.Get("/stats/pdf", statsH.StandingsPDF)
 
 		r.Get("/export/excel", exportH.Excel)
 		r.Get("/export/pdf", exportH.PDF)
