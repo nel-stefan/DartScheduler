@@ -293,7 +293,7 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
                   <p style="color:#616161;font-size:13px;margin:12px 0 8px 0">
                     Totaal aantal keer als schrijver of teller ingezet (gecombineerd).
                   </p>
-                  <table mat-table [dataSource]="dutyStats()" style="width:100%">
+                  <table mat-table [dataSource]="sortedDutyStats()" style="width:100%">
                     <ng-container matColumnDef="rank">
                       <th mat-header-cell *matHeaderCellDef class="rank-col">#</th>
                       <td mat-cell *matCellDef="let s; let i = index" class="rank-col">{{ i + 1 }}</td>
@@ -305,14 +305,31 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
                     </ng-container>
 
                     <ng-container matColumnDef="name">
-                      <th mat-header-cell *matHeaderCellDef>Naam</th>
+                      <th mat-header-cell *matHeaderCellDef style="cursor:pointer;user-select:none"
+                          (click)="sortDuty('name')">
+                        Naam
+                        @if (dutySortCol() === 'name') {
+                          <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                            {{ dutySortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                          </mat-icon>
+                        }
+                      </th>
                       <td mat-cell *matCellDef="let s">
                         <strong>{{ s.player.name }}</strong>
                       </td>
                     </ng-container>
 
                     <ng-container matColumnDef="count">
-                      <th mat-header-cell *matHeaderCellDef style="width:80px;text-align:center">Keer</th>
+                      <th mat-header-cell *matHeaderCellDef
+                          style="width:80px;text-align:center;cursor:pointer;user-select:none"
+                          (click)="sortDuty('count')">
+                        Keer
+                        @if (dutySortCol() === 'count') {
+                          <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                            {{ dutySortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                          </mat-icon>
+                        }
+                      </th>
                       <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600">{{ s.count }}</td>
                     </ng-container>
 
@@ -441,6 +458,26 @@ export class StandingsComponent implements OnInit {
 
   standingsSortCol = signal<'name' | 'wins' | 'losses' | 'pf' | 'pa' | '180s'>('pf');
   standingsSortDir = signal<'asc' | 'desc'>('desc');
+  dutySortCol = signal<'name' | 'count'>('count');
+  dutySortDir = signal<'asc' | 'desc'>('desc');
+
+  sortDuty(col: 'name' | 'count'): void {
+    if (this.dutySortCol() === col) {
+      this.dutySortDir.set(this.dutySortDir() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.dutySortCol.set(col);
+      this.dutySortDir.set(col === 'name' ? 'asc' : 'desc');
+    }
+  }
+
+  sortedDutyStats = computed(() => {
+    const col = this.dutySortCol();
+    const dir = this.dutySortDir() === 'asc' ? 1 : -1;
+    return [...this.dutyStats()].sort((a, b) => {
+      if (col === 'name') return dir * a.player.name.localeCompare(b.player.name);
+      return dir * (a.count - b.count);
+    });
+  });
 
   sortStandings(col: 'name' | 'wins' | 'losses' | 'pf' | 'pa' | '180s'): void {
     if (this.standingsSortCol() === col) {
