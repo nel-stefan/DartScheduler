@@ -120,7 +120,7 @@ func (h *StatsHandler) StandingsPDF(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.pdf"`, filename))
-	if err := pdf.ExportStandings(competitionName, season, stats, dutyStats, w); err != nil {
+	if err := pdf.ExportStandings(competitionName, stats, dutyStats, w); err != nil {
 		httpError(w, err, http.StatusInternalServerError)
 	}
 }

@@ -18,12 +18,17 @@ type standingsClassGroup struct {
 
 // ExportStandings writes a klassement PDF (landscape A4) to w.
 // Klasse 1 and Klasse 2 are rendered side-by-side on the first page;
-// any additional classes each get their own page. Duty stats follow on a final page.
-func ExportStandings(competitionName, season string, stats []usecase.PlayerStats, dutyStats []usecase.DutyStats, w io.Writer) error {
+// any additional classes each get their own page. Duty stats follow on a portrait page.
+func ExportStandings(competitionName string, stats []usecase.PlayerStats, dutyStats []usecase.DutyStats, w io.Writer) error {
 	f := gofpdf.New("L", "mm", "A4", "")
 	f.SetMargins(14, 14, 14)
 	f.SetAutoPageBreak(false, 0)
-	tr := f.UnicodeTranslatorFromDescriptor("")
+
+	// Register Verdana (embedded TTF) — no UnicodeTranslator needed for UTF-8 fonts
+	f.AddUTF8FontFromBytes("Verdana", "", verdanaRegular)
+	f.AddUTF8FontFromBytes("Verdana", "B", verdanaBold)
+	f.AddUTF8FontFromBytes("Verdana", "I", verdanaItalic)
+	f.AddUTF8FontFromBytes("Verdana", "BI", verdanaBoldItalic)
 
 	// A4 landscape usable area: 297 - 28 = 269mm wide, 210 - 28 = 182mm tall
 	const (
@@ -33,8 +38,8 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 		twoColW    = (usableW - 10) / 2 // each column ~129.5mm (gap = 10mm)
 		twoColGap  = 10.0
 		col2X      = marginL + twoColW + twoColGap
-		rowH       = 6.5
-		headerRowH = 7.5
+		rowH       = 7.0
+		headerRowH = 8.0
 	)
 
 	// Table column widths (must sum to twoColW ≈ 129.5)
@@ -47,54 +52,47 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 	setAltFill := func() { f.SetFillColor(236, 240, 241) } // very light grey
 	setClearFill := func() { f.SetFillColor(255, 255, 255) }
 
-	// Draw full-page header (title + subtitle). Returns Y after header.
-	drawPageHeader := func(subtitle string) float64 {
-		f.AddPage()
-		startY := marginL
+	// drawPageHeader draws a title bar and section label. Returns Y below header.
+	drawPageHeader := func(pageUsableW float64, subtitle string) float64 {
+		startY := float64(marginL)
 
-		// Title bar — filled rectangle (no CellFormat needed before font is set)
+		// Title bar background
 		f.SetFillColor(52, 73, 94)
-		f.Rect(marginL, startY, usableW, 11, "F")
+		f.Rect(marginL, startY, pageUsableW, 10, "F")
 
-		// Title text (competition name, left)
-		f.SetFont("Arial", "B", 16)
+		// Competition name — bold, white, left
+		f.SetFont("Verdana", "B", 14)
 		f.SetTextColor(255, 255, 255)
-		f.SetXY(marginL, startY)
-		f.CellFormat(usableW, 11, tr(competitionName), "", 0, "L", false, 0, "")
+		f.SetXY(marginL+2, startY)
+		f.CellFormat(pageUsableW-4, 10, competitionName, "", 1, "L", false, 0, "")
 
-		// Season (right-aligned, italic)
-		f.SetFont("Arial", "I", 11)
-		f.SetXY(marginL, startY)
-		f.CellFormat(usableW, 11, tr(season), "", 1, "R", false, 0, "")
-
-		// Section label below header bar
-		f.SetTextColor(80, 80, 80)
-		f.SetFont("Arial", "I", 9)
-		f.SetXY(marginL, startY+12)
-		f.CellFormat(usableW, 6, tr(subtitle), "", 1, "L", false, 0, "")
+		// Section label — italic grey below the bar
+		f.SetFont("Verdana", "I", 9)
+		f.SetTextColor(90, 90, 90)
+		f.SetXY(marginL, startY+11)
+		f.CellFormat(pageUsableW, 6, subtitle, "", 1, "L", false, 0, "")
 
 		f.SetTextColor(0, 0, 0)
-		return startY + 12 + 6 + 3 // Y below header + small gap
+		return startY + 11 + 6 + 2 // Y below header + gap
 	}
 
-	// Draw one class table starting at (x, y). Returns Y after last row.
+	// drawClassTable draws one standings table at (x, y). Returns Y after last row.
 	drawClassTable := func(cg *standingsClassGroup, x, y float64) float64 {
-		// Class label
-		f.SetFont("Arial", "B", 12)
+		// Class label with underline
+		f.SetFont("Verdana", "B", 11)
 		f.SetTextColor(52, 73, 94)
 		f.SetXY(x, y)
-		f.CellFormat(twoColW, 8, tr(cg.label), "", 0, "L", false, 0, "")
-		// Underline by drawing a line
+		f.CellFormat(twoColW, 7, cg.label, "", 0, "L", false, 0, "")
 		f.SetDrawColor(52, 73, 94)
 		f.SetLineWidth(0.4)
-		f.Line(x, y+8, x+twoColW, y+8)
-		y += 9
+		f.Line(x, y+7, x+twoColW, y+7)
+		y += 8
 
-		// Column headers
+		// Column header row
 		setHeaderFill()
-		f.SetFont("Arial", "B", 9)
+		f.SetFont("Verdana", "B", 9)
 		f.SetTextColor(255, 255, 255)
-		f.SetDrawColor(200, 200, 200)
+		f.SetDrawColor(180, 180, 180)
 		f.SetLineWidth(0.2)
 		xc := x
 		for i, h := range ch {
@@ -107,17 +105,15 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 		// Data rows
 		f.SetTextColor(0, 0, 0)
 		for rank, s := range cg.stats {
-			alt := rank%2 == 1
-			if alt {
+			if rank%2 == 1 {
 				setAltFill()
 			} else {
 				setClearFill()
 			}
-			// Bold + slightly larger for rank 1
 			if rank == 0 {
-				f.SetFont("Arial", "B", 9)
+				f.SetFont("Verdana", "B", 9) // winner in bold
 			} else {
-				f.SetFont("Arial", "", 9)
+				f.SetFont("Verdana", "", 9)
 			}
 
 			e180 := ""
@@ -126,8 +122,8 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 			}
 			cells := []string{
 				fmt.Sprintf("%d", rank+1),
-				tr(s.Player.Nr),
-				tr(s.Player.Name),
+				s.Player.Nr,
+				s.Player.Name,
 				fmt.Sprintf("%d", s.PointsFor),
 				fmt.Sprintf("%d", s.PointsAgainst),
 				e180,
@@ -135,8 +131,7 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 			xc := x
 			for i, cell := range cells {
 				f.SetXY(xc, y)
-				border := "1"
-				f.CellFormat(cw[i], rowH, cell, border, 0, ca[i], true, 0, "")
+				f.CellFormat(cw[i], rowH, cell, "1", 0, ca[i], true, 0, "")
 				xc += cw[i]
 			}
 			y += rowH
@@ -173,10 +168,10 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 		})
 	}
 
-	// --- Render pages ---
-	// First two classes side-by-side on one landscape page
+	// --- Render landscape pages (pairs of classes side-by-side) ---
 	for i := 0; i < len(classOrder); i += 2 {
-		headerY := drawPageHeader("Klassement")
+		f.AddPage()
+		headerY := drawPageHeader(usableW, "Klassement")
 
 		leftCls := classMap[classOrder[i]]
 		drawClassTable(leftCls, marginL, headerY)
@@ -187,46 +182,28 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 		}
 	}
 
-	// --- Duty stats page (portrait) ---
-	// A4 portrait: 210mm wide, usable = 210 - 28 = 182mm
-	const (
-		portraitUsableW = 210.0 - 2*marginL // 182mm
-	)
-	dutyW := []float64{9, 13, 140, 20} // 182mm
+	// --- Duty stats page (portrait A4) ---
+	const portraitUsableW = 210.0 - 2*marginL // 182mm
+
+	dutyW := []float64{9, 13, 140, 20} // 182mm total
 	dutyH := []string{"#", "Nr", "Naam", "Keer"}
 	dutyA := []string{"C", "C", "L", "C"}
 
-	// Portrait page with same styled header
 	f.AddPageFormat("P", gofpdf.SizeType{Wd: 210, Ht: 297})
-	startY := float64(marginL)
-	f.SetFillColor(52, 73, 94)
-	f.Rect(marginL, startY, portraitUsableW, 11, "F")
-	f.SetFont("Arial", "B", 16)
-	f.SetTextColor(255, 255, 255)
-	f.SetXY(marginL, startY)
-	f.CellFormat(portraitUsableW, 11, tr(competitionName), "", 0, "L", false, 0, "")
-	f.SetFont("Arial", "I", 11)
-	f.SetXY(marginL, startY)
-	f.CellFormat(portraitUsableW, 11, tr(season), "", 1, "R", false, 0, "")
-	f.SetTextColor(80, 80, 80)
-	f.SetFont("Arial", "I", 9)
-	f.SetXY(marginL, startY+12)
-	f.CellFormat(portraitUsableW, 6, "Schrijver / Teller", "", 1, "L", false, 0, "")
-	f.SetTextColor(0, 0, 0)
-	headerY := startY + 12 + 6 + 3
+	headerY := drawPageHeader(portraitUsableW, "Schrijver / Teller")
 
 	// Subtitle note
-	f.SetFont("Arial", "I", 9)
+	f.SetFont("Verdana", "I", 8)
 	f.SetTextColor(100, 100, 100)
 	f.SetXY(marginL, headerY)
 	f.CellFormat(portraitUsableW, 5, "Totaal aantal keer als schrijver of teller ingezet (gecombineerd).", "", 1, "L", false, 0, "")
-	headerY += 7
+	headerY += 6
 
 	// Header row
 	setHeaderFill()
-	f.SetFont("Arial", "B", 9)
+	f.SetFont("Verdana", "B", 9)
 	f.SetTextColor(255, 255, 255)
-	xc := marginL
+	xc := float64(marginL)
 	for i, h := range dutyH {
 		f.SetXY(xc, headerY)
 		f.CellFormat(dutyW[i], headerRowH, h, "1", 0, dutyA[i], true, 0, "")
@@ -240,24 +217,23 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 		if d.Count == 0 {
 			continue
 		}
-		alt := ri%2 == 1
-		if alt {
+		if ri%2 == 1 {
 			setAltFill()
 		} else {
 			setClearFill()
 		}
 		if rank == 1 {
-			f.SetFont("Arial", "B", 9)
+			f.SetFont("Verdana", "B", 9)
 		} else {
-			f.SetFont("Arial", "", 9)
+			f.SetFont("Verdana", "", 9)
 		}
 		cells := []string{
 			fmt.Sprintf("%d", rank),
-			tr(d.Player.Nr),
-			tr(d.Player.Name),
+			d.Player.Nr,
+			d.Player.Name,
 			fmt.Sprintf("%d", d.Count),
 		}
-		xc := marginL
+		xc := float64(marginL)
 		for i, cell := range cells {
 			f.SetXY(xc, headerY)
 			f.CellFormat(dutyW[i], rowH, cell, "1", 0, dutyA[i], true, 0, "")
