@@ -27,14 +27,14 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 
 	// A4 landscape usable area: 297 - 28 = 269mm wide, 210 - 28 = 182mm tall
 	const (
-		pageW       = 297.0
-		marginL     = 14.0
-		usableW     = pageW - 2*marginL // 269mm
-		twoColW     = (usableW - 10) / 2 // each column ~129.5mm (gap = 10mm)
-		twoColGap   = 10.0
-		col2X       = marginL + twoColW + twoColGap
-		rowH        = 6.5
-		headerRowH  = 7.5
+		pageW      = 297.0
+		marginL    = 14.0
+		usableW    = pageW - 2*marginL  // 269mm
+		twoColW    = (usableW - 10) / 2 // each column ~129.5mm (gap = 10mm)
+		twoColGap  = 10.0
+		col2X      = marginL + twoColW + twoColGap
+		rowH       = 6.5
+		headerRowH = 7.5
 	)
 
 	// Table column widths (must sum to twoColW ≈ 129.5)
@@ -43,8 +43,8 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 	ca := []string{"C", "C", "L", "C", "C", "C"}
 
 	// Colors
-	setHeaderFill := func() { f.SetFillColor(52, 73, 94) }  // dark blue-grey
-	setAltFill := func() { f.SetFillColor(236, 240, 241) }   // very light grey
+	setHeaderFill := func() { f.SetFillColor(52, 73, 94) } // dark blue-grey
+	setAltFill := func() { f.SetFillColor(236, 240, 241) } // very light grey
 	setClearFill := func() { f.SetFillColor(255, 255, 255) }
 
 	// Draw full-page header (title + subtitle). Returns Y after header.
