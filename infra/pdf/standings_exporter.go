@@ -187,23 +187,39 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 		}
 	}
 
-	// --- Duty stats page ---
-	// Wider single table for duty stats
-	dutyW := []float64{9, 13, 115, 19} // 156mm — fits nicely on half-width landscape
+	// --- Duty stats page (portrait) ---
+	// A4 portrait: 210mm wide, usable = 210 - 28 = 182mm
+	const (
+		portraitUsableW = 210.0 - 2*marginL // 182mm
+	)
+	dutyW := []float64{9, 13, 140, 20} // 182mm
 	dutyH := []string{"#", "Nr", "Naam", "Keer"}
 	dutyA := []string{"C", "C", "L", "C"}
-	dutyTableW := 0.0
-	for _, w := range dutyW {
-		dutyTableW += w
-	}
 
-	headerY := drawPageHeader("Schrijver / Teller")
+	// Portrait page with same styled header
+	f.AddPageFormat("P", gofpdf.SizeType{Wd: 210, Ht: 297})
+	startY := float64(marginL)
+	f.SetFillColor(52, 73, 94)
+	f.Rect(marginL, startY, portraitUsableW, 11, "F")
+	f.SetFont("Arial", "B", 16)
+	f.SetTextColor(255, 255, 255)
+	f.SetXY(marginL, startY)
+	f.CellFormat(portraitUsableW, 11, tr(competitionName), "", 0, "L", false, 0, "")
+	f.SetFont("Arial", "I", 11)
+	f.SetXY(marginL, startY)
+	f.CellFormat(portraitUsableW, 11, tr(season), "", 1, "R", false, 0, "")
+	f.SetTextColor(80, 80, 80)
+	f.SetFont("Arial", "I", 9)
+	f.SetXY(marginL, startY+12)
+	f.CellFormat(portraitUsableW, 6, "Schrijver / Teller", "", 1, "L", false, 0, "")
+	f.SetTextColor(0, 0, 0)
+	headerY := startY + 12 + 6 + 3
 
 	// Subtitle note
 	f.SetFont("Arial", "I", 9)
 	f.SetTextColor(100, 100, 100)
 	f.SetXY(marginL, headerY)
-	f.CellFormat(dutyTableW, 5, "Totaal aantal keer als schrijver of teller ingezet (gecombineerd).", "", 1, "L", false, 0, "")
+	f.CellFormat(portraitUsableW, 5, "Totaal aantal keer als schrijver of teller ingezet (gecombineerd).", "", 1, "L", false, 0, "")
 	headerY += 7
 
 	// Header row
