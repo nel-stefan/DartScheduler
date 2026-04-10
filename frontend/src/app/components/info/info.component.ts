@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, DestroyRef, signal } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { combineLatest, distinctUntilChanged, filter, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -387,62 +387,97 @@ interface MatchRow {
                 <mat-card>
                   <mat-card-header><mat-card-title>Beurtstatistieken &amp; Records</mat-card-title></mat-card-header>
                   <mat-card-content>
-                    <table mat-table [dataSource]="statRows()" style="width:100%">
+                    <table mat-table [dataSource]="sortedStatRows()" style="width:100%">
                       <ng-container matColumnDef="nr">
                         <th mat-header-cell *matHeaderCellDef style="width:48px">Nr</th>
                         <td mat-cell *matCellDef="let s">{{ s.player.nr }}</td>
                       </ng-container>
                       <ng-container matColumnDef="name">
-                        <th mat-header-cell *matHeaderCellDef>Naam</th>
+                        <th mat-header-cell *matHeaderCellDef style="cursor:pointer;user-select:none"
+                            (click)="sortStat('name')">
+                          Naam
+                          @if (statSortCol() === 'name') {
+                            <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                              {{ statSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                            </mat-icon>
+                          }
+                        </th>
                         <td mat-cell *matCellDef="let s">
                           <strong>{{ s.player.name }}</strong>
                         </td>
                       </ng-container>
                       <ng-container matColumnDef="minTurns">
-                        <th
-                          mat-header-cell
-                          *matHeaderCellDef
-                          style="width:90px;text-align:center"
-                          title="Minste beurten in een gewonnen leg"
-                        >
+                        <th mat-header-cell *matHeaderCellDef
+                            style="width:90px;text-align:center;cursor:pointer;user-select:none"
+                            title="Minste beurten in een gewonnen leg"
+                            (click)="sortStat('minTurns')">
                           Min. beurten
+                          @if (statSortCol() === 'minTurns') {
+                            <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                              {{ statSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                            </mat-icon>
+                          }
                         </th>
                         <td mat-cell *matCellDef="let s" style="text-align:center">{{ s.minTurns || '—' }}</td>
                       </ng-container>
                       <ng-container matColumnDef="avgTurns">
-                        <th
-                          mat-header-cell
-                          *matHeaderCellDef
-                          style="width:90px;text-align:center"
-                          title="Gemiddeld beurten per gewonnen leg"
-                        >
+                        <th mat-header-cell *matHeaderCellDef
+                            style="width:90px;text-align:center;cursor:pointer;user-select:none"
+                            title="Gemiddeld beurten per gewonnen leg"
+                            (click)="sortStat('avgTurns')">
                           Gem. beurten
+                          @if (statSortCol() === 'avgTurns') {
+                            <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                              {{ statSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                            </mat-icon>
+                          }
                         </th>
                         <td mat-cell *matCellDef="let s" style="text-align:center">
                           {{ s.avgTurns ? (s.avgTurns | number: '1.1-1') : '—' }}
                         </td>
                       </ng-container>
                       <ng-container matColumnDef="avgScore">
-                        <th
-                          mat-header-cell
-                          *matHeaderCellDef
-                          style="width:100px;text-align:center"
-                          title="Gemiddelde score per beurt (≈ 501 / gem. beurten)"
-                        >
+                        <th mat-header-cell *matHeaderCellDef
+                            style="width:100px;text-align:center;cursor:pointer;user-select:none"
+                            title="Gemiddelde score per beurt (≈ 501 / gem. beurten)"
+                            (click)="sortStat('avgScore')">
                           Gem. score/beurt
+                          @if (statSortCol() === 'avgScore') {
+                            <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                              {{ statSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                            </mat-icon>
+                          }
                         </th>
                         <td mat-cell *matCellDef="let s" style="text-align:center">
                           {{ s.avgScorePerTurn ? (s.avgScorePerTurn | number: '1.1-1') : '—' }}
                         </td>
                       </ng-container>
                       <ng-container matColumnDef="180s">
-                        <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center">180's</th>
+                        <th mat-header-cell *matHeaderCellDef
+                            style="width:60px;text-align:center;cursor:pointer;user-select:none"
+                            (click)="sortStat('180s')">
+                          180's
+                          @if (statSortCol() === '180s') {
+                            <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                              {{ statSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                            </mat-icon>
+                          }
+                        </th>
                         <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600;color:#7b1fa2">
                           {{ s.oneEighties || '—' }}
                         </td>
                       </ng-container>
                       <ng-container matColumnDef="hf">
-                        <th mat-header-cell *matHeaderCellDef style="width:90px;text-align:center">Hoogste finish</th>
+                        <th mat-header-cell *matHeaderCellDef
+                            style="width:90px;text-align:center;cursor:pointer;user-select:none"
+                            (click)="sortStat('hf')">
+                          Hoogste finish
+                          @if (statSortCol() === 'hf') {
+                            <mat-icon style="font-size:14px;vertical-align:middle;height:14px;width:14px">
+                              {{ statSortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                            </mat-icon>
+                          }
+                        </th>
                         <td mat-cell *matCellDef="let s" style="text-align:center;font-weight:600;color:#0277bd">
                           {{ s.highestFinish || '—' }}
                         </td>
@@ -882,6 +917,31 @@ export class InfoComponent implements OnInit {
   statusCols = ['nr', 'name', 'gespeeld', 'teSpelen', 'inTeHalen'];
   statusSortCol = signal<'nr' | 'name' | 'gespeeld' | 'teSpelen' | 'inTeHalen'>('nr');
   statusSortDir = signal<'asc' | 'desc'>('asc');
+  statSortCol = signal<'name' | 'minTurns' | 'avgTurns' | 'avgScore' | '180s' | 'hf'>('name');
+  statSortDir = signal<'asc' | 'desc'>('asc');
+
+  sortStat(col: 'name' | 'minTurns' | 'avgTurns' | 'avgScore' | '180s' | 'hf'): void {
+    if (this.statSortCol() === col) {
+      this.statSortDir.set(this.statSortDir() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.statSortCol.set(col);
+      this.statSortDir.set(col === 'name' ? 'asc' : 'desc');
+    }
+  }
+
+  sortedStatRows = computed(() => {
+    const col = this.statSortCol();
+    const dir = this.statSortDir() === 'asc' ? 1 : -1;
+    return [...this.statRows()].sort((a, b) => {
+      if (col === 'name')     return dir * a.player.name.localeCompare(b.player.name);
+      if (col === 'minTurns') return dir * ((a.minTurns || Infinity) - (b.minTurns || Infinity));
+      if (col === 'avgTurns') return dir * ((a.avgTurns || Infinity) - (b.avgTurns || Infinity));
+      if (col === 'avgScore') return dir * ((a.avgScorePerTurn ?? 0) - (b.avgScorePerTurn ?? 0));
+      if (col === '180s')     return dir * ((a.oneEighties ?? 0) - (b.oneEighties ?? 0));
+      if (col === 'hf')       return dir * ((a.highestFinish ?? 0) - (b.highestFinish ?? 0));
+      return 0;
+    });
+  });
 
   sortStatus(col: 'nr' | 'name' | 'gespeeld' | 'teSpelen' | 'inTeHalen'): void {
     if (this.statusSortCol() === col) {
