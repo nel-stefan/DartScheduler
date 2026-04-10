@@ -52,18 +52,17 @@ func ExportStandings(competitionName, season string, stats []usecase.PlayerStats
 		f.AddPage()
 		startY := marginL
 
-		// Title bar background
+		// Title bar — filled rectangle (no CellFormat needed before font is set)
 		f.SetFillColor(52, 73, 94)
-		f.SetXY(marginL, startY)
-		f.CellFormat(usableW, 11, "", "", 0, "L", true, 0, "")
+		f.Rect(marginL, startY, usableW, 11, "F")
 
-		// Title text
+		// Title text (competition name, left)
 		f.SetFont("Arial", "B", 16)
 		f.SetTextColor(255, 255, 255)
 		f.SetXY(marginL, startY)
 		f.CellFormat(usableW, 11, tr(competitionName), "", 0, "L", false, 0, "")
 
-		// Subtitle / season (right-aligned, italic)
+		// Season (right-aligned, italic)
 		f.SetFont("Arial", "I", 11)
 		f.SetXY(marginL, startY)
 		f.CellFormat(usableW, 11, tr(season), "", 1, "R", false, 0, "")
