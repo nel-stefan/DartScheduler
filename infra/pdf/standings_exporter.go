@@ -144,19 +144,86 @@ func ExportStandings(stats []usecase.PlayerStats, dutyStats []usecase.DutyStats,
 		})
 	}
 
+	// --- Find records across all stats ---
+	type playerRecord struct {
+		name  string
+		value int
+	}
+	var minTurnsRec, highFinishRec *playerRecord
+	for _, s := range stats {
+		if s.MinTurns > 0 {
+			if minTurnsRec == nil || s.MinTurns < minTurnsRec.value {
+				minTurnsRec = &playerRecord{name: s.Player.Name, value: s.MinTurns}
+			}
+		}
+		if s.HighestFinish > 0 {
+			if highFinishRec == nil || s.HighestFinish > highFinishRec.value {
+				highFinishRec = &playerRecord{name: s.Player.Name, value: s.HighestFinish}
+			}
+		}
+	}
+
+	// drawRecords draws record boxes below the class tables.
+	drawRecords := func(bottomY float64) {
+		if minTurnsRec == nil && highFinishRec == nil {
+			return
+		}
+		y := bottomY + 6
+		boxH := 14.0
+		boxW := twoColW
+
+		if minTurnsRec != nil {
+			f.SetFillColor(232, 240, 254) // light blue
+			f.SetDrawColor(180, 180, 180)
+			f.SetLineWidth(0.2)
+			f.Rect(marginL, y, boxW, boxH, "FD")
+			f.SetFont("Verdana", "I", 8)
+			f.SetTextColor(90, 90, 90)
+			f.SetXY(marginL+3, y+1)
+			f.CellFormat(boxW-6, 5, "Minste beurten", "", 1, "L", false, 0, "")
+			f.SetFont("Verdana", "B", 10)
+			f.SetTextColor(1, 87, 155)
+			f.SetXY(marginL+3, y+6)
+			f.CellFormat(boxW-6, 7, fmt.Sprintf("%s  (%d)", minTurnsRec.name, minTurnsRec.value), "", 0, "L", false, 0, "")
+		}
+
+		if highFinishRec != nil {
+			f.SetFillColor(255, 243, 224) // light orange
+			f.SetDrawColor(180, 180, 180)
+			f.Rect(col2X, y, boxW, boxH, "FD")
+			f.SetFont("Verdana", "I", 8)
+			f.SetTextColor(90, 90, 90)
+			f.SetXY(col2X+3, y+1)
+			f.CellFormat(boxW-6, 5, "Hoogste finish", "", 1, "L", false, 0, "")
+			f.SetFont("Verdana", "B", 10)
+			f.SetTextColor(230, 81, 0)
+			f.SetXY(col2X+3, y+6)
+			f.CellFormat(boxW-6, 7, fmt.Sprintf("%s  (%d)", highFinishRec.name, highFinishRec.value), "", 0, "L", false, 0, "")
+		}
+
+		f.SetTextColor(0, 0, 0)
+		f.SetDrawColor(0, 0, 0)
+	}
+
 	// --- Render landscape pages (pairs of classes side-by-side) ---
+	var lastPageBottomY float64
 	for i := 0; i < len(classOrder); i += 2 {
 		f.AddPage()
 		startY := float64(marginL)
 
 		leftCls := classMap[classOrder[i]]
-		drawClassTable(leftCls, marginL, startY)
+		leftBottomY := drawClassTable(leftCls, marginL, startY)
+		lastPageBottomY = leftBottomY
 
 		if i+1 < len(classOrder) {
 			rightCls := classMap[classOrder[i+1]]
-			drawClassTable(rightCls, col2X, startY)
+			rightBottomY := drawClassTable(rightCls, col2X, startY)
+			if rightBottomY > lastPageBottomY {
+				lastPageBottomY = rightBottomY
+			}
 		}
 	}
+	drawRecords(lastPageBottomY)
 
 	// --- Duty stats page (portrait A4) ---
 	const portraitUsableW = 210.0 - 2*marginL // 182mm
