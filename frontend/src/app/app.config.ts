@@ -11,6 +11,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideAnimationsAsync(),
     provideHttpClient(),
-    { provide: MAT_SELECT_CONFIG, useValue: { typeaheadDebounceInterval: 350 } },
+    { provide: MAT_SELECT_CONFIG, useValue: { typeaheadDebounceInterval: 430 } },
   ],
 };
