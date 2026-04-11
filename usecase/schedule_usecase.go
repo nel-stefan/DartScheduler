@@ -677,6 +677,27 @@ func (uc *ScheduleUseCase) GetPlayedMatches(ctx context.Context, scheduleID doma
 		return nil, fmt.Errorf("load matches: %w", err)
 	}
 
+	// resolveWinner converts a UUID string (stored as leg winner) to the player's display name.
+	resolveWinner := func(uuidStr string, pA, pB domain.Player) string {
+		if uuidStr == "" {
+			return ""
+		}
+		if uuidStr == pA.ID.String() {
+			return domain.FormatDisplayName(pA.Name)
+		}
+		if uuidStr == pB.ID.String() {
+			return domain.FormatDisplayName(pB.Name)
+		}
+		// Fallback: look up in playerMap (shouldn't be needed)
+		id, err := uuid.Parse(uuidStr)
+		if err == nil {
+			if p, ok := playerMap[id]; ok {
+				return domain.FormatDisplayName(p.Name)
+			}
+		}
+		return uuidStr
+	}
+
 	var result []PlayedMatchItem
 	for _, m := range matches {
 		if !m.Played {
@@ -706,11 +727,11 @@ func (uc *ScheduleUseCase) GetPlayedMatches(ctx context.Context, scheduleID doma
 			PlayerBName: domain.FormatDisplayName(pB.Name),
 			ScoreA:      scoreA,
 			ScoreB:      scoreB,
-			Leg1Winner:  m.Leg1Winner,
+			Leg1Winner:  resolveWinner(m.Leg1Winner, pA, pB),
 			Leg1Turns:   m.Leg1Turns,
-			Leg2Winner:  m.Leg2Winner,
+			Leg2Winner:  resolveWinner(m.Leg2Winner, pA, pB),
 			Leg2Turns:   m.Leg2Turns,
-			Leg3Winner:  m.Leg3Winner,
+			Leg3Winner:  resolveWinner(m.Leg3Winner, pA, pB),
 			Leg3Turns:   m.Leg3Turns,
 			SecretaryNr: m.SecretaryNr,
 			CounterNr:   m.CounterNr,

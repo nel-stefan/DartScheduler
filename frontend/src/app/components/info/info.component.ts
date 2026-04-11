@@ -2,7 +2,6 @@ import { Component, inject, OnInit, DestroyRef, signal, computed } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { combineLatest, distinctUntilChanged, filter, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
@@ -55,7 +54,6 @@ interface MatchRow {
   selector: 'app-info',
   imports: [
     CommonModule,
-    FormsModule,
     MatCardModule,
     MatTableModule,
     MatIconModule,
@@ -877,14 +875,18 @@ interface MatchRow {
               <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
                 <mat-form-field subscriptSizing="dynamic" style="width:200px">
                   <mat-label>Speler (naam of nr)</mat-label>
-                  <input matInput [(ngModel)]="matchFilterPlayer" placeholder="bv. Jansen of 42" />
+                  <input matInput [value]="matchFilterPlayer()"
+                         (input)="matchFilterPlayer.set($any($event.target).value)"
+                         placeholder="bv. Jansen of 42" />
                 </mat-form-field>
                 <mat-form-field subscriptSizing="dynamic" style="width:160px">
                   <mat-label>Datum (yyyy-mm-dd)</mat-label>
-                  <input matInput [(ngModel)]="matchFilterDate" placeholder="2025-09-12" />
+                  <input matInput [value]="matchFilterDate()"
+                         (input)="matchFilterDate.set($any($event.target).value)"
+                         placeholder="2025-09-12" />
                 </mat-form-field>
-                @if (matchFilterPlayer || matchFilterDate) {
-                  <button mat-icon-button (click)="matchFilterPlayer = ''; matchFilterDate = ''"
+                @if (matchFilterPlayer() || matchFilterDate()) {
+                  <button mat-icon-button (click)="matchFilterPlayer.set(''); matchFilterDate.set('')"
                           title="Filters wissen">
                     <mat-icon>clear</mat-icon>
                   </button>
@@ -1013,12 +1015,12 @@ export class InfoComponent implements OnInit {
   playedMatchCols = ['evening', 'date', 'playerA', 'score', 'playerB', 'legs', 'secretary', 'counter'];
 
   playedMatches = signal<PlayedMatchItem[]>([]);
-  matchFilterPlayer = '';
-  matchFilterDate = '';
+  matchFilterPlayer = signal('');
+  matchFilterDate = signal('');
 
   filteredPlayedMatches = computed(() => {
-    const playerQ = this.matchFilterPlayer.toLowerCase().trim();
-    const dateQ = this.matchFilterDate.trim();
+    const playerQ = this.matchFilterPlayer().toLowerCase().trim();
+    const dateQ = this.matchFilterDate().trim();
     return this.playedMatches().filter((m) => {
       if (playerQ) {
         const matchesA = m.playerAName.toLowerCase().includes(playerQ) || m.playerANr.includes(playerQ);
