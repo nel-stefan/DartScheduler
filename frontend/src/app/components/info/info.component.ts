@@ -1023,8 +1023,8 @@ export class InfoComponent implements OnInit {
     const dateQ = this.matchFilterDate().trim();
     return this.playedMatches().filter((m) => {
       if (playerQ) {
-        const matchesA = m.playerAName.toLowerCase().includes(playerQ) || m.playerANr.includes(playerQ);
-        const matchesB = m.playerBName.toLowerCase().includes(playerQ) || m.playerBNr.includes(playerQ);
+        const matchesA = m.playerAName.toLowerCase().includes(playerQ) || m.playerANr === playerQ;
+        const matchesB = m.playerBName.toLowerCase().includes(playerQ) || m.playerBNr === playerQ;
         if (!matchesA && !matchesB) return false;
       }
       if (dateQ && !m.playedDate.includes(dateQ)) return false;
