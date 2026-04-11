@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	"DartScheduler/usecase"
 
@@ -146,19 +147,21 @@ func ExportStandings(stats []usecase.PlayerStats, dutyStats []usecase.DutyStats,
 
 	// --- Find records across all stats ---
 	type playerRecord struct {
-		name  string
+		names []string
 		value int
 	}
 	var minTurnsRec, highFinishRec *playerRecord
 	for _, s := range stats {
 		if s.MinTurns > 0 {
 			if minTurnsRec == nil || s.MinTurns < minTurnsRec.value {
-				minTurnsRec = &playerRecord{name: s.Player.Name, value: s.MinTurns}
+				minTurnsRec = &playerRecord{names: []string{s.Player.Name}, value: s.MinTurns}
+			} else if s.MinTurns == minTurnsRec.value {
+				minTurnsRec.names = append(minTurnsRec.names, s.Player.Name)
 			}
 		}
 		if s.HighestFinish > 0 {
 			if highFinishRec == nil || s.HighestFinish > highFinishRec.value {
-				highFinishRec = &playerRecord{name: s.Player.Name, value: s.HighestFinish}
+				highFinishRec = &playerRecord{names: []string{s.Player.Name}, value: s.HighestFinish}
 			}
 		}
 	}
@@ -184,7 +187,7 @@ func ExportStandings(stats []usecase.PlayerStats, dutyStats []usecase.DutyStats,
 			f.SetFont("Verdana", "B", 10)
 			f.SetTextColor(1, 87, 155)
 			f.SetXY(marginL+3, y+6)
-			f.CellFormat(boxW-6, 7, fmt.Sprintf("%s  (%d)", minTurnsRec.name, minTurnsRec.value), "", 0, "L", false, 0, "")
+			f.CellFormat(boxW-6, 7, fmt.Sprintf("%s  (%d)", strings.Join(minTurnsRec.names, ", "), minTurnsRec.value), "", 0, "L", false, 0, "")
 		}
 
 		if highFinishRec != nil {
@@ -198,7 +201,7 @@ func ExportStandings(stats []usecase.PlayerStats, dutyStats []usecase.DutyStats,
 			f.SetFont("Verdana", "B", 10)
 			f.SetTextColor(230, 81, 0)
 			f.SetXY(col2X+3, y+6)
-			f.CellFormat(boxW-6, 7, fmt.Sprintf("%s  (%d)", highFinishRec.name, highFinishRec.value), "", 0, "L", false, 0, "")
+			f.CellFormat(boxW-6, 7, fmt.Sprintf("%s  (%d)", strings.Join(highFinishRec.names, ", "), highFinishRec.value), "", 0, "L", false, 0, "")
 		}
 
 		f.SetTextColor(0, 0, 0)
