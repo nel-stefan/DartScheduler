@@ -2,6 +2,7 @@ import { Component, inject, OnInit, DestroyRef, signal, computed } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { combineLatest, distinctUntilChanged, filter, forkJoin } from 'rxjs';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
@@ -10,10 +11,11 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { ScheduleService } from '../../services/schedule.service';
 import { SeasonService } from '../../services/season.service';
 import { ScoreService } from '../../services/score.service';
-import { PlayerInfoItem, ScheduleInfo, PlayerStats, Schedule, DutyStats } from '../../models';
+import { PlayerInfoItem, ScheduleInfo, PlayerStats, Schedule, DutyStats, PlayedMatchItem } from '../../models';
 
 interface PlayerRow {
   player: PlayerInfoItem;
@@ -53,6 +55,7 @@ interface MatchRow {
   selector: 'app-info',
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatTableModule,
     MatIconModule,
@@ -60,6 +63,7 @@ interface MatchRow {
     MatTabsModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatInputModule,
     MatButtonModule,
   ],
   styles: [
@@ -865,6 +869,97 @@ interface MatchRow {
               }
             </div>
           </mat-tab>
+
+          <!-- Tab 8: Gespeelde wedstrijden controle -->
+          <mat-tab label="Gespeeld">
+            <div style="padding-top:16px">
+              <!-- Filters -->
+              <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+                <mat-form-field subscriptSizing="dynamic" style="width:200px">
+                  <mat-label>Speler (naam of nr)</mat-label>
+                  <input matInput [(ngModel)]="matchFilterPlayer" placeholder="bv. Jansen of 42" />
+                </mat-form-field>
+                <mat-form-field subscriptSizing="dynamic" style="width:160px">
+                  <mat-label>Datum (yyyy-mm-dd)</mat-label>
+                  <input matInput [(ngModel)]="matchFilterDate" placeholder="2025-09-12" />
+                </mat-form-field>
+                @if (matchFilterPlayer || matchFilterDate) {
+                  <button mat-icon-button (click)="matchFilterPlayer = ''; matchFilterDate = ''"
+                          title="Filters wissen">
+                    <mat-icon>clear</mat-icon>
+                  </button>
+                }
+                <span style="color:#757575;font-size:13px">
+                  {{ filteredPlayedMatches().length }} wedstrijd(en)
+                </span>
+              </div>
+
+              <mat-card>
+                <mat-card-content>
+                  <div style="overflow-x:auto">
+                    <table mat-table [dataSource]="filteredPlayedMatches()" style="width:100%;min-width:900px">
+                      <ng-container matColumnDef="evening">
+                        <th mat-header-cell *matHeaderCellDef style="width:56px">Avond</th>
+                        <td mat-cell *matCellDef="let m">{{ m.eveningNr }}</td>
+                      </ng-container>
+                      <ng-container matColumnDef="date">
+                        <th mat-header-cell *matHeaderCellDef style="width:110px">Datum</th>
+                        <td mat-cell *matCellDef="let m">{{ m.playedDate }}</td>
+                      </ng-container>
+                      <ng-container matColumnDef="playerA">
+                        <th mat-header-cell *matHeaderCellDef>Speler A</th>
+                        <td mat-cell *matCellDef="let m">
+                          <strong>{{ m.playerANr }}</strong> {{ m.playerAName }}
+                        </td>
+                      </ng-container>
+                      <ng-container matColumnDef="score">
+                        <th mat-header-cell *matHeaderCellDef style="width:60px;text-align:center">Score</th>
+                        <td mat-cell *matCellDef="let m" style="text-align:center;font-weight:600">
+                          {{ m.scoreA }} – {{ m.scoreB }}
+                        </td>
+                      </ng-container>
+                      <ng-container matColumnDef="playerB">
+                        <th mat-header-cell *matHeaderCellDef>Speler B</th>
+                        <td mat-cell *matCellDef="let m">
+                          <strong>{{ m.playerBNr }}</strong> {{ m.playerBName }}
+                        </td>
+                      </ng-container>
+                      <ng-container matColumnDef="legs">
+                        <th mat-header-cell *matHeaderCellDef style="width:200px;text-align:center">Legs (winnaar / beurten)</th>
+                        <td mat-cell *matCellDef="let m" style="text-align:center;font-size:12px;color:#555">
+                          @if (m.leg1Winner) {
+                            <span>{{ m.leg1Winner }}:{{ m.leg1Turns }}</span>
+                          }
+                          @if (m.leg2Winner) {
+                            <span style="margin-left:6px">{{ m.leg2Winner }}:{{ m.leg2Turns }}</span>
+                          }
+                          @if (m.leg3Winner) {
+                            <span style="margin-left:6px">{{ m.leg3Winner }}:{{ m.leg3Turns }}</span>
+                          }
+                          @if (!m.leg1Winner) { <span style="color:#bdbdbd">—</span> }
+                        </td>
+                      </ng-container>
+                      <ng-container matColumnDef="secretary">
+                        <th mat-header-cell *matHeaderCellDef style="width:80px;text-align:center">Schrijver</th>
+                        <td mat-cell *matCellDef="let m" style="text-align:center">{{ m.secretaryNr || '—' }}</td>
+                      </ng-container>
+                      <ng-container matColumnDef="counter">
+                        <th mat-header-cell *matHeaderCellDef style="width:70px;text-align:center">Teller</th>
+                        <td mat-cell *matCellDef="let m" style="text-align:center">{{ m.counterNr || '—' }}</td>
+                      </ng-container>
+                      <tr mat-header-row *matHeaderRowDef="playedMatchCols"></tr>
+                      <tr mat-row *matRowDef="let row; columns: playedMatchCols"></tr>
+                    </table>
+                  </div>
+                  @if (filteredPlayedMatches().length === 0) {
+                    <p style="color:#9e9e9e;text-align:center;padding:24px 0;margin:0">
+                      Geen wedstrijden gevonden.
+                    </p>
+                  }
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </mat-tab>
         </mat-tab-group>
       }
     </div>
@@ -915,6 +1010,25 @@ export class InfoComponent implements OnInit {
   matchCols = ['evening', 'date', 'playedDate', 'opponent', 'score', 'result'];
   openCols = ['evening', 'date', 'playerA', 'playerB'];
   statusCols = ['nr', 'name', 'gespeeld', 'teSpelen', 'inTeHalen'];
+  playedMatchCols = ['evening', 'date', 'playerA', 'score', 'playerB', 'legs', 'secretary', 'counter'];
+
+  playedMatches = signal<PlayedMatchItem[]>([]);
+  matchFilterPlayer = '';
+  matchFilterDate = '';
+
+  filteredPlayedMatches = computed(() => {
+    const playerQ = this.matchFilterPlayer.toLowerCase().trim();
+    const dateQ = this.matchFilterDate.trim();
+    return this.playedMatches().filter((m) => {
+      if (playerQ) {
+        const matchesA = m.playerAName.toLowerCase().includes(playerQ) || m.playerANr.includes(playerQ);
+        const matchesB = m.playerBName.toLowerCase().includes(playerQ) || m.playerBNr.includes(playerQ);
+        if (!matchesA && !matchesB) return false;
+      }
+      if (dateQ && !m.playedDate.includes(dateQ)) return false;
+      return true;
+    });
+  });
   statusSortCol = signal<'nr' | 'name' | 'gespeeld' | 'teSpelen' | 'inTeHalen'>('nr');
   statusSortDir = signal<'asc' | 'desc'>('asc');
   statSortCol = signal<'name' | 'minTurns' | 'avgTurns' | 'avgScore' | '180s' | 'hf'>('name');
@@ -1087,8 +1201,9 @@ export class InfoComponent implements OnInit {
       schedule: this.scheduleService.getById(scheduleId),
       stats: this.scoreService.getStats(scheduleId, listId),
       duties: this.scoreService.getDutyStats(scheduleId, listId),
+      matches: this.scheduleService.getPlayedMatches(scheduleId),
     }).subscribe({
-      next: ({ info, schedule, stats, duties }) => {
+      next: ({ info, schedule, stats, duties, matches }) => {
         this.info.set(info);
         this.schedule.set(schedule);
         this.playerRows.set(this.buildPlayerRows(info));
@@ -1100,6 +1215,7 @@ export class InfoComponent implements OnInit {
             .filter((d) => d.count > 0)
             .sort((a, b) => (parseInt(a.player.nr) || 9999) - (parseInt(b.player.nr) || 9999))
         );
+        this.playedMatches.set(matches);
       },
       error: () => {
         this.info.set(null);
@@ -1107,6 +1223,7 @@ export class InfoComponent implements OnInit {
         this.playerRows.set([]);
         this.statRows.set([]);
         this.dutyStats.set([]);
+        this.playedMatches.set([]);
       },
     });
   }

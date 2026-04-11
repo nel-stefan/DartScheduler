@@ -157,3 +157,24 @@ export interface PlayerList {
   name: string;
   createdAt: string;
 }
+
+export interface PlayedMatchItem {
+  matchId: string;
+  eveningNr: number;
+  eveningDate: string;
+  playerANr: string;
+  playerAName: string;
+  playerBNr: string;
+  playerBName: string;
+  scoreA: number;
+  scoreB: number;
+  leg1Winner: string;
+  leg1Turns: number;
+  leg2Winner: string;
+  leg2Turns: number;
+  leg3Winner: string;
+  leg3Turns: number;
+  secretaryNr: string;
+  counterNr: string;
+  playedDate: string;
+}

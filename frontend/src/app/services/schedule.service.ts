@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Schedule, SeasonSummary, GenerateScheduleRequest, ScheduleInfo, Evening } from '../models';
+import { Schedule, SeasonSummary, GenerateScheduleRequest, ScheduleInfo, Evening, PlayedMatchItem } from '../models';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -61,6 +61,10 @@ export class ScheduleService {
 
   setActive(id: string): Observable<void> {
     return this.http.post<void>(`${this.base}/schedules/${id}/active`, {});
+  }
+
+  getPlayedMatches(scheduleId: string): Observable<PlayedMatchItem[]> {
+    return this.http.get<PlayedMatchItem[]>(`${this.base}/schedules/${scheduleId}/matches`);
   }
 
   importSeason(file: File, competitionName: string, season: string): Observable<Schedule> {

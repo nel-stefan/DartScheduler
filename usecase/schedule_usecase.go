@@ -646,6 +646,86 @@ func (uc *ScheduleUseCase) GetInfo(ctx context.Context, scheduleID domain.Schedu
 	}, nil
 }
 
+// GetPlayedMatches returns all played matches for a schedule as flat rows.
+func (uc *ScheduleUseCase) GetPlayedMatches(ctx context.Context, scheduleID domain.ScheduleID) ([]PlayedMatchItem, error) {
+	evenings, err := uc.evenings.FindBySchedule(ctx, scheduleID)
+	if err != nil {
+		return nil, fmt.Errorf("load evenings: %w", err)
+	}
+	// Build evening lookup: ID → (number, date)
+	type eveningMeta struct {
+		nr   int
+		date string
+	}
+	eveningMeta_ := make(map[domain.EveningID]eveningMeta, len(evenings))
+	for _, ev := range evenings {
+		eveningMeta_[ev.ID] = eveningMeta{nr: ev.Number, date: ev.Date.Format("2006-01-02")}
+	}
+
+	// Build player lookup: ID → player
+	allPlayers, err := uc.players.FindAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load players: %w", err)
+	}
+	playerMap := make(map[domain.PlayerID]domain.Player, len(allPlayers))
+	for _, p := range allPlayers {
+		playerMap[p.ID] = p
+	}
+
+	matches, err := uc.matches.FindBySchedule(ctx, scheduleID)
+	if err != nil {
+		return nil, fmt.Errorf("load matches: %w", err)
+	}
+
+	var result []PlayedMatchItem
+	for _, m := range matches {
+		if !m.Played {
+			continue
+		}
+		em := eveningMeta_[m.EveningID]
+		pA := playerMap[m.PlayerA]
+		pB := playerMap[m.PlayerB]
+		scoreA, scoreB := 0, 0
+		if m.ScoreA != nil {
+			scoreA = *m.ScoreA
+		}
+		if m.ScoreB != nil {
+			scoreB = *m.ScoreB
+		}
+		date := em.date
+		if m.PlayedDate != "" {
+			date = m.PlayedDate
+		}
+		result = append(result, PlayedMatchItem{
+			MatchID:     m.ID.String(),
+			EveningNr:   em.nr,
+			EveningDate: em.date,
+			PlayerANr:   pA.Nr,
+			PlayerAName: domain.FormatDisplayName(pA.Name),
+			PlayerBNr:   pB.Nr,
+			PlayerBName: domain.FormatDisplayName(pB.Name),
+			ScoreA:      scoreA,
+			ScoreB:      scoreB,
+			Leg1Winner:  m.Leg1Winner,
+			Leg1Turns:   m.Leg1Turns,
+			Leg2Winner:  m.Leg2Winner,
+			Leg2Turns:   m.Leg2Turns,
+			Leg3Winner:  m.Leg3Winner,
+			Leg3Turns:   m.Leg3Turns,
+			SecretaryNr: m.SecretaryNr,
+			CounterNr:   m.CounterNr,
+			PlayedDate:  date,
+		})
+	}
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].EveningNr != result[j].EveningNr {
+			return result[i].EveningNr < result[j].EveningNr
+		}
+		return result[i].PlayerANr < result[j].PlayerANr
+	})
+	return result, nil
+}
+
 // hydrate loads evenings (with matches) into the schedule.
 // It uses two queries total: one for all regular matches, one for cancelled
 // matches used by catch-up evenings.

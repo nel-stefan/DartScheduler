@@ -143,8 +143,10 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
               <mat-icon class="record-icon" style="color:#0277bd">speed</mat-icon>
               <div class="record-body">
                 <div class="record-label">Minste beurten</div>
-                <div class="record-name">{{ minTurnsRecord()!.player.name }}</div>
-                <div class="record-value" style="color:#0277bd">{{ minTurnsRecord()!.minTurns }}</div>
+                @for (r of minTurnsRecord()!; track r.player.id) {
+                  <div class="record-name">{{ r.player.name }}</div>
+                }
+                <div class="record-value" style="color:#0277bd">{{ minTurnsRecord()![0].minTurns }}</div>
               </div>
             </div>
           }
@@ -359,8 +361,8 @@ import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-st
             @if (minTurnsRecord()) {
               <div>
                 <span style="font-size:13pt;color:#757575">Minste beurten: </span>
-                <strong style="font-size:13pt">{{ minTurnsRecord()!.player.name }}</strong>
-                <span style="font-size:13pt"> ({{ minTurnsRecord()!.minTurns }})</span>
+                <strong style="font-size:13pt">{{ minTurnsRecord()!.map(r => r.player.name).join(', ') }}</strong>
+                <span style="font-size:13pt"> ({{ minTurnsRecord()![0].minTurns }})</span>
               </div>
             }
             @if (highestFinishRecord()) {
@@ -450,7 +452,7 @@ export class StandingsComponent implements OnInit {
   dutyStats = signal<DutyStats[]>([]);
   allStats = signal<PlayerStats[]>([]);
   loading = signal(true);
-  minTurnsRecord = signal<PlayerStats | null>(null);
+  minTurnsRecord = signal<PlayerStats[] | null>(null);
   highestFinishRecord = signal<PlayerStats | null>(null);
 
   matchCols = ['rank', 'nr', 'name', 'wins', 'losses', 'pf', 'pa', '180s', 'edit'];
@@ -532,9 +534,12 @@ export class StandingsComponent implements OnInit {
       this.allStats.set(s);
       this.classes.set(this.buildClasses(s));
       const withMinTurns = s.filter((x) => x.minTurns > 0);
-      this.minTurnsRecord.set(
-        withMinTurns.length ? withMinTurns.reduce((b, x) => (x.minTurns < b.minTurns ? x : b)) : null
-      );
+      if (withMinTurns.length) {
+        const best = withMinTurns.reduce((b, x) => (x.minTurns < b.minTurns ? x : b));
+        this.minTurnsRecord.set(withMinTurns.filter((x) => x.minTurns === best.minTurns));
+      } else {
+        this.minTurnsRecord.set(null);
+      }
       const withHF = s.filter((x) => x.highestFinish > 0);
       this.highestFinishRecord.set(
         withHF.length ? withHF.reduce((b, x) => (x.highestFinish > b.highestFinish ? x : b)) : null

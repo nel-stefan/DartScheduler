@@ -86,6 +86,28 @@ type PlayerStats struct {
 	AvgScorePerTurn float64       `json:"avgScorePerTurn"`
 }
 
+// PlayedMatchItem is a flat row for the "all played matches" overview.
+type PlayedMatchItem struct {
+	MatchID     string `json:"matchId"`
+	EveningNr   int    `json:"eveningNr"`
+	EveningDate string `json:"eveningDate"` // yyyy-mm-dd
+	PlayerANr   string `json:"playerANr"`
+	PlayerAName string `json:"playerAName"`
+	PlayerBNr   string `json:"playerBNr"`
+	PlayerBName string `json:"playerBName"`
+	ScoreA      int    `json:"scoreA"`
+	ScoreB      int    `json:"scoreB"`
+	Leg1Winner  string `json:"leg1Winner"` // "A", "B", or ""
+	Leg1Turns   int    `json:"leg1Turns"`
+	Leg2Winner  string `json:"leg2Winner"`
+	Leg2Turns   int    `json:"leg2Turns"`
+	Leg3Winner  string `json:"leg3Winner"`
+	Leg3Turns   int    `json:"leg3Turns"`
+	SecretaryNr string `json:"secretaryNr"`
+	CounterNr   string `json:"counterNr"`
+	PlayedDate  string `json:"playedDate"` // actual date for catch-up matches
+}
+
 // DutyMatch holds the evening number and match players for a single duty entry.
 type DutyMatch struct {
 	EveningNr   int    `json:"eveningNr"`
