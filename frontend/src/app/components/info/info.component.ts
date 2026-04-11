@@ -927,16 +927,16 @@ interface MatchRow {
                         </td>
                       </ng-container>
                       <ng-container matColumnDef="legs">
-                        <th mat-header-cell *matHeaderCellDef style="width:200px;text-align:center">Legs (winnaar / beurten)</th>
-                        <td mat-cell *matCellDef="let m" style="text-align:center;font-size:12px;color:#555">
+                        <th mat-header-cell *matHeaderCellDef style="width:200px">Legs (winnaar / beurten)</th>
+                        <td mat-cell *matCellDef="let m" style="font-size:12px;color:#555;line-height:1.6">
                           @if (m.leg1Winner) {
-                            <span>{{ m.leg1Winner }}:{{ m.leg1Turns }}</span>
+                            <div>{{ m.leg1Winner }}: {{ m.leg1Turns }}</div>
                           }
                           @if (m.leg2Winner) {
-                            <span style="margin-left:6px">{{ m.leg2Winner }}:{{ m.leg2Turns }}</span>
+                            <div>{{ m.leg2Winner }}: {{ m.leg2Turns }}</div>
                           }
                           @if (m.leg3Winner) {
-                            <span style="margin-left:6px">{{ m.leg3Winner }}:{{ m.leg3Turns }}</span>
+                            <div>{{ m.leg3Winner }}: {{ m.leg3Turns }}</div>
                           }
                           @if (!m.leg1Winner) { <span style="color:#bdbdbd">—</span> }
                         </td>
