@@ -297,13 +297,13 @@ func migrateMatches(ctx context.Context, src, dst *sql.DB) (int, error) {
 	n := 0
 	for rows.Next() {
 		var (
-			id, eveningID, playerA, playerB                     string
-			scoreA, scoreB                                      *int
-			played, leg1Turns, leg2Turns, leg3Turns             int
-			leg1Winner, leg2Winner, leg3Winner                   string
-			reportedBy, rescheduleDate, secretaryNr, counterNr  string
-			pA180s, pB180s, pAHighest, pBHighest                int
-			playedDate                                           string
+			id, eveningID, playerA, playerB                    string
+			scoreA, scoreB                                     *int
+			played, leg1Turns, leg2Turns, leg3Turns            int
+			leg1Winner, leg2Winner, leg3Winner                 string
+			reportedBy, rescheduleDate, secretaryNr, counterNr string
+			pA180s, pB180s, pAHighest, pBHighest               int
+			playedDate                                         string
 		)
 		if err := rows.Scan(
 			&id, &eveningID, &playerA, &playerB, &scoreA, &scoreB, &played,

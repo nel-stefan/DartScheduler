@@ -34,10 +34,10 @@ func main() {
 
 	// Repositories — wired based on DATABASE_TYPE / DATABASE_URL.
 	var (
-		playerRepo     domain.PlayerRepository
-		scheduleRepo   domain.ScheduleRepository
-		eveningRepo    domain.EveningRepository
-		matchRepo      domain.MatchRepository
+		playerRepo      domain.PlayerRepository
+		scheduleRepo    domain.ScheduleRepository
+		eveningRepo     domain.EveningRepository
+		matchRepo       domain.MatchRepository
 		eveningStatRepo domain.EveningPlayerStatRepository
 		seasonStatRepo  domain.SeasonPlayerStatRepository
 		playerListRepo  domain.PlayerListRepository
