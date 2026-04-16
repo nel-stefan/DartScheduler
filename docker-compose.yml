@@ -1,4 +1,20 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: dartscheduler
+      POSTGRES_USER: dart
+      POSTGRES_PASSWORD: dart_secret
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dart -d dartscheduler"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
   dartscheduler:
     build: .
     ports:
@@ -6,19 +22,26 @@ services:
     volumes:
       - dart_data:/data
     environment:
-      - DATABASE_PATH=/data/dartscheduler.db
-      - DATABASE_TYPE=sqlite
       - PORT=8080
+      - DATABASE_TYPE=postgres
+      - DATABASE_URL=postgres://dart:dart_secret@postgres:5432/dartscheduler?sslmode=disable
+      # Uncomment below to use SQLite instead (no postgres service needed):
+      # - DATABASE_TYPE=sqlite
+      # - DATABASE_PATH=/data/dartscheduler.db
       # - CLUB_NAME=DARTCLUB GROLZICHT
       # - APP_TITLE=DartScheduler
       # - LOGO_PATH=/data/logo.png
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 15s
 
 volumes:
   dart_data:
+  pg_data:

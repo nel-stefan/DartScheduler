@@ -6,7 +6,7 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build -- --configuration=production
 
-# Stage 2: Build Go binary
+# Stage 2: Build Go binaries
 FROM golang:1.26-alpine AS go-builder
 WORKDIR /app
 # Download deps first (cached layer)
@@ -18,12 +18,14 @@ COPY . .
 # builder output always wins over any stale local web/dist.
 COPY --from=frontend-builder /app/web/dist/dart-scheduler/browser ./web/dist/dart-scheduler/browser
 RUN CGO_ENABLED=0 go build -o dartscheduler ./cmd/server/
+RUN CGO_ENABLED=0 go build -o migrate-db ./cmd/migrate-db/
 
 # Stage 3: Minimal runtime
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata wget
 WORKDIR /app
 COPY --from=go-builder /app/dartscheduler .
+COPY --from=go-builder /app/migrate-db .
 EXPOSE 8080
 VOLUME ["/data"]
 ENV DATABASE_PATH=/data/dartscheduler.db
