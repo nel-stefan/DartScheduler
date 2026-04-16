@@ -9,12 +9,18 @@ type AppConfig struct {
 	// Port is the TCP port the HTTP server listens on.
 	Port string
 
-	// DatabaseType selects the storage backend. Currently only "sqlite" is
-	// supported; the field exists for future extensibility.
+	// DatabaseType selects the storage backend: "sqlite" (default) or "postgres".
+	// Set DATABASE_TYPE=postgres together with DATABASE_URL to use PostgreSQL.
 	DatabaseType string
 
 	// DatabasePath is the filesystem path to the SQLite database file.
+	// Only used when DatabaseType is "sqlite".
 	DatabasePath string
+
+	// DatabaseURL is the PostgreSQL connection string (DSN).
+	// Only used when DatabaseType is "postgres".
+	// Example: "postgres://dart:secret@localhost:5432/dart?sslmode=disable"
+	DatabaseURL string
 
 	// ClubName is printed as the heading on every match-form export
 	// (Excel, PDF, HTML). Set CLUB_NAME to your club's name.
@@ -55,6 +61,19 @@ func loadConfig() AppConfig {
 	}
 	if v := os.Getenv("DATABASE_PATH"); v != "" {
 		cfg.DatabasePath = v
+	}
+	// DATABASE_URL or POSTGRES_DSN both select the PostgreSQL backend.
+	if v := os.Getenv("DATABASE_URL"); v != "" {
+		cfg.DatabaseURL = v
+		if cfg.DatabaseType == "sqlite" {
+			cfg.DatabaseType = "postgres"
+		}
+	}
+	if v := os.Getenv("POSTGRES_DSN"); v != "" {
+		cfg.DatabaseURL = v
+		if cfg.DatabaseType == "sqlite" {
+			cfg.DatabaseType = "postgres"
+		}
 	}
 	if v := os.Getenv("CLUB_NAAM"); v != "" {
 		cfg.ClubName = v
