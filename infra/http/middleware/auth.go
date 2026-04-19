@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"strings"
 
@@ -69,9 +68,6 @@ func ResolveIdentity(r *http.Request, jwtSecret string) (Identity, bool) {
 }
 
 func resolveIdentity(r *http.Request, jwtSecret string) (Identity, bool) {
-	if isLocalNetwork(r) {
-		return Identity{UserID: "local-network", Username: "lokaal netwerk", Role: "admin"}, true
-	}
 	authHeader := r.Header.Get("Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		return Identity{}, false
@@ -99,12 +95,3 @@ func resolveIdentity(r *http.Request, jwtSecret string) (Identity, bool) {
 	return Identity{UserID: sub, Username: username, Role: role}, true
 }
 
-// isLocalNetwork reports whether the request's remote address is in 192.168.0.0/16.
-// Only RemoteAddr is consulted — X-Forwarded-For is never trusted.
-func isLocalNetwork(r *http.Request) bool {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	return strings.HasPrefix(host, "192.168.")
-}

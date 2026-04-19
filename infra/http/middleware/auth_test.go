@@ -23,31 +23,6 @@ func makeJWT(secret, userID, username, role string, exp time.Time) string {
 	return signed
 }
 
-func TestResolveIdentity_LocalNetwork(t *testing.T) {
-	tests := []struct {
-		addr    string
-		isLocal bool
-	}{
-		{"192.168.1.100:54321", true},
-		{"192.168.0.1:80", true},
-		{"10.0.0.1:8080", false},
-		{"127.0.0.1:8080", false},
-		{"8.8.8.8:443", false},
-	}
-	for _, tc := range tests {
-		r := &http.Request{RemoteAddr: tc.addr, Header: http.Header{}}
-		id, ok := mw.ResolveIdentity(r, "secret")
-		if tc.isLocal {
-			if !ok || id.Role != "admin" || id.Username != "lokaal netwerk" {
-				t.Errorf("addr=%q: expected local-admin identity, got ok=%v id=%+v", tc.addr, ok, id)
-			}
-		} else {
-			if ok {
-				t.Errorf("addr=%q: expected ok=false for non-local without JWT", tc.addr)
-			}
-		}
-	}
-}
 
 func TestResolveIdentity_ValidJWT(t *testing.T) {
 	secret := "test-secret"
@@ -90,28 +65,6 @@ func TestResolveIdentity_WrongSecret(t *testing.T) {
 	}
 }
 
-func TestAuth_Middleware_LocalNetworkGetsAdmin(t *testing.T) {
-	handler := mw.Auth("secret")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id, ok := mw.IdentityFromContext(r.Context())
-		if !ok {
-			http.Error(w, "no identity", http.StatusUnauthorized)
-			return
-		}
-		_, _ = w.Write([]byte(id.Role))
-	}))
-
-	req := httptest.NewRequest("GET", "/", nil)
-	req.RemoteAddr = "192.168.1.5:1234"
-	rr := httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("status: got %d, want 200", rr.Code)
-	}
-	if rr.Body.String() != "admin" {
-		t.Errorf("role: got %q, want %q", rr.Body.String(), "admin")
-	}
-}
 
 func TestAuth_Middleware_NoAuth_Returns401(t *testing.T) {
 	handler := mw.Auth("secret")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
