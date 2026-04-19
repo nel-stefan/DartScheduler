@@ -53,6 +53,13 @@ var alterations = []string{
 	`ALTER TABLE schedules ADD COLUMN active INTEGER NOT NULL DEFAULT 0`,
 	`ALTER TABLE players ADD COLUMN list_id TEXT REFERENCES player_lists(id)`,
 	`ALTER TABLE schedules ADD COLUMN player_list_id TEXT REFERENCES player_lists(id)`,
+	`CREATE TABLE IF NOT EXISTS users (
+    id            TEXT PRIMARY KEY,
+    username      TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role          TEXT NOT NULL CHECK(role IN ('viewer', 'maintainer', 'admin')),
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+)`,
 }
 
 // dataMigrations are named, one-time data migrations run after schema setup.

@@ -75,6 +75,14 @@ CREATE TABLE IF NOT EXISTS applied_migrations (
     applied_at DATETIME NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS users (
+    id            TEXT PRIMARY KEY,
+    username      TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role          TEXT NOT NULL CHECK(role IN ('viewer', 'maintainer', 'admin')),
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_matches_evening   ON matches(evening_id);
 CREATE INDEX IF NOT EXISTS idx_matches_player_a  ON matches(player_a);
 CREATE INDEX IF NOT EXISTS idx_matches_player_b  ON matches(player_b);
