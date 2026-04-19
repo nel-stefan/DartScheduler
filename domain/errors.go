@@ -24,4 +24,7 @@ var (
 	// ErrScheduleConstraintViolation is returned when a generated schedule violates
 	// one or more hard constraints and cannot be used.
 	ErrScheduleConstraintViolation = errors.New("schema voldoet niet aan harde constraints")
+
+	// ErrInvalidCredentials is returned when username or password is incorrect.
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )
