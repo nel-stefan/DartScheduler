@@ -8,11 +8,11 @@ export class ExportService {
   private base = environment.apiBaseUrl;
 
   downloadExcel(): void {
-    window.open(`${this.base}/export/excel`, '_blank');
+    this.downloadBlob(`${this.base}/export/excel`, 'schema.xlsx');
   }
 
   downloadPdf(): void {
-    window.open(`${this.base}/export/pdf`, '_blank');
+    this.openBlob(`${this.base}/export/pdf`);
   }
 
   downloadStandingsPdf(scheduleId?: string, listId?: string | null): void {
@@ -20,6 +20,37 @@ export class ExportService {
     if (scheduleId) params.set('scheduleId', scheduleId);
     if (listId) params.set('listId', listId);
     const query = params.toString();
-    window.open(`${this.base}/stats/pdf${query ? '?' + query : ''}`, '_blank');
+    this.openBlob(`${this.base}/stats/pdf${query ? '?' + query : ''}`);
+  }
+
+  downloadEveningExcel(eveningId: string): void {
+    this.downloadBlob(`${this.base}/export/evening/${eveningId}/excel`, `avond-${eveningId}.xlsx`);
+  }
+
+  openEveningPdf(eveningId: string): void {
+    this.openBlob(`${this.base}/export/evening/${eveningId}/pdf`);
+  }
+
+  openEveningPrint(eveningId: string): void {
+    this.openBlob(`${this.base}/export/evening/${eveningId}/print`);
+  }
+
+  private downloadBlob(url: string, filename: string): void {
+    this.http.get(url, { responseType: 'blob' }).subscribe((blob) => {
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(objectUrl);
+    });
+  }
+
+  private openBlob(url: string): void {
+    this.http.get(url, { responseType: 'blob' }).subscribe((blob) => {
+      const objectUrl = URL.createObjectURL(blob);
+      window.open(objectUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+    });
   }
 }

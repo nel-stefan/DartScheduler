@@ -20,8 +20,8 @@ import { ScheduleService } from '../../services/schedule.service';
 import { PlayerService } from '../../services/player.service';
 import { ScoreService } from '../../services/score.service';
 import { SeasonService } from '../../services/season.service';
+import { ExportService } from '../../services/export.service';
 import { Schedule, Player, Match, Evening } from '../../models';
-import { environment } from '../../../environments/environment';
 import { EveningStatDialogComponent, EveningStatDialogData } from '../evening-stat-dialog.component';
 
 // ---------------------------------------------------------------------------
@@ -792,6 +792,7 @@ export class OverviewComponent implements OnInit {
   private playerService = inject(PlayerService);
   private scoreService = inject(ScoreService);
   private seasonService = inject(SeasonService);
+  private exportService = inject(ExportService);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
@@ -998,15 +999,15 @@ export class OverviewComponent implements OnInit {
   }
 
   exportEvening(eveningId: string): void {
-    window.open(`${environment.apiBaseUrl}/export/evening/${eveningId}/excel`, '_blank');
+    this.exportService.downloadEveningExcel(eveningId);
   }
 
   exportEveningPdf(eveningId: string): void {
-    window.open(`${environment.apiBaseUrl}/export/evening/${eveningId}/pdf`, '_blank');
+    this.exportService.openEveningPdf(eveningId);
   }
 
   printEvening(eveningId: string): void {
-    window.open(`${environment.apiBaseUrl}/export/evening/${eveningId}/print`, '_blank');
+    this.exportService.openEveningPrint(eveningId);
   }
 
   deleteEvening(ev: Evening): void {
