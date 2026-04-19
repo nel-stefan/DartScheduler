@@ -23,7 +23,6 @@ func makeJWT(secret, userID, username, role string, exp time.Time) string {
 	return signed
 }
 
-
 func TestResolveIdentity_ValidJWT(t *testing.T) {
 	secret := "test-secret"
 	token := makeJWT(secret, "user-1", "alice", "admin", time.Now().Add(time.Hour))
@@ -64,7 +63,6 @@ func TestResolveIdentity_WrongSecret(t *testing.T) {
 		t.Error("expected ok=false for wrong secret")
 	}
 }
-
 
 func TestAuth_Middleware_NoAuth_Returns401(t *testing.T) {
 	handler := mw.Auth("secret")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

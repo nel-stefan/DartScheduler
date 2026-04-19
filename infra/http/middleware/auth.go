@@ -94,4 +94,3 @@ func resolveIdentity(r *http.Request, jwtSecret string) (Identity, bool) {
 	}
 	return Identity{UserID: sub, Username: username, Role: role}, true
 }
-
