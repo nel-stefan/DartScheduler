@@ -2,7 +2,7 @@
   <mat-toolbar color="primary" class="app-toolbar"
     [style.background-color]="(configService.primaryColor$ | async) || null">
     <img src="assets/logo.svg" alt="dart" class="toolbar-logo" />
-    <a class="toolbar-title" routerLink="/">{{ configService.clubName$ | async }}</a>
+    <a class="toolbar-title" routerLink="/schema">{{ configService.clubName$ | async }}</a>
     <span class="toolbar-spacer"></span>
     @if ((seasonService.seasons$ | async)?.length) {
       <mat-form-field appearance="outline" subscriptSizing="dynamic" class="toolbar-season-select">
@@ -17,15 +17,23 @@
       </mat-form-field>
     }
     <nav class="toolbar-nav">
-      <a mat-button routerLink="/" routerLinkActive="nav-active" [routerLinkActiveOptions]="{ exact: true }">
+      <a mat-button routerLink="/schema" routerLinkActive="nav-active" [routerLinkActiveOptions]="{ exact: true }">
         <mat-icon>event_note</mat-icon> Schema
       </a>
-      <a mat-button routerLink="/spelers" routerLinkActive="nav-active"> <mat-icon>people</mat-icon> Spelers </a>
-      <a mat-button routerLink="/standings" routerLinkActive="nav-active">
-        <mat-icon>leaderboard</mat-icon> Klassement
-      </a>
-      <a mat-button routerLink="/info" routerLinkActive="nav-active"> <mat-icon>insights</mat-icon> Info </a>
-      <a mat-button routerLink="/beheer" routerLinkActive="nav-active"> <mat-icon>settings</mat-icon> Beheer </a>
+      @if (authService.isAdmin()) {
+        <a mat-button routerLink="/spelers" routerLinkActive="nav-active"> <mat-icon>people</mat-icon> Spelers </a>
+        <a mat-button routerLink="/standings" routerLinkActive="nav-active">
+          <mat-icon>leaderboard</mat-icon> Klassement
+        </a>
+        <a mat-button routerLink="/info" routerLinkActive="nav-active"> <mat-icon>insights</mat-icon> Info </a>
+        <a mat-button routerLink="/beheer" routerLinkActive="nav-active"> <mat-icon>settings</mat-icon> Beheer </a>
+        <a mat-button routerLink="/gebruikers" routerLinkActive="nav-active"> <mat-icon>manage_accounts</mat-icon> Gebruikers </a>
+      }
+      @if (authService.isLoggedIn()) {
+        <button mat-icon-button (click)="logout()" title="Uitloggen">
+          <mat-icon>logout</mat-icon>
+        </button>
+      }
     </nav>
   </mat-toolbar>
 }

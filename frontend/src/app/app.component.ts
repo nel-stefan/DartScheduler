@@ -11,6 +11,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { filter } from 'rxjs';
 import { SeasonService } from './services/season.service';
 import { ConfigService } from './services/config.service';
+import { AuthService } from './services/auth.service';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -33,12 +34,18 @@ import { environment } from '../environments/environment';
 export class AppComponent implements OnInit {
   protected seasonService = inject(SeasonService);
   protected configService = inject(ConfigService);
+  protected authService = inject(AuthService);
   protected version = environment.version;
   private router = inject(Router);
   private titleService = inject(Title);
   private destroyRef = inject(DestroyRef);
 
   isMobile = false;
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
 
   ngOnInit(): void {
     this.seasonService.load();
