@@ -25,12 +25,21 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { ScheduleService } from '../../services/schedule.service';
 import { PlayerService } from '../../services/player.service';
 import { SeasonService } from '../../services/season.service';
 import { SystemService } from '../../services/system.service';
 import { SeasonSummary, GenerateScheduleRequest, PlayerList } from '../../models';
 import { environment } from '../../../environments/environment';
+
+interface AppUser {
+  id: string;
+  username: string;
+  role: string;
+  createdAt: string;
+}
 
 // ---------------------------------------------------------------------------
 // Loading-dialog (shown while the scheduler runs)
@@ -464,6 +473,7 @@ export class ImportSeasonDialogComponent {
     MatFormFieldModule,
     MatInputModule,
     MatTabsModule,
+    MatSelectModule,
   ],
   styles: [
     `
@@ -733,6 +743,56 @@ export class ImportSeasonDialogComponent {
           }
         </mat-card-content>
       </mat-card>
+      <!-- Gebruikers -->
+      <mat-card style="margin-top:24px">
+        <mat-card-header>
+          <mat-card-title>Gebruikers</mat-card-title>
+        </mat-card-header>
+        <mat-card-content style="padding-top:16px">
+          <form (ngSubmit)="createUser()" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Gebruikersnaam</mat-label>
+              <input matInput [(ngModel)]="newUsername" name="newUsername" required />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Wachtwoord</mat-label>
+              <input matInput type="password" [(ngModel)]="newPassword" name="newPassword" required />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" style="min-width:140px">
+              <mat-label>Rol</mat-label>
+              <mat-select [(ngModel)]="newRole" name="newRole">
+                <mat-option value="viewer">Viewer</mat-option>
+                <mat-option value="maintainer">Maintainer</mat-option>
+                <mat-option value="admin">Admin</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <button mat-raised-button color="primary" type="submit">Aanmaken</button>
+          </form>
+          @if (userCreateError()) {
+            <p style="color:red;margin:0 0 12px">{{ userCreateError() }}</p>
+          }
+          @for (u of appUsers(); track u.id) {
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f0f0f0">
+              <span style="flex:1;font-weight:500">{{ u.username }}</span>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" style="min-width:140px">
+                <mat-select [value]="u.role" (selectionChange)="updateUserRole(u, $event.value)">
+                  <mat-option value="viewer">Viewer</mat-option>
+                  <mat-option value="maintainer">Maintainer</mat-option>
+                  <mat-option value="admin">Admin</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <input type="password" placeholder="Nieuw wachtwoord" #pwInput
+                style="border:1px solid #ccc;border-radius:4px;padding:8px;font-size:14px;width:160px" />
+              <button mat-icon-button (click)="updateUserPassword(u, pwInput.value); pwInput.value = ''" matTooltip="Wachtwoord opslaan">
+                <mat-icon>save</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteUser(u)" matTooltip="Verwijderen">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
     </div>
   `,
 })
@@ -744,6 +804,7 @@ export class BeheerComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private cdr = inject(ChangeDetectorRef);
+  private http = inject(HttpClient);
 
   readonly fileInputRef = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
 
@@ -760,6 +821,12 @@ export class BeheerComponent implements OnInit {
   version = environment.version;
   logs = signal<string[]>([]);
   logsLoading = signal(false);
+
+  appUsers = signal<AppUser[]>([]);
+  newUsername = '';
+  newPassword = '';
+  newRole = 'viewer';
+  userCreateError = signal('');
 
   get httpLogs(): string[] {
     return this.logs().filter((l) => l.includes('[HTTP]'));
@@ -787,6 +854,7 @@ export class BeheerComponent implements OnInit {
   ngOnInit(): void {
     this.loadSeasons();
     this.refreshLogs();
+    this.loadUsers();
   }
 
   refreshLogs(): void {
@@ -986,6 +1054,51 @@ export class BeheerComponent implements OnInit {
         this.fileInputRef().nativeElement.value = '';
         this.loading.set(false);
       },
+    });
+  }
+
+  loadUsers(): void {
+    this.http.get<AppUser[]>('/api/users').subscribe({
+      next: (users) => this.appUsers.set(users),
+      error: () => {},
+    });
+  }
+
+  async createUser(): Promise<void> {
+    this.userCreateError.set('');
+    try {
+      await firstValueFrom(this.http.post('/api/users', {
+        username: this.newUsername,
+        password: this.newPassword,
+        role: this.newRole,
+      }));
+      this.newUsername = '';
+      this.newPassword = '';
+      this.newRole = 'viewer';
+      this.loadUsers();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Fout bij aanmaken gebruiker.';
+      this.userCreateError.set(msg);
+    }
+  }
+
+  updateUserRole(user: AppUser, role: string): void {
+    this.http.put(`/api/users/${user.id}`, { role }).subscribe({ error: () => {} });
+  }
+
+  updateUserPassword(user: AppUser, password: string): void {
+    if (!password) return;
+    this.http.put(`/api/users/${user.id}`, { password }).subscribe({
+      next: () => this.snackBar.open('Wachtwoord opgeslagen', 'OK', { duration: 2000 }),
+      error: () => {},
+    });
+  }
+
+  deleteUser(user: AppUser): void {
+    if (!confirm(`Gebruiker "${user.username}" verwijderen?`)) return;
+    this.http.delete(`/api/users/${user.id}`).subscribe({
+      next: () => this.loadUsers(),
+      error: () => {},
     });
   }
 }

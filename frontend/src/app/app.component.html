@@ -27,7 +27,6 @@
         </a>
         <a mat-button routerLink="/info" routerLinkActive="nav-active"> <mat-icon>insights</mat-icon> Info </a>
         <a mat-button routerLink="/beheer" routerLinkActive="nav-active"> <mat-icon>settings</mat-icon> Beheer </a>
-        <a mat-button routerLink="/gebruikers" routerLinkActive="nav-active"> <mat-icon>manage_accounts</mat-icon> Gebruikers </a>
       }
       @if (authService.isLoggedIn()) {
         <button mat-icon-button (click)="logout()" title="Uitloggen">

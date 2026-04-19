@@ -43,11 +43,6 @@ export const routes: Routes = [
     loadComponent: () => import('./components/beheer/beheer.component').then((m) => m.BeheerComponent),
   },
   {
-    path: 'gebruikers',
-    canActivate: [roleGuard('admin')],
-    loadComponent: () => import('./components/gebruikers/gebruikers.component').then((m) => m.GebruikersComponent),
-  },
-  {
     path: 'm',
     canActivate: [authGuard],
     loadChildren: () => import('./mobile/mobile.routes').then((m) => m.mobileRoutes),
