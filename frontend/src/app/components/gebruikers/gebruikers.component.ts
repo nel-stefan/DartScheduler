@@ -10,7 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 
 interface User {
   id: string;
@@ -146,8 +146,9 @@ export class GebruikersComponent implements OnInit {
       this.newPassword = '';
       this.newRole = 'viewer';
       await this.load();
-    } catch (e: any) {
-      this.createError.set(e?.error || 'Fout bij aanmaken gebruiker.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Fout bij aanmaken gebruiker.';
+      this.createError.set(msg);
     }
   }
 

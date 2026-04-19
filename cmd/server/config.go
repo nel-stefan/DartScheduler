@@ -1,6 +1,9 @@
 package main
 
-import "os"
+import (
+	"log"
+	"os"
+)
 
 // AppConfig holds all runtime configuration for the server, loaded from
 // environment variables. Every field has a safe default so existing
@@ -36,6 +39,10 @@ type AppConfig struct {
 	// the toolbar background. Leave empty to use the default theme colour.
 	// Useful for distinguishing demo from production deployments.
 	PrimaryColor string
+
+	// JWTSecret is the HS256 signing secret for JWT tokens.
+	// Set via JWT_SECRET env var. Falls back to an insecure default in development.
+	JWTSecret string
 }
 
 func loadConfig() AppConfig {
@@ -72,6 +79,12 @@ func loadConfig() AppConfig {
 	}
 	if v := os.Getenv("PRIMARY_COLOR"); v != "" {
 		cfg.PrimaryColor = v
+	}
+	if v := os.Getenv("JWT_SECRET"); v != "" {
+		cfg.JWTSecret = v
+	} else {
+		log.Println("[WARN] JWT_SECRET not set — using insecure default (development only)")
+		cfg.JWTSecret = "dart-scheduler-dev-secret-change-in-production"
 	}
 	return cfg
 }
