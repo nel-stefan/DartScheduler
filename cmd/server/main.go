@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -18,6 +19,15 @@ import (
 )
 
 func main() {
+	if len(os.Args) >= 2 && os.Args[1] == "seed-admin" {
+		if len(os.Args) != 4 {
+			fmt.Fprintln(os.Stderr, "usage: server seed-admin <username> <password>")
+			os.Exit(1)
+		}
+		runSeedAdmin(os.Args[2], os.Args[3])
+		return
+	}
+
 	cfg := loadConfig()
 
 	logBuf := logbuf.New(200)
@@ -39,12 +49,14 @@ func main() {
 	eveningStatRepo := sqlite.NewEveningPlayerStatRepo(db)
 	seasonStatRepo := sqlite.NewSeasonPlayerStatRepo(db)
 	playerListRepo := sqlite.NewPlayerListRepo(db)
+	userRepo := sqlite.NewUserRepo(db)
 
 	// Use cases
 	playerUC := usecase.NewPlayerUseCase(playerRepo, matchRepo, playerListRepo)
 	scheduleUC := usecase.NewScheduleUseCase(playerRepo, scheduleRepo, eveningRepo, matchRepo)
 	scoreUC := usecase.NewScoreUseCase(matchRepo, eveningRepo, seasonStatRepo)
 	exportUC := usecase.NewExportUseCase(scheduleRepo, eveningRepo, matchRepo, playerRepo)
+	authUC := usecase.NewAuthUseCase(userRepo, cfg.JWTSecret)
 
 	// Log database summary at startup
 	if players, err := playerUC.ListPlayers(context.Background()); err == nil {
@@ -64,8 +76,15 @@ func main() {
 	configH := handler.NewConfigHandler(cfg.AppTitle, cfg.ClubName, cfg.PrimaryColor)
 	progressH := handler.NewProgressHandler()
 	playerListH := handler.NewPlayerListHandler(playerUC)
+	authH := handler.NewAuthHandler(authUC, cfg.JWTSecret)
+	userH := handler.NewUserHandler(authUC)
 
-	router := apphttp.NewRouter(playerH, schedH, scoreH, statsH, exportH, systemH, eveningStatH, seasonStatH, configH, progressH, playerListH, cfg.AllowedOrigin)
+	router := apphttp.NewRouter(
+		playerH, schedH, scoreH, statsH, exportH, systemH,
+		eveningStatH, seasonStatH, configH, progressH, playerListH,
+		authH, userH,
+		cfg.AllowedOrigin, cfg.JWTSecret,
+	)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 
@@ -92,4 +111,22 @@ func main() {
 		log.Fatalf("forced shutdown: %v", err)
 	}
 	log.Println("server stopped")
+}
+
+func runSeedAdmin(username, password string) {
+	cfg := loadConfig()
+	db, err := sqlite.Open(cfg.DatabasePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "open db: %v\n", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+
+	userRepo := sqlite.NewUserRepo(db)
+	authUC := usecase.NewAuthUseCase(userRepo, cfg.JWTSecret)
+	if err := authUC.SeedAdmin(context.Background(), username, password); err != nil {
+		fmt.Fprintf(os.Stderr, "seed-admin: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Admin user %q created successfully.\n", username)
 }
