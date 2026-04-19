@@ -213,3 +213,34 @@ type PlayerListSummary struct {
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"createdAt"`
 }
+
+// --- Auth ---
+
+// LoginOutput is returned by AuthUseCase.Login.
+type LoginOutput struct {
+	Token    string
+	Username string
+	Role     string
+}
+
+// CreateUserInput is the input for AuthUseCase.CreateUser.
+type CreateUserInput struct {
+	Username string
+	Password string
+	Role     string
+}
+
+// UpdateUserInput is the input for AuthUseCase.UpdateUser.
+// Empty fields are ignored (no update performed for that field).
+type UpdateUserInput struct {
+	Role     string
+	Password string
+}
+
+// UserDTO is the output representation of a User (never includes PasswordHash).
+type UserDTO struct {
+	ID        string    `json:"id"`
+	Username  string    `json:"username"`
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"createdAt"`
+}
