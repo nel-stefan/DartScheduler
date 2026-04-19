@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { AuthService } from '../../services/auth.service';
+import { SeasonService } from '../../services/season.service';
 
 @Component({
   selector: 'app-login',
@@ -66,13 +67,14 @@ export class LoginComponent {
   loading = signal(false);
   error = signal('');
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router, private seasonService: SeasonService) {}
 
   async submit(): Promise<void> {
     this.error.set('');
     this.loading.set(true);
     try {
       await this.auth.login(this.username, this.password);
+      this.seasonService.load();
       this.router.navigate(['/schema']);
     } catch {
       this.error.set('Ongeldige gebruikersnaam of wachtwoord.');
