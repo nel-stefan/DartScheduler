@@ -11,7 +11,7 @@ export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 NFS_SERVER="datastation.local"
 NFS_EXPORT="/volume4/backup/Servers/Darts"
-NFS_MOUNT="/mnt/nfs/darts-backup"
+NFS_MOUNT="$HOME/mnt/darts-backup"
 COMPOSE="docker compose"
 SERVICE="dartscheduler"
 DB_PATH_IN_CONTAINER="/data/dartscheduler.db"
@@ -31,7 +31,7 @@ echo "    $LOCAL → $REMOTE"
 
 # ── 2. Database backup naar NFS ─────────────────────────────────────────────
 mkdir -p "$NFS_MOUNT"
-if ! mountpoint -q "$NFS_MOUNT"; then
+if ! mount | grep -q "$NFS_MOUNT"; then
   echo "→ NFS mounten: ${NFS_SERVER}:${NFS_EXPORT}"
   mount -t nfs "${NFS_SERVER}:${NFS_EXPORT}" "$NFS_MOUNT"
 fi
