@@ -36,6 +36,7 @@
 
 .toolbar-nav {
   display: flex;
+  align-items: center;
   gap: 4px;
 
   a {
@@ -71,19 +72,33 @@
   --mat-form-field-outlined-hover-outline-color: rgba(255, 255, 255, 0.75);
   --mat-form-field-outlined-focus-outline-color: #fff;
 
-  // Label text colour (resting, hover and focused states)
-  --mat-form-field-outlined-label-text-color: rgba(255, 255, 255, 0.85);
-  --mat-form-field-outlined-hover-label-text-color: #fff;
-  --mat-form-field-outlined-focus-label-text-color: #fff;
-
   // Selected-value and arrow colours
   --mat-select-enabled-trigger-text-color: #fff;
   --mat-select-enabled-arrow-color: rgba(255, 255, 255, 0.7);
   --mat-select-focused-arrow-color: #fff;
+  --mat-select-placeholder-text-color: rgba(255, 255, 255, 0.7);
 
-  ::ng-deep .mat-mdc-select-value-text {
-    font-weight: 500;
+  // Match height of toolbar buttons (~36px)
+  ::ng-deep {
+    .mat-mdc-text-field-wrapper {
+      height: 36px;
+    }
+    .mat-mdc-form-field-infix {
+      padding-top: 6px;
+      padding-bottom: 6px;
+      min-height: unset;
+    }
+    .mat-mdc-select-value-text {
+      font-weight: 500;
+    }
   }
+}
+
+// Keep logout icon button the same size as nav buttons
+.toolbar-nav button[mat-icon-button] {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
 }
 
 .app-content {
