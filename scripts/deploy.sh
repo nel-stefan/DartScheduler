@@ -9,7 +9,9 @@ set -euo pipefail
 export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-BACKUP_DIR="$REPO_DIR/backups"
+NFS_SERVER="datastation.local"
+NFS_EXPORT="/volume4/backup/Servers/Darts"
+NFS_MOUNT="/mnt/nfs/darts-backup"
 COMPOSE="docker compose"
 SERVICE="dartscheduler"
 DB_PATH_IN_CONTAINER="/data/dartscheduler.db"
@@ -27,21 +29,26 @@ fi
 echo "=== Nieuwe versie gevonden, deploy gestart: $(date) ==="
 echo "    $LOCAL → $REMOTE"
 
-# ── 2. Database backup ───────────────────────────────────────────────────────
-mkdir -p "$BACKUP_DIR"
-BACKUP_FILE="$BACKUP_DIR/dartscheduler-$(date +%Y%m%d-%H%M%S).db"
+# ── 2. Database backup naar NFS ─────────────────────────────────────────────
+mkdir -p "$NFS_MOUNT"
+if ! mountpoint -q "$NFS_MOUNT"; then
+  echo "→ NFS mounten: ${NFS_SERVER}:${NFS_EXPORT}"
+  mount -t nfs "${NFS_SERVER}:${NFS_EXPORT}" "$NFS_MOUNT"
+fi
+
+BACKUP_FILE="dartscheduler-$(date +%Y%m%d-%H%M%S).db"
 
 if $COMPOSE -f "$REPO_DIR/docker-compose.yml" ps --status running | grep -q "$SERVICE"; then
-  echo "→ Database backup naar $BACKUP_FILE"
+  echo "→ Database backup naar ${NFS_MOUNT}/${BACKUP_FILE}"
   $COMPOSE -f "$REPO_DIR/docker-compose.yml" cp \
-    "$SERVICE:$DB_PATH_IN_CONTAINER" "$BACKUP_FILE"
-  echo "  Backup klaar ($(du -sh "$BACKUP_FILE" | cut -f1))"
+    "$SERVICE:$DB_PATH_IN_CONTAINER" "${NFS_MOUNT}/${BACKUP_FILE}"
+  echo "  Backup klaar ($(du -sh "${NFS_MOUNT}/${BACKUP_FILE}" | cut -f1))"
 else
   echo "→ Container niet actief, backup overgeslagen"
 fi
 
-# Bewaar alleen de laatste 10 backups
-ls -t "$BACKUP_DIR"/dartscheduler-*.db 2>/dev/null | tail -n +11 | xargs rm -f
+# Bewaar alleen de laatste 10 backups op NFS
+ls -t "$NFS_MOUNT"/dartscheduler-*.db 2>/dev/null | tail -n +11 | xargs rm -f
 
 # ── 3. Nieuwste code ophalen ─────────────────────────────────────────────────
 echo "→ git restore (reset lokale wijzigingen)"
