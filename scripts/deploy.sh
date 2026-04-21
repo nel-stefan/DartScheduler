@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Cron runs with a minimal PATH — add the locations where Docker, git and
 # curl live on macOS (both Intel /usr/local and Apple Silicon /opt/homebrew).
-export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/sbin:/usr/sbin:$PATH"
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 NFS_SERVER="datastation.local"
