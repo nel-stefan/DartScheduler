@@ -28,8 +28,8 @@
         <a mat-button routerLink="/beheer" routerLinkActive="nav-active"> <mat-icon>settings</mat-icon> Beheer </a>
       }
       @if (authService.isLoggedIn()) {
-        <button mat-icon-button (click)="logout()" title="Uitloggen">
-          <mat-icon>logout</mat-icon>
+        <button mat-button (click)="logout()" class="nav-logout">
+          <mat-icon>logout</mat-icon> Uitloggen
         </button>
       }
     </nav>

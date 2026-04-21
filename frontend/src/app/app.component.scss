@@ -94,20 +94,18 @@
   }
 }
 
-// Keep logout button the same size as nav buttons
-.toolbar-nav button[mat-icon-button] {
-  --mdc-icon-button-state-layer-size: 36px;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.nav-logout {
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 6px;
 
   mat-icon {
     font-size: 18px;
     width: 18px;
     height: 18px;
-    color: rgba(255, 255, 255, 0.85);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
   }
 }
 
