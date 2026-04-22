@@ -47,8 +47,8 @@ else
   echo "→ Container niet actief, backup overgeslagen"
 fi
 
-# Bewaar alleen de laatste 10 backups op NFS
-ls -t "$NFS_MOUNT"/dartscheduler-*.db 2>/dev/null | tail -n +11 | xargs rm -f
+# Verwijder backups ouder dan 30 dagen
+find "$NFS_MOUNT" -name "dartscheduler-*.db" -mtime +30 -delete 2>/dev/null || true
 
 # ── 3. Nieuwste code ophalen ─────────────────────────────────────────────────
 echo "→ git restore (reset lokale wijzigingen)"
