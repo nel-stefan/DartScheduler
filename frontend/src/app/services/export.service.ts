@@ -27,8 +27,8 @@ export class ExportService {
     this.downloadBlob(`${this.base}/export/evening/${eveningId}/excel`, `avond-${eveningId}.xlsx`);
   }
 
-  openEveningPdf(eveningId: string): void {
-    this.openBlob(`${this.base}/export/evening/${eveningId}/pdf`);
+  downloadEveningPdf(eveningId: string, date: string): void {
+    this.downloadBlob(`${this.base}/export/evening/${eveningId}/pdf`, `wedstrijdformulier_${date}.pdf`);
   }
 
   openEveningPrint(eveningId: string): void {

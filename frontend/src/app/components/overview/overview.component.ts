@@ -610,7 +610,7 @@ export class AbsentDialogComponent {
                     <button mat-icon-button (click)="exportEvening(ev.id)" matTooltip="Exporteren naar Excel">
                       <mat-icon>file_download</mat-icon>
                     </button>
-                    <button mat-icon-button (click)="exportEveningPdf(ev.id)" matTooltip="Exporteren naar PDF">
+                    <button mat-icon-button (click)="exportEveningPdf(ev.id, ev.date)" matTooltip="Exporteren naar PDF">
                       <mat-icon>picture_as_pdf</mat-icon>
                     </button>
                     <button mat-icon-button (click)="printEvening(ev.id)" matTooltip="Afdrukken">
@@ -1002,8 +1002,8 @@ export class OverviewComponent implements OnInit {
     this.exportService.downloadEveningExcel(eveningId);
   }
 
-  exportEveningPdf(eveningId: string): void {
-    this.exportService.openEveningPdf(eveningId);
+  exportEveningPdf(eveningId: string, date: string): void {
+    this.exportService.downloadEveningPdf(eveningId, date);
   }
 
   printEvening(eveningId: string): void {
